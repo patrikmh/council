@@ -82,13 +82,30 @@ def poll_data_model(state: dict) -> dict:
     option_labels = state["options"]
     num_options = len(option_labels)
 
-    # Group voters by their chosen option label
+    # Build a lookup that accepts index letters (A, B, C…) or exact labels
+    vote_lookup: dict[str, int] = {}
+    for i, label in enumerate(option_labels):
+        vote_lookup[label] = i
+        vote_lookup[label.lower()] = i
+        vote_lookup[chr(65 + i)] = i       # A, B, C …
+        vote_lookup[chr(65 + i).lower()] = i
+        vote_lookup[f"Option {chr(65 + i)}"] = i
+        vote_lookup[f"option {chr(65 + i)}"] = i
+        vote_lookup[f"Option {chr(65 + i)}: {label}"] = i
+        vote_lookup[f"option {chr(65 + i)}: {label}"] = i
+
     voters_by_option: list[list[dict]] = [[] for _ in range(num_options)]
     for ballot in state["ballots"]:
-        for i, label in enumerate(option_labels):
-            if ballot["vote"] == label:
-                voters_by_option[i].append(ballot)
-                break
+        idx = vote_lookup.get(ballot["vote"]) or vote_lookup.get(ballot["vote"].strip())
+        if idx is not None:
+            voters_by_option[idx].append(ballot)
+        else:
+            # Fuzzy: try substring match
+            v = ballot["vote"].lower()
+            for i, label in enumerate(option_labels):
+                if v in label.lower() or label.lower() in v:
+                    voters_by_option[i].append(ballot)
+                    break
 
     done = state.get("done", False)
     vote_counts = [len(v) for v in voters_by_option]

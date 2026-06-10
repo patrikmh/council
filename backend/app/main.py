@@ -121,10 +121,26 @@ async def run_agent(body: RunAgentInput) -> StreamingResponse:
                     yield agui.sse(agui.custom("panelist_error", {
                         "name": panelist.name, "error": str(ballot)[:200]}))
                     continue
+                vote_raw = ballot.vote
+                # Normalise vote to the matching option label
+                vote_label = vote_raw
+                for opt in framing.options:
+                    if vote_raw.strip().lower() == opt.lower():
+                        vote_label = opt
+                        break
+                else:
+                    # Try matching by letter (A, B, C…)
+                    for idx, opt in enumerate(framing.options):
+                        letter = chr(65 + idx)
+                        if (vote_raw.strip().upper() == letter
+                                or vote_raw.strip().upper().startswith(f"OPTION {letter}")):
+                            vote_label = opt
+                            break
+
                 state["ballots"].append({
                     "name": panelist.name,
                     "provider": panelist.provider,
-                    "vote": ballot.vote,
+                    "vote": vote_label,
                     "reasoning": ballot.reasoning,
                 })
                 yield agui.sse(agui.state_snapshot(state))
