@@ -18,8 +18,11 @@ Event choreography per run:
 import json
 import uuid
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -161,3 +164,9 @@ async def run_agent(body: RunAgentInput) -> StreamingResponse:
 @app.get("/health")
 async def health():
     return {"ok": True}
+
+
+# Serve the built frontend as static files (production)
+frontend = os.path.join(os.path.dirname(__file__), "../../frontend/dist")
+if os.path.isdir(frontend):
+    app.mount("/", StaticFiles(directory=frontend, html=True), name="frontend")
