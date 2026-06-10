@@ -193,8 +193,8 @@ export default function App() {
             <img src="/logo.png" alt="" className="empty-logo" />
             <p className="empty-display">Put it to the table.</p>
             <p className="empty-hint">
-              Ask anything with two sides — the panel frames it, votes, and one
-              of them writes the minutes.
+              Ask any question — the panel frames the options (2–6), each member
+              votes, and one writes the minutes.
             </p>
           </div>
         )}
@@ -226,7 +226,7 @@ export default function App() {
         <textarea
           value={draft}
           rows={1}
-          placeholder="Should I walk or drive to the car wash 50 m away?"
+          placeholder="Which city should we move to: Stockholm, Berlin, or Lisbon?"
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === "Enter" && !e.shiftKey) {
