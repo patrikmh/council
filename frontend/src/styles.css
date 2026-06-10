@@ -17,15 +17,38 @@
   --ink: #1a1d21;
   --ink-soft: #6b7280;
 
-  /* Accent: teal-aqua */
+  /* Accent palette (one per voting option) */
   --aqua: #5eead4;
   --aqua-deep: #14b8a6;
   --aqua-bg: rgba(94, 234, 212, 0.12);
 
-  /* Accent: warm clay/amber */
   --clay: #fbbf7a;
   --clay-deep: #d97706;
   --clay-bg: rgba(251, 191, 122, 0.12);
+
+  --violet: #c4b5fd;
+  --violet-deep: #8b5cf6;
+  --violet-bg: rgba(196, 181, 253, 0.12);
+
+  --rose: #fda4af;
+  --rose-deep: #f43f5e;
+  --rose-bg: rgba(253, 164, 175, 0.12);
+
+  --mint: #86efac;
+  --mint-deep: #22c55e;
+  --mint-bg: rgba(134, 239, 172, 0.12);
+
+  --sky: #7dd3fc;
+  --sky-deep: #0ea5e9;
+  --sky-bg: rgba(125, 211, 252, 0.12);
+
+  --coral: #fca5a5;
+  --coral-deep: #ef4444;
+  --coral-bg: rgba(252, 165, 165, 0.12);
+
+  --gold: #fde68a;
+  --gold-deep: #eab308;
+  --gold-bg: rgba(253, 230, 138, 0.12);
 
   /* Lamp (gold for winner) */
   --lamp: #f59e0b;
@@ -253,11 +276,24 @@ body {
   z-index: 0;
 }
 
-.tone-aqua .poll-fill {
-  background: linear-gradient(90deg, var(--aqua-bg), rgba(94, 234, 212, 0.22));
+/* Tone colour system — each tone sets --tc, --tc-deep, --tc-bg */
+.tone-aqua  { --tc: var(--aqua);  --tc-deep: var(--aqua-deep);  --tc-bg: var(--aqua-bg); }
+.tone-clay  { --tc: var(--clay);  --tc-deep: var(--clay-deep);  --tc-bg: var(--clay-bg); }
+.tone-violet{ --tc: var(--violet);--tc-deep: var(--violet-deep);--tc-bg: var(--violet-bg); }
+.tone-rose  { --tc: var(--rose);  --tc-deep: var(--rose-deep);  --tc-bg: var(--rose-bg); }
+.tone-mint  { --tc: var(--mint);  --tc-deep: var(--mint-deep);  --tc-bg: var(--mint-bg); }
+.tone-sky   { --tc: var(--sky);   --tc-deep: var(--sky-deep);   --tc-bg: var(--sky-bg); }
+.tone-coral { --tc: var(--coral); --tc-deep: var(--coral-deep); --tc-bg: var(--coral-bg); }
+.tone-gold  { --tc: var(--gold);  --tc-deep: var(--gold-deep);  --tc-bg: var(--gold-bg); }
+
+.poll-fill {
+  background: linear-gradient(90deg, var(--tc-bg), color-mix(in srgb, var(--tc) 22%, transparent));
 }
-.tone-clay .poll-fill {
-  background: linear-gradient(90deg, var(--clay-bg), rgba(251, 191, 122, 0.22));
+.poll-id {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--tc-deep);
 }
 
 .poll-row {
@@ -276,18 +312,6 @@ body {
   gap: 10px;
   align-items: baseline;
   color: var(--ink);
-}
-
-.poll-id {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
-  font-weight: 600;
-}
-.tone-aqua .poll-id {
-  color: var(--aqua-deep);
-}
-.tone-clay .poll-id {
-  color: var(--clay-deep);
 }
 
 .poll-tally {

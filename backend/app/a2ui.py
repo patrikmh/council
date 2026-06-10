@@ -15,7 +15,7 @@ Messages:
 from typing import Any
 
 # Tone palette cycled across options for visual variety
-_TONES = ("aqua", "clay", "violet", "rose", "mint", "sky")
+_TONES = ("aqua", "clay", "violet", "rose", "mint", "sky", "coral", "gold")
 
 
 def begin_rendering(surface_id: str, root: dict) -> dict:

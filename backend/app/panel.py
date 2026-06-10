@@ -72,7 +72,7 @@ async def frame_question(model, question: str) -> Framing:
 
 
 # Tone palette cycled across options for visual variety
-_TONES = ["aqua", "clay", "violet", "rose", "mint", "sky"]
+_TONES = ["aqua", "clay", "violet", "rose", "mint", "sky", "coral", "gold"]
 
 
 def tone_for(index: int) -> str:
