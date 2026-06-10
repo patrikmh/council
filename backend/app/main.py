@@ -20,7 +20,7 @@ import uuid
 
 import os
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
@@ -28,6 +28,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from . import a2ui, agui
 from .config import build_panel, framer_model
+from .guard import GuardError, client_ip, limiter, validate_question
 from .panel import cast_ballots, frame_question, stream_summary
 
 app = FastAPI(title="AI Council")
@@ -67,18 +68,43 @@ async def get_panel():
     ]
 
 
+async def _error_stream(body: RunAgentInput, message: str):
+    """SSE stream for guard rejections (rate limit / validation)."""
+    yield agui.sse(agui.run_started(body.thread_id, body.run_id))
+    yield agui.sse(agui.run_error(message))
+
+
 @app.post("/agui")
-async def run_agent(body: RunAgentInput) -> StreamingResponse:
-    question = next(
+async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
+    # ── Rate limit ────────────────────────────────────────────────────
+    ip = client_ip(request)
+    allowed, reason = limiter.check(ip)
+    if not allowed:
+        return StreamingResponse(
+            _error_stream(body, reason),
+            media_type="text/event-stream",
+            status_code=429,
+        )
+
+    # ── Extract & validate question ───────────────────────────────────
+    raw_question = next(
         (m.content for m in reversed(body.messages) if m.role == "user"), ""
-    ).strip()
+    )
+    try:
+        question = validate_question(raw_question)
+    except GuardError as e:
+        return StreamingResponse(
+            _error_stream(body, e.reason),
+            media_type="text/event-stream",
+            status_code=400,
+        )
+
+    # Request accepted — count against rate limit
+    limiter.record(ip)
 
     async def events():
         yield agui.sse(agui.run_started(body.thread_id, body.run_id))
         try:
-            if not question:
-                yield agui.sse(agui.run_error("No user question in messages."))
-                return
 
             full_panel = build_panel()
             # Filter to user-selected models, or use the full panel

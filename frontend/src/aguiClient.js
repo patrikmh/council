@@ -13,7 +13,14 @@ export async function runAgent({ question, threadId, selectedModels, signal, onE
       selectedModels: selectedModels ?? [],
     }),
   });
-  if (!res.ok || !res.body) {
+  if (!res.body) {
+    throw new Error(`Backend responded ${res.status}`);
+  }
+
+  // For 429/400, the body is still an SSE stream with a run_error event —
+  // read it so the UI shows the guard message instead of a generic error.
+  // For other non-OK codes, throw immediately.
+  if (!res.ok && res.status !== 429 && res.status !== 400) {
     throw new Error(`Backend responded ${res.status}`);
   }
 
