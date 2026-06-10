@@ -1,9 +1,9 @@
-"""The AI Council itself: frame the question, collect ballots, summarize.
+"""The Rabble itself: frame the question, collect ballots, summarize.
 
 Three agent roles, all Pydantic AI:
   framer     -> turns a free-text question into 2-6 answer options
   panelists  -> one per model, vote with one-sentence reasoning, in parallel
-  summarizer -> writes the dry council summary, streamed token by token
+  summarizer -> writes the dry Rabble summary, streamed token by token
 """
 
 import asyncio
@@ -48,7 +48,7 @@ FRAMER_PROMPT = (
 )
 
 PANELIST_PROMPT = (
-    "You are one voice on the AI Council. You are given a question and a "
+    "You are one voice on the Rabble. You are given a question and a "
     "set of options. Pick exactly one option (by its exact label) and defend "
     "your choice in one or two sentences. Commit to a choice even if the "
     "question is silly or underspecified; if the premise is flawed, vote for "
@@ -57,7 +57,7 @@ PANELIST_PROMPT = (
 )
 
 SUMMARIZER_PROMPT = (
-    "You write the 'Council Summary' for an AI model poll: a single dry, "
+    "You write the 'Rabble Summary' for an AI model poll: a single dry, "
     "lightly amused paragraph (3-5 sentences) describing how the vote went, "
     "naming the models on each side and the gist of their arguments. If a "
     "model's reasoning was odd, point it out deadpan. No headers, no lists, "

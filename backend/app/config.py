@@ -1,4 +1,4 @@
-"""Who sits on the AI Council — via OpenRouter.
+"""Who sits on the Rabble — via OpenRouter.
 
 One OPENROUTER_API_KEY gives access to every model on the menu. The panel
 is just a comma-separated list of OpenRouter model slugs in ROUNDTABLE_PANEL;

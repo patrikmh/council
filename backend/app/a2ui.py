@@ -41,7 +41,7 @@ def component(ctype: str, **props: Any) -> dict:
 
 
 def poll_card_root(num_options: int = 2) -> dict:
-    """The AI Council poll card. Everything dynamic is bound to the data
+    """The Rabble poll card. Everything dynamic is bound to the data
     model, so vote updates are pure dataModelUpdate messages.
 
     Generates one PollOption child per option with bindings like
@@ -64,10 +64,10 @@ def poll_card_root(num_options: int = 2) -> dict:
     return component(
         "Card",
         children=[
-            component("Eyebrow", text="AI Council"),
+            component("Eyebrow", text="Rabble"),
             component("Heading", text=bind("/question")),
             *option_components,
-            component("SectionLabel", text="Council summary"),
+            component("SectionLabel", text="Rabble summary"),
             component("Paragraph", text=bind("/summary")),
         ],
     )

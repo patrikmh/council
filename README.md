@@ -1,6 +1,6 @@
-# AI Council
+# Rabble
 
-A clone of the "AI Council" poll apps: one question goes to a panel of
+A clone of the "Rabble" poll apps: one question goes to a panel of
 models, each casts a vote with a one-liner of reasoning, the UI shows a live
 poll card, and one model writes the dry summary at the end.
 

@@ -1,4 +1,4 @@
-"""AI Council backend — one AG-UI endpoint.
+"""Rabble backend — one AG-UI endpoint.
 
 POST /agui takes an AG-UI RunAgentInput and streams AG-UI events back as
 SSE. The poll card itself travels inside CUSTOM events as A2UI surface
@@ -31,7 +31,7 @@ from .config import build_panel, framer_model
 from .guard import GuardError, client_ip, limiter, validate_question
 from .panel import cast_ballots, frame_question, stream_summary
 
-app = FastAPI(title="AI Council")
+app = FastAPI(title="Rabble")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],

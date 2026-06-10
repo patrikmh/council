@@ -1,4 +1,4 @@
-// AI Council chat. The transcript is a list of items: user questions,
+// Rabble chat. The transcript is a list of items: user questions,
 // A2UI surfaces (the poll cards), streamed assistant text, and step notes.
 // A single reducer folds the AG-UI event stream into that transcript.
 
@@ -164,8 +164,8 @@ export default function App() {
   return (
     <div className="shell">
       <header className="masthead">
-        <img src="/logo.png" alt="AI Council" className="masthead-logo" />
-        <span className="masthead-name">AI Council</span>
+        <img src="/logo.png" alt="Rabble" className="masthead-logo" />
+        <span className="masthead-name">Rabble</span>
         <span className="masthead-sub">one question · every model votes</span>
       </header>
       <div className="masthead-rule" />
