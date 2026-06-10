@@ -14,6 +14,9 @@ Messages:
 
 from typing import Any
 
+# Tone palette cycled across options for visual variety
+_TONES = ("aqua", "clay", "violet", "rose", "mint", "sky")
+
 
 def begin_rendering(surface_id: str, root: dict) -> dict:
     return {"a2ui": "beginRendering", "surfaceId": surface_id, "root": root}
@@ -37,32 +40,33 @@ def component(ctype: str, **props: Any) -> dict:
     return node
 
 
-def poll_card_root() -> dict:
+def poll_card_root(num_options: int = 2) -> dict:
     """The AI Council poll card. Everything dynamic is bound to the data
-    model, so vote updates are pure dataModelUpdate messages."""
+    model, so vote updates are pure dataModelUpdate messages.
+
+    Generates one PollOption child per option with bindings like
+    /options/0/votes, /options/0/voters, etc.
+    """
+    option_components = []
+    for i in range(num_options):
+        option_components.append(
+            component(
+                "PollOption",
+                optionId=str(i),
+                label=bind(f"/options/{i}/label"),
+                votes=bind(f"/options/{i}/votes"),
+                voters=bind(f"/options/{i}/voters"),
+                winner=bind(f"/options/{i}/winner"),
+                tone=_TONES[i % len(_TONES)],
+            )
+        )
+
     return component(
         "Card",
         children=[
             component("Eyebrow", text="AI Council"),
             component("Heading", text=bind("/question")),
-            component(
-                "PollOption",
-                optionId="A",
-                label=bind("/optionA"),
-                votes=bind("/votesA"),
-                voters=bind("/votersA"),
-                winner=bind("/winnerA"),
-                tone="aqua",
-            ),
-            component(
-                "PollOption",
-                optionId="B",
-                label=bind("/optionB"),
-                votes=bind("/votesB"),
-                voters=bind("/votersB"),
-                winner=bind("/winnerB"),
-                tone="clay",
-            ),
+            *option_components,
             component("SectionLabel", text="Council summary"),
             component("Paragraph", text=bind("/summary")),
         ],
@@ -70,18 +74,37 @@ def poll_card_root() -> dict:
 
 
 def poll_data_model(state: dict) -> dict:
-    voters_a = [v for v in state["ballots"] if v["vote"] == "A"]
-    voters_b = [v for v in state["ballots"] if v["vote"] == "B"]
+    """Build the data model for the poll card from the current state.
+
+    Expects state["options"] to be a list of option label strings and
+    state["ballots"] to have {"vote": <label>, ...} entries.
+    """
+    option_labels = state["options"]
+    num_options = len(option_labels)
+
+    # Group voters by their chosen option label
+    voters_by_option: list[list[dict]] = [[] for _ in range(num_options)]
+    for ballot in state["ballots"]:
+        for i, label in enumerate(option_labels):
+            if ballot["vote"] == label:
+                voters_by_option[i].append(ballot)
+                break
+
     done = state.get("done", False)
+    vote_counts = [len(v) for v in voters_by_option]
+    max_votes = max(vote_counts) if vote_counts else 0
+
+    options_data = []
+    for i, label in enumerate(option_labels):
+        options_data.append({
+            "label": label,
+            "votes": vote_counts[i],
+            "voters": voters_by_option[i],
+            "winner": done and vote_counts[i] == max_votes and max_votes > 0,
+        })
+
     return {
         "question": state["question"],
-        "optionA": state["option_a"],
-        "optionB": state["option_b"],
-        "votesA": len(voters_a),
-        "votesB": len(voters_b),
-        "votersA": voters_a,
-        "votersB": voters_b,
-        "winnerA": done and len(voters_a) > len(voters_b),
-        "winnerB": done and len(voters_b) > len(voters_a),
+        "options": options_data,
         "summary": state.get("summary", ""),
     }

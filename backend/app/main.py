@@ -91,15 +91,14 @@ async def run_agent(body: RunAgentInput) -> StreamingResponse:
                 panel = full_panel
             surface = f"poll-{body.run_id}"
 
-            # 1. Frame the question into two options
+            # 1. Frame the question into 2-6 options
             yield agui.sse(agui.step_started("frame_question"))
             framing = await frame_question(framer_model(panel), question)
             yield agui.sse(agui.step_finished("frame_question"))
 
             state = {
                 "question": question,
-                "option_a": framing.option_a,
-                "option_b": framing.option_b,
+                "options": framing.options,
                 "ballots": [],
                 "expected": len(panel),
                 "done": False,
@@ -108,7 +107,8 @@ async def run_agent(body: RunAgentInput) -> StreamingResponse:
 
             # 2. Mount the A2UI poll surface, then seed its data model
             yield agui.sse(agui.custom(
-                "a2ui", a2ui.begin_rendering(surface, a2ui.poll_card_root())))
+                "a2ui", a2ui.begin_rendering(
+                    surface, a2ui.poll_card_root(num_options=len(framing.options)))))
             yield agui.sse(agui.custom(
                 "a2ui", a2ui.data_model_update(surface, a2ui.poll_data_model(state))))
             yield agui.sse(agui.state_snapshot(state))

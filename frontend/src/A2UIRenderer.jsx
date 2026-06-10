@@ -81,6 +81,6 @@ function renderNode(node, data, ctx, key) {
 
 export default function A2UISurface({ surface }) {
   const { root, data } = surface;
-  const totalVotes = (data?.votesA ?? 0) + (data?.votesB ?? 0);
+  const totalVotes = (data?.options ?? []).reduce((sum, o) => sum + (o.votes ?? 0), 0);
   return <div className="a2ui-surface">{renderNode(root, data ?? {}, { totalVotes }, "root")}</div>;
 }
