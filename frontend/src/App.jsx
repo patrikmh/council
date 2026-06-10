@@ -70,6 +70,8 @@ function reducer(state, ev) {
           return state;
       }
     }
+    case "clear":
+      return { items: [], running: false, status: "" };
     case "fail":
       return {
         ...state,
@@ -233,6 +235,17 @@ export default function App() {
             }
           }}
         />
+        <button
+          className="btn-clear"
+          onClick={() => {
+            dispatch({ kind: "clear" });
+            threadId.current = crypto.randomUUID();
+          }}
+          disabled={state.running || state.items.length === 0}
+          title="Clear chat"
+        >
+          ✕
+        </button>
         <button onClick={submit} disabled={state.running || !draft.trim()}>
           {state.running ? "In session" : "Ask the table"}
         </button>

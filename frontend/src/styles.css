@@ -415,6 +415,19 @@ body {
   outline-offset: 3px;
 }
 
+.btn-clear {
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  padding: 0 14px;
+  font-size: 16px;
+}
+.btn-clear:hover:not(:disabled) {
+  color: var(--lamp);
+  border-color: var(--lamp);
+  box-shadow: none;
+}
+
 /* ── Motion: Reduced ── */
 @media (prefers-reduced-motion: reduce) {
   .poll-fill,
