@@ -7,6 +7,7 @@ Three agent roles, all Pydantic AI:
 """
 
 import asyncio
+import datetime as _dt
 import logging
 import os
 import time
@@ -21,6 +22,26 @@ from .tools import make_tools, OnToolCall
 log = logging.getLogger("rabble")
 
 PANELIST_TIMEOUT = float(os.getenv("PANELIST_TIMEOUT_SEC", "60"))
+
+
+def today_iso() -> str:
+    return _dt.date.today().isoformat()
+
+
+def _preamble(context: str = "") -> str:
+    """Injected at the top of every panelist system prompt so the model
+    knows what today is and (optionally) has fresh search results to
+    ground itself in."""
+    date = today_iso()
+    lines = [
+        f"Today's date is {date}. Your training data is older than that; "
+        "treat any event dated on or after your cutoff as possibly having "
+        "already happened."
+    ]
+    if context:
+        lines.append("")
+        lines.append(context)
+    return "\n".join(lines) + "\n\n"
 
 
 class Framing(BaseModel):
@@ -103,6 +124,7 @@ async def cast_ballots(
     question: str,
     framing: Framing,
     on_tool_call: OnToolCall | None = None,
+    context: str = "",
 ) -> AsyncIterator[tuple[Panelist, Ballot | Exception]]:
     """Fan the question out to every panelist; yield ballots as they land."""
     options_text = "\n".join(
@@ -118,7 +140,7 @@ async def cast_ballots(
             agent = Agent(
                 p.model,
                 output_type=Ballot,
-                system_prompt=PANELIST_PROMPT,
+                system_prompt=_preamble(context) + PANELIST_PROMPT,
                 tools=make_tools(p.name, on_tool_call),
             )
             result = await asyncio.wait_for(agent.run(prompt), timeout=PANELIST_TIMEOUT)

@@ -18,7 +18,7 @@ from typing import AsyncIterator
 from pydantic_ai import Agent
 
 from .config import Panelist
-from .panel import Ballot, Framing, PANELIST_TIMEOUT, cast_ballots
+from .panel import Ballot, Framing, PANELIST_TIMEOUT, _preamble, cast_ballots
 from .tools import make_tools, OnToolCall
 
 log = logging.getLogger("rabble")
@@ -64,9 +64,10 @@ async def initial_ballots(
     question: str,
     framing: Framing,
     on_tool_call: OnToolCall | None = None,
+    context: str = "",
 ) -> AsyncIterator[tuple[Panelist, Ballot | Exception]]:
     """Round 0 — identical to poll mode. Delegated to cast_ballots."""
-    async for item in cast_ballots(panel, question, framing, on_tool_call):
+    async for item in cast_ballots(panel, question, framing, on_tool_call, context):
         yield item
 
 
@@ -76,6 +77,7 @@ async def debate_round(
     framing: Framing,
     prior_round: list[dict],
     on_tool_call: OnToolCall | None = None,
+    context: str = "",
 ) -> AsyncIterator[tuple[Panelist, Ballot | Exception]]:
     """One persuasion round. Every panelist sees the prior round's votes."""
     options_text = _options_text(framing)
@@ -92,7 +94,7 @@ async def debate_round(
             agent = Agent(
                 p.model,
                 output_type=Ballot,
-                system_prompt=DEBATE_PROMPT,
+                system_prompt=_preamble(context) + DEBATE_PROMPT,
                 tools=make_tools(p.name, on_tool_call),
             )
             result = await asyncio.wait_for(agent.run(prompt), timeout=PANELIST_TIMEOUT)

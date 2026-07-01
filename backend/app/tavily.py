@@ -104,3 +104,30 @@ class Tavily:
 
 
 client = Tavily()
+
+
+async def context_block(question: str, limit: int = 3) -> str:
+    """One preflight Tavily search on the user question, formatted as a
+    'Current context' block ready to paste into a system prompt.
+
+    Grounds every panelist in fresh facts even when they don't spontaneously
+    decide to search. Returns "" when Tavily isn't configured or the search
+    fails — the run continues with no grounding, same as before.
+    """
+    if not client.available:
+        return ""
+    try:
+        hits = await client.search(question, limit=limit)
+    except Exception as exc:
+        log.warning("context_search_failed %s: %s",
+                    type(exc).__name__, str(exc)[:200])
+        return ""
+    if not hits:
+        return ""
+    lines = ["Current web context (fresh search results, use these as ground truth):"]
+    for i, h in enumerate(hits, 1):
+        lines.append(f"  {i}. {h.title} — {h.url}")
+        if h.snippet:
+            lines.append(f"     {h.snippet}")
+    log.info("context_search_ok hits=%d", len(hits))
+    return "\n".join(lines)

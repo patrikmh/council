@@ -198,6 +198,17 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
             framing = await frame_question(framer_model(panel), question)
             yield agui.sse(agui.step_finished("frame_question"))
 
+            # Preflight: one Tavily search on the question, injected into
+            # every panelist's system prompt so nobody argues from stale
+            # training data alone.
+            yield agui.sse(agui.step_started("gather_context"))
+            context = await tavily.context_block(question)
+            if context:
+                yield agui.sse(agui.custom("tool_call", {
+                    "agent": "framer", "tool": "web_search",
+                    "query": question[:200]}))
+            yield agui.sse(agui.step_finished("gather_context"))
+
             state = {
                 "question": question,
                 "options": framing.options,
@@ -220,7 +231,7 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
                 await tool_events.put(payload)
 
             yield agui.sse(agui.step_started("collect_ballots"))
-            pump = _pump(cast_ballots(panel, question, framing, on_tool_call))
+            pump = _pump(cast_ballots(panel, question, framing, on_tool_call, context))
             get_ballot = asyncio.create_task(pump.results_get())
 
             while True:
@@ -351,6 +362,14 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
             framing = await frame_question(framer_model(panel), question)
             yield agui.sse(agui.step_finished("frame_question"))
 
+            yield agui.sse(agui.step_started("gather_context"))
+            context = await tavily.context_block(question)
+            if context:
+                yield agui.sse(agui.custom("tool_call", {
+                    "agent": "framer", "tool": "web_search",
+                    "query": question[:200]}))
+            yield agui.sse(agui.step_finished("gather_context"))
+
             state: dict = {
                 "question": question,
                 "options": framing.options,
@@ -409,7 +428,7 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
                 yield agui.sse(agui.step_finished(f"round_{index + 1}"))
 
             # Round 0 — initial ballots
-            async for ev in _run_round(0, initial_ballots(panel, question, framing, on_tool_call)):
+            async for ev in _run_round(0, initial_ballots(panel, question, framing, on_tool_call, context)):
                 yield ev
 
             # Rounds 1..N — persuasion
@@ -418,7 +437,7 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
                 if not prior_round:
                     break
                 async for ev in _run_round(
-                    r, debate_round(panel, question, framing, prior_round, on_tool_call)
+                    r, debate_round(panel, question, framing, prior_round, on_tool_call, context)
                 ):
                     yield ev
 
