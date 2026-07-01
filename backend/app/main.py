@@ -32,6 +32,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
 from . import a2ui, agui, openrouter as orcatalog, store, tavily
+from .memory import RunMemory
 from .config import build_panel, framer_model
 from .debate import (
     DEBATE_ROUNDS,
@@ -231,7 +232,9 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
                 await tool_events.put(payload)
 
             yield agui.sse(agui.step_started("collect_ballots"))
-            pump = _pump(cast_ballots(panel, question, framing, on_tool_call, context))
+            memory = RunMemory()
+            pump = _pump(cast_ballots(panel, question, framing, on_tool_call,
+                                       context, memory=memory))
             get_ballot = asyncio.create_task(pump.results_get())
 
             while True:
@@ -428,16 +431,26 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
                 yield agui.sse(agui.step_finished(f"round_{index + 1}"))
 
             # Round 0 — initial ballots
-            async for ev in _run_round(0, initial_ballots(panel, question, framing, on_tool_call, context)):
+            memory = RunMemory()
+
+            async for ev in _run_round(0, initial_ballots(panel, question, framing,
+                                                          on_tool_call, context,
+                                                          memory=memory)):
                 yield ev
 
-            # Rounds 1..N — persuasion
+            # Rounds 1..N — persuasion. Each round sees the immediately
+            # prior round for peer rebuttal, but memory keeps each
+            # panelist's *own* history across every round.
             for r in range(1, DEBATE_ROUNDS + 1):
                 prior_round = state["rounds"][r - 1]["ballots"]
                 if not prior_round:
                     break
+                all_prior = [b for rd in state["rounds"] for b in rd["ballots"]]
                 async for ev in _run_round(
-                    r, debate_round(panel, question, framing, prior_round, on_tool_call, context)
+                    r, debate_round(panel, question, framing, prior_round,
+                                     on_tool_call, context,
+                                     memory=memory, round_index=r,
+                                     all_prior_ballots=all_prior)
                 ):
                     yield ev
 

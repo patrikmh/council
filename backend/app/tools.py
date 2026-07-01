@@ -12,6 +12,7 @@ import time
 from typing import Awaitable, Callable
 
 from . import tavily
+from .memory import RunMemory
 
 log = logging.getLogger("rabble")
 
@@ -26,6 +27,8 @@ def make_tools(
     agent_name: str,
     on_tool_call: OnToolCall | None = None,
     budget: int = _DEFAULT_BUDGET,
+    memory: RunMemory | None = None,
+    round_index: int = 0,
 ) -> list:
     """Return [web_search, browse] tool functions bound to *agent_name*.
 
@@ -59,6 +62,18 @@ def make_tools(
         """Search the public web. Returns a short list of title/url/snippet
         triples. Use this to find sources, then call browse(url) to read
         one in detail."""
+        # Cache lookup — free hit, doesn't count against budget or Tavily.
+        if memory is not None:
+            cached = memory.get_search(query)
+            if cached is not None:
+                await _notify({"tool": "web_search", "query": query[:200],
+                              "cached": True})
+                log.info("tool_cached name=%r tool=web_search q=%r",
+                         agent_name, query[:80])
+                if memory is not None:
+                    memory.record_tool(agent_name, round_index, "search", query=query)
+                return f"(cached from earlier this run)\n{cached}"
+
         gate = _over_budget()
         if gate:
             log.info("tool_budget name=%r tool=web_search", agent_name)
@@ -74,16 +89,30 @@ def make_tools(
         log.info("tool_ok   name=%r tool=web_search hits=%d elapsed=%.1fs",
                  agent_name, len(hits), time.monotonic() - t0)
         if not hits:
-            return f"No results for {query!r}."
-        lines = [f"Search results for {query!r}:"]
-        for i, h in enumerate(hits, 1):
-            lines.append(f"{i}. {h.title}\n   {h.url}\n   {h.snippet}")
-        return "\n".join(lines)
+            result = f"No results for {query!r}."
+        else:
+            lines = [f"Search results for {query!r}:"]
+            for i, h in enumerate(hits, 1):
+                lines.append(f"{i}. {h.title}\n   {h.url}\n   {h.snippet}")
+            result = "\n".join(lines)
+        if memory is not None:
+            memory.put_search(query, result)
+            memory.record_tool(agent_name, round_index, "search", query=query)
+        return result
 
     async def browse(url: str) -> str:
         """Fetch a public URL and return the readable text of the page
         (title + main text, capped). Use after web_search to read a source
         in detail."""
+        if memory is not None:
+            cached = memory.get_browse(url)
+            if cached is not None:
+                await _notify({"tool": "browse", "url": url[:300], "cached": True})
+                log.info("tool_cached name=%r tool=browse url=%r",
+                         agent_name, url[:80])
+                memory.record_tool(agent_name, round_index, "browse", url=url)
+                return f"(cached from earlier this run)\n{cached}"
+
         gate = _over_budget()
         if gate:
             log.info("tool_budget name=%r tool=browse", agent_name)
@@ -99,6 +128,10 @@ def make_tools(
         log.info("tool_ok   name=%r tool=browse bytes=%d elapsed=%.1fs",
                  agent_name, len(page.text), time.monotonic() - t0)
         header = f"Title: {page.title}\nURL: {page.final_url}\n\n"
-        return header + (page.text or "(no readable text extracted)")
+        result = header + (page.text or "(no readable text extracted)")
+        if memory is not None:
+            memory.put_browse(url, result)
+            memory.record_tool(agent_name, round_index, "browse", url=url)
+        return result
 
     return [web_search, browse]

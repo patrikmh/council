@@ -18,6 +18,7 @@ from typing import AsyncIterator
 from pydantic_ai import Agent
 
 from .config import Panelist
+from .memory import RunMemory
 from .panel import Ballot, Framing, PANELIST_TIMEOUT, _preamble, cast_ballots
 from .tools import make_tools, OnToolCall
 
@@ -65,9 +66,11 @@ async def initial_ballots(
     framing: Framing,
     on_tool_call: OnToolCall | None = None,
     context: str = "",
+    memory: RunMemory | None = None,
 ) -> AsyncIterator[tuple[Panelist, Ballot | Exception]]:
     """Round 0 — identical to poll mode. Delegated to cast_ballots."""
-    async for item in cast_ballots(panel, question, framing, on_tool_call, context):
+    async for item in cast_ballots(panel, question, framing, on_tool_call,
+                                    context, memory=memory, round_index=0):
         yield item
 
 
@@ -78,24 +81,32 @@ async def debate_round(
     prior_round: list[dict],
     on_tool_call: OnToolCall | None = None,
     context: str = "",
+    memory: RunMemory | None = None,
+    round_index: int = 1,
+    all_prior_ballots: list[dict] | None = None,
 ) -> AsyncIterator[tuple[Panelist, Ballot | Exception]]:
     """One persuasion round. Every panelist sees the prior round's votes."""
     options_text = _options_text(framing)
+    all_prior = all_prior_ballots or prior_round
 
     async def one(p: Panelist) -> tuple[Panelist, Ballot | Exception]:
         t0 = time.monotonic()
         log.info("debate_start name=%r timeout=%.1fs", p.name, PANELIST_TIMEOUT)
         try:
             others = _render_others(prior_round, p.name)
-            prompt = (
-                f"Question: {question}\n{options_text}\n\n{others}\n\n"
-                "Now cast your ballot for this round."
-            )
+            my_history = memory.agent_history(p.name, all_prior) if memory else ""
+            parts = [f"Question: {question}\n{options_text}"]
+            if my_history:
+                parts.append(my_history)
+            parts.append(others)
+            parts.append("Now cast your ballot for this round.")
+            prompt = "\n\n".join(parts)
             agent = Agent(
                 p.model,
                 output_type=Ballot,
                 system_prompt=_preamble(context) + DEBATE_PROMPT,
-                tools=make_tools(p.name, on_tool_call),
+                tools=make_tools(p.name, on_tool_call, memory=memory,
+                                 round_index=round_index),
             )
             result = await asyncio.wait_for(agent.run(prompt), timeout=PANELIST_TIMEOUT)
             log.info("debate_done  name=%r vote=%r elapsed=%.1fs",

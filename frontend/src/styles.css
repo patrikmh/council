@@ -996,3 +996,10 @@ body {
   letter-spacing: 0.02em;
   margin-left: 6px;
 }
+
+.tool-badge.is-cached {
+  background: rgba(107, 114, 128, 0.15);
+  color: rgba(255, 255, 255, 0.55);
+  border-color: rgba(107, 114, 128, 0.25);
+  font-style: italic;
+}

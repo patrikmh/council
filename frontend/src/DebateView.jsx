@@ -112,14 +112,23 @@ function toneFor(optionIndex) {
 }
 
 function ToolBadge({ call }) {
+  const mark = call.cached ? " · cached" : "";
   if (call.tool === "web_search")
-    return <span className="tool-badge">🔎 searched “{(call.query || "").slice(0, 60)}”</span>;
+    return (
+      <span className={`tool-badge ${call.cached ? "is-cached" : ""}`}>
+        🔎 searched “{(call.query || "").slice(0, 60)}”{mark}
+      </span>
+    );
   if (call.tool === "browse") {
     let host = call.url || "";
     try {
       host = new URL(call.url).host;
     } catch {}
-    return <span className="tool-badge">🌐 browsed {host}</span>;
+    return (
+      <span className={`tool-badge ${call.cached ? "is-cached" : ""}`}>
+        🌐 browsed {host}{mark}
+      </span>
+    );
   }
   return <span className="tool-badge">🛠 {call.tool}</span>;
 }

@@ -17,6 +17,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
 from .config import Panelist
+from .memory import RunMemory
 from .tools import make_tools, OnToolCall
 
 log = logging.getLogger("rabble")
@@ -125,6 +126,8 @@ async def cast_ballots(
     framing: Framing,
     on_tool_call: OnToolCall | None = None,
     context: str = "",
+    memory: RunMemory | None = None,
+    round_index: int = 0,
 ) -> AsyncIterator[tuple[Panelist, Ballot | Exception]]:
     """Fan the question out to every panelist; yield ballots as they land."""
     options_text = "\n".join(
@@ -141,7 +144,8 @@ async def cast_ballots(
                 p.model,
                 output_type=Ballot,
                 system_prompt=_preamble(context) + PANELIST_PROMPT,
-                tools=make_tools(p.name, on_tool_call),
+                tools=make_tools(p.name, on_tool_call, memory=memory,
+                                 round_index=round_index),
             )
             result = await asyncio.wait_for(agent.run(prompt), timeout=PANELIST_TIMEOUT)
             log.info("panelist_done  name=%r vote=%r elapsed=%.1fs",
