@@ -696,15 +696,45 @@ export default function DebateView({ panelists, selected, toggleModel }) {
             : null
         }
       />
+      <div className={`composer ${(!state.snapshot && !state.running && state.transcript.length === 0) ? "is-hero" : "is-slim"}`}>
+        <textarea
+          value={draft}
+          rows={1}
+          placeholder={
+            !state.snapshot && !state.running
+              ? "Put a motion to the table…"
+              : "Ask another question"
+          }
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              submit();
+            }
+          }}
+        />
+        <button
+          className="btn-clear"
+          onClick={() => {
+            dispatch({ kind: "clear" });
+            threadId.current = crypto.randomUUID();
+          }}
+          disabled={state.running || state.transcript.length === 0}
+          title="Clear debate"
+        >
+          ✕
+        </button>
+        <button onClick={submit} disabled={state.running || !draft.trim()}>
+          {state.running ? "In session" : "Open the floor"}
+        </button>
+      </div>
       <main className="transcript debate-transcript">
         {state.transcript.length === 0 && !state.snapshot && !state.running && (
           <div className="empty">
-            <img src="/logo.png" alt="" className="empty-logo" />
-            <p className="empty-display">Open the floor.</p>
             <p className="empty-hint">
-              Ask a question. Every panelist casts an opening ballot, then they
-              see each other, argue, and may flip. They can search the web to
-              check claims.
+              Every panelist casts an opening ballot, then they see each
+              other, argue, and may flip. They can search the web to check
+              claims.
             </p>
           </div>
         )}
@@ -758,34 +788,6 @@ export default function DebateView({ panelists, selected, toggleModel }) {
         {state.running && <Spinner step={state.step} />}
         <div ref={endRef} />
       </main>
-      <footer className="composer">
-        <textarea
-          value={draft}
-          rows={1}
-          placeholder="Which city should we move to: Stockholm, Berlin, or Lisbon?"
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              submit();
-            }
-          }}
-        />
-        <button
-          className="btn-clear"
-          onClick={() => {
-            dispatch({ kind: "clear" });
-            threadId.current = crypto.randomUUID();
-          }}
-          disabled={state.running || state.transcript.length === 0}
-          title="Clear debate"
-        >
-          ✕
-        </button>
-        <button onClick={submit} disabled={state.running || !draft.trim()}>
-          {state.running ? "In session" : "Open the floor"}
-        </button>
-      </footer>
     </>
   );
 }

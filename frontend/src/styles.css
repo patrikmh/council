@@ -393,13 +393,32 @@ body {
 }
 
 /* ── Composer ── */
+/* The composer moves out of the page footer and lives right under the
+   table. Two flavours:
+     .is-hero — big centered "put a motion to the table" moment, only
+                shown before the first question.
+     .is-slim — a slim always-visible bar for follow-up questions once
+                results are on screen. */
 .composer {
-  position: sticky;
-  bottom: 0;
   display: flex;
   gap: 10px;
-  padding: 14px 0 24px;
-  background: linear-gradient(to bottom, transparent 0%, var(--chamber) 30%);
+  margin: 0 auto 20px;
+  max-width: 620px;
+  width: 100%;
+  transition: max-width 320ms ease, margin 320ms ease, padding 320ms ease;
+}
+.composer.is-hero {
+  margin: 8px auto 28px;
+  padding: 4px 0;
+  max-width: 580px;
+}
+.composer.is-slim {
+  margin: 6px auto 14px;
+  padding: 0;
+  max-width: 720px;
+}
+.composer::before {
+  display: none; /* the hanging "01." mark from the old design is gone */
 }
 
 .composer textarea {
@@ -411,7 +430,25 @@ body {
   border: 1px solid var(--border-strong);
   border-radius: 14px;
   padding: 12px 16px;
-  transition: border-color 0.2s ease, background 0.2s ease;
+  transition: border-color 0.2s ease, background 0.2s ease,
+              font-size 300ms ease, padding 300ms ease;
+}
+.composer.is-hero textarea {
+  font: 500 18px/1.35 "Fraunces", serif;
+  font-style: italic;
+  padding: 16px 22px;
+  border-radius: 16px;
+  border-color: rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.03);
+}
+.composer.is-hero textarea::placeholder {
+  font-style: italic;
+  color: rgba(245, 158, 11, 0.5);
+}
+.composer.is-slim textarea {
+  font-size: 13px;
+  padding: 8px 14px;
+  border-radius: 10px;
 }
 .composer textarea::placeholder {
   color: rgba(255, 255, 255, 0.3);
@@ -434,9 +471,13 @@ body {
   border-radius: 14px;
   padding: 0 22px;
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease,
+              font-size 300ms ease, padding 300ms ease, border-radius 300ms ease;
   white-space: nowrap;
 }
+.composer.is-hero button { padding: 0 26px; border-radius: 16px; font-size: 15px; }
+.composer.is-slim button { padding: 0 14px; border-radius: 10px; font-size: 12px; }
+.composer.is-slim .btn-clear { padding: 0 10px; }
 .composer button:hover:not(:disabled) {
   transform: translateY(-1px);
   box-shadow: 0 4px 16px var(--lamp-glow);
@@ -1624,8 +1665,11 @@ body::after {
     inset 0 1px 0 rgba(255, 255, 255, 0.05),
     inset 0 -8px 24px rgba(0, 0, 0, 0.4),
     0 6px 20px rgba(0, 0, 0, 0.35);
-  display: grid;
-  place-items: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
 }
 .round-table::before {
   content: "";
@@ -2034,4 +2078,17 @@ body::after {
   line-height: 1.28;
   letter-spacing: -0.005em;
   color: var(--paper);
+}
+
+/* ── Rabble wordmark inside the round table ─────────────────────────── */
+.table-wordmark {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-style: italic;
+  font-size: clamp(14px, 1.6vw, 20px);
+  letter-spacing: 0.02em;
+  color: var(--paper);
+  user-select: none;
+  opacity: 0.86;
+  margin-top: -2px;
 }

@@ -66,6 +66,7 @@ export function PanelPicker({ panelists, selected, toggleModel, disabled, thinki
             className="table-logo"
             draggable={false}
           />
+          <span className="table-wordmark">Rabble</span>
         </div>
         {panelists.map((p, i) => {
           const dead = p.available === false;
@@ -295,6 +296,42 @@ function PollView({ panelists, selected, toggleModel }) {
     }
   }
 
+  const isEmpty = state.items.length === 0 && !state.running;
+  const composer = (
+    <div className={`composer ${isEmpty ? "is-hero" : "is-slim"}`}>
+      <textarea
+        value={draft}
+        rows={1}
+        placeholder={
+          isEmpty
+            ? "Put a motion to the table…"
+            : "Ask another question"
+        }
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            submit();
+          }
+        }}
+      />
+      <button
+        className="btn-clear"
+        onClick={() => {
+          dispatch({ kind: "clear" });
+          threadId.current = crypto.randomUUID();
+        }}
+        disabled={state.running || state.items.length === 0}
+        title="Clear chat"
+      >
+        ✕
+      </button>
+      <button onClick={submit} disabled={state.running || !draft.trim()}>
+        {state.running ? "In session" : "Ask the table"}
+      </button>
+    </div>
+  );
+
   return (
     <>
       <PanelPicker
@@ -304,13 +341,12 @@ function PollView({ panelists, selected, toggleModel }) {
         disabled={state.running}
         thinkingSet={state.running ? selected : null}
       />
+      {composer}
       <main className="transcript">
-        {state.items.length === 0 && !state.running && (
+        {isEmpty && (
           <div className="empty">
-            <img src="/logo.png" alt="" className="empty-logo" />
-            <p className="empty-display">Put it to the table.</p>
             <p className="empty-hint">
-              Ask any question — the panel frames the options (2–6), each member
+              Ask any question — the panel frames 2–6 options, each member
               votes, and one writes the minutes. Panelists can browse the web
               if a fact needs checking.
             </p>
@@ -341,34 +377,6 @@ function PollView({ panelists, selected, toggleModel }) {
         {state.running && <Spinner step={state.step} />}
         <div ref={endRef} />
       </main>
-      <footer className="composer">
-        <textarea
-          value={draft}
-          rows={1}
-          placeholder="Which city should we move to: Stockholm, Berlin, or Lisbon?"
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              submit();
-            }
-          }}
-        />
-        <button
-          className="btn-clear"
-          onClick={() => {
-            dispatch({ kind: "clear" });
-            threadId.current = crypto.randomUUID();
-          }}
-          disabled={state.running || state.items.length === 0}
-          title="Clear chat"
-        >
-          ✕
-        </button>
-        <button onClick={submit} disabled={state.running || !draft.trim()}>
-          {state.running ? "In session" : "Ask the table"}
-        </button>
-      </footer>
     </>
   );
 }
@@ -408,17 +416,6 @@ export default function App() {
   return (
     <div className="shell">
       <header className="masthead">
-        <a
-          href="#"
-          className="masthead-brand"
-          onClick={(e) => {
-            e.preventDefault();
-            setMode("poll");
-          }}
-          aria-label="Rabble — go to Poll"
-        >
-          <span className="masthead-name">Rabble</span>
-        </a>
         <nav className="tabs" aria-label="Mode">
           {[
             ["poll", "Poll", "one question, everyone votes"],
