@@ -920,3 +920,51 @@ body {
 .verdict-voter { display: inline-flex; align-items: center; gap: 4px; }
 .verdict-voter-name { color: var(--ink); font-weight: 500; }
 .verdict-voter-vote { color: var(--ink); }
+
+/* ── Rabble minutes card ────────────────────────────────────────────────
+   A tight pull-quote block that sits between the ballots and the verdict.
+   Hairline gold rule on the left, small caps eyebrow, big Fraunces italic
+   body — reads like an epigraph, not a chat bubble. */
+.minutes {
+  align-self: stretch;
+  margin: 24px 0 4px;
+  padding: 16px 22px 18px 26px;
+  border-left: 2px solid var(--lamp);
+  background: linear-gradient(
+    90deg,
+    rgba(245, 158, 11, 0.06) 0%,
+    rgba(245, 158, 11, 0) 60%
+  );
+  position: relative;
+}
+.minutes::before {
+  content: "";
+  position: absolute;
+  left: 26px;
+  right: 22px;
+  bottom: 10px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.06);
+}
+.minutes-eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lamp);
+  margin-bottom: 8px;
+}
+.minutes-body {
+  font-family: "Fraunces", serif;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 20px;
+  line-height: 1.45;
+  letter-spacing: -0.005em;
+  color: #f3f4f6;
+  margin: 0;
+}
+.minutes-body::first-letter {
+  font-weight: 500;
+}

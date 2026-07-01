@@ -74,11 +74,13 @@ PANELIST_PROMPT = (
 )
 
 SUMMARIZER_PROMPT = (
-    "You write the 'Rabble Summary' for an AI model poll: a single dry, "
-    "lightly amused paragraph (3-5 sentences) describing how the vote went, "
-    "naming the models on each side and the gist of their arguments. If a "
-    "model's reasoning was odd, point it out deadpan. No headers, no lists, "
-    "no quotes longer than a few words."
+    "You write the 'Rabble Minutes' for a one-shot AI model poll. Rules:\n"
+    "  • TWO sentences. Max three.\n"
+    "  • Dry, wry, one clean observation — no throat-clearing.\n"
+    "  • Name at least one model. If a reasoning was odd, point it out "
+    "deadpan.\n"
+    "  • No heading, no lists, no bold, no quotes longer than four words.\n"
+    "Plain prose. Ship it."
 )
 
 

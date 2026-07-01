@@ -115,9 +115,14 @@ async def debate_round(
 
 DEBATE_SUMMARY_PROMPT = (
     "You write the closing 'Rabble Minutes' for a multi-round debate "
-    "between AI models. In one dry, lightly amused paragraph (3-6 "
-    "sentences), describe the arc: who started where, who flipped whom, "
-    "and where the room landed. Name models. No headers, no lists."
+    "between AI models. Rules:\n"
+    "  • TWO sentences. Absolute max three. This is a headline, not an essay.\n"
+    "  • Dry, wry, one clean observation — no throat-clearing.\n"
+    "  • Name at least one model. If someone flipped, that is the story.\n"
+    "  • If everyone agreed the whole way, say so bluntly — do not pad.\n"
+    "  • No heading like 'Rabble Minutes', no lists, no bold, no quotes "
+    "longer than four words.\n"
+    "Write it as plain prose. Ship it."
 )
 
 

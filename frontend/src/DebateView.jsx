@@ -183,6 +183,14 @@ function AgentCard({ ballot, toolCalls, snapshot }) {
   );
 }
 
+// Strip the model-added heading if the summarizer still leads with it.
+function cleanSummary(text) {
+  return text
+    .replace(/^\s*\**\s*rabble\s*(minutes|summary)\s*\**[:.\-—\s]*/i, "")
+    .replace(/^\s*[#*]+\s*/, "")
+    .trim();
+}
+
 function Verdict({ snapshot }) {
   if (!snapshot?.done || !snapshot.rounds?.length) return null;
   const finalRound = snapshot.rounds[snapshot.rounds.length - 1].ballots;
@@ -329,9 +337,10 @@ export default function DebateView({ panelists, selected, toggleModel }) {
               />
             ))}
             {state.summary && (
-              <div className="bubble bubble-assistant debate-summary">
-                {state.summary}
-              </div>
+              <aside className="minutes">
+                <div className="minutes-eyebrow">Rabble minutes</div>
+                <p className="minutes-body">{cleanSummary(state.summary)}</p>
+              </aside>
             )}
             <Verdict snapshot={state.snapshot} />
           </>

@@ -9,6 +9,13 @@ import DebateView from "./DebateView.jsx";
 import StatsView from "./StatsView.jsx";
 import Spinner from "./Spinner.jsx";
 
+function cleanSummary(text) {
+  return text
+    .replace(/^\s*\**\s*rabble\s*(minutes|summary)\s*\**[:.\-—\s]*/i, "")
+    .replace(/^\s*[#*]+\s*/, "")
+    .trim();
+}
+
 function reducer(state, ev) {
   switch (ev.kind) {
     case "user":
@@ -215,9 +222,10 @@ function PollView({ panelists, selected, toggleModel }) {
           if (it.type === "surface") return <A2UISurface key={it.id} surface={it} />;
           if (it.type === "text")
             return (
-              <div key={it.id} className="bubble bubble-assistant">
-                {it.text}
-              </div>
+              <aside key={it.id} className="minutes">
+                <div className="minutes-eyebrow">Rabble minutes</div>
+                <p className="minutes-body">{cleanSummary(it.text)}</p>
+              </aside>
             );
           if (it.type === "tool") return <ToolNote key={it.id} item={it} />;
           return (
