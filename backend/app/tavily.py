@@ -22,7 +22,10 @@ import httpx
 log = logging.getLogger("rabble")
 
 _BASE = "https://api.tavily.com"
-_TIMEOUT_SEC = 12
+# 12 s was too generous — a slow Tavily call chained 2-3 times blows a
+# panelist's whole budget. Fail fast and let the model proceed with what
+# it already has from the framer's preflight context.
+_TIMEOUT_SEC = float(os.getenv("TAVILY_TIMEOUT_SEC", "6"))
 _MAX_CONTENT_CHARS = 4000
 
 

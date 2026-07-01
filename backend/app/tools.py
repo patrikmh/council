@@ -18,18 +18,29 @@ log = logging.getLogger("rabble")
 
 OnToolCall = Callable[[dict], Awaitable[None] | None]
 
-# How many tool calls each panelist may make per round. A search + browse-A
-# + browse-B + decide flow needs about 4; 6 gives a small margin.
-_DEFAULT_BUDGET = int(os.getenv("TOOL_BUDGET_PER_AGENT", "6"))
+# How many tool calls each panelist may make per round.
+# Round 0 (opening ballot) is capped tighter — the framer already ran ONE
+# preflight Tavily search and injected the top hits into every panelist's
+# system prompt, so a panelist rarely needs to search on their own before
+# casting a first ballot. Persuasion rounds get more headroom for
+# verifying peers' claims.
+_INITIAL_BUDGET = int(os.getenv("TOOL_BUDGET_INITIAL", "2"))
+_DEBATE_BUDGET = int(os.getenv("TOOL_BUDGET_DEBATE", "5"))
+
+
+def _budget_for_round(round_index: int) -> int:
+    return _INITIAL_BUDGET if round_index == 0 else _DEBATE_BUDGET
 
 
 def make_tools(
     agent_name: str,
     on_tool_call: OnToolCall | None = None,
-    budget: int = _DEFAULT_BUDGET,
+    budget: int | None = None,
     memory: RunMemory | None = None,
     round_index: int = 0,
 ) -> list:
+    if budget is None:
+        budget = _budget_for_round(round_index)
     """Return [web_search, browse] tool functions bound to *agent_name*.
 
     If Tavily is not configured (no ``TAVILY_API_KEY``), returns an empty
