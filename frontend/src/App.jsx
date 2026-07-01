@@ -408,26 +408,36 @@ export default function App() {
   return (
     <div className="shell">
       <header className="masthead">
-        <img src="/logo.png" alt="Rabble" className="masthead-logo" />
-        <span className="masthead-name">Rabble</span>
-        <span className="masthead-sub">one question · every model votes</span>
-        <nav className="tabs">
+        <a
+          href="#"
+          className="masthead-brand"
+          onClick={(e) => {
+            e.preventDefault();
+            setMode("poll");
+          }}
+          aria-label="Rabble — go to Poll"
+        >
+          <img src="/logo.png" alt="" className="masthead-logo" />
+          <span className="masthead-name">Rabble</span>
+        </a>
+        <nav className="tabs" aria-label="Mode">
           {[
-            ["poll", "Poll"],
-            ["debate", "Debate"],
-            ["stats", "Stats"],
-          ].map(([key, label]) => (
+            ["poll", "Poll", "one question, everyone votes"],
+            ["debate", "Debate", "argue across rounds"],
+            ["stats", "Stats", "who's been most persuasive"],
+          ].map(([key, label, hint]) => (
             <button
               key={key}
               className={`tab ${mode === key ? "is-on" : ""}`}
               onClick={() => setMode(key)}
+              title={hint}
             >
-              {label}
+              <span className="tab-label">{label}</span>
+              <span className="tab-hint">{hint}</span>
             </button>
           ))}
         </nav>
       </header>
-      <div className="masthead-rule" />
 
       {mode === "poll" && (
         <PollView
