@@ -417,7 +417,6 @@ export default function App() {
           }}
           aria-label="Rabble — go to Poll"
         >
-          <img src="/logo.png" alt="" className="masthead-logo" />
           <span className="masthead-name">Rabble</span>
         </a>
         <nav className="tabs" aria-label="Mode">
