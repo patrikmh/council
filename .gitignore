@@ -14,7 +14,8 @@ venv/
 .env.local
 
 # Build output
-frontend/dist/
+# frontend/dist/ is intentionally committed so Render can serve it
+# without a Node build step (the service runs env: python).
 
 # OS
 .DS_Store
