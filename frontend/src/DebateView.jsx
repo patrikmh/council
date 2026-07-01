@@ -4,18 +4,7 @@
 
 import React, { useEffect, useReducer, useRef, useState } from "react";
 import { runDebate } from "./aguiClient.js";
-
-const STEP_LABELS = {
-  frame_question: "Framing the motion…",
-  summarize: "Drafting the minutes…",
-};
-
-function stepLabel(name) {
-  if (STEP_LABELS[name]) return STEP_LABELS[name];
-  const m = name.match(/^round_(\d+)$/);
-  if (m) return `Round ${m[1]} — panelists debating…`;
-  return name;
-}
+import Spinner from "./Spinner.jsx";
 
 function reducer(state, ev) {
   switch (ev.kind) {
@@ -30,13 +19,13 @@ function reducer(state, ev) {
         toolCalls: {},
         summary: "",
         running: true,
-        status: "Convening the debate…",
+        step: "_default",
       };
     case "agui": {
       const e = ev.event;
       switch (e.type) {
         case "STEP_STARTED":
-          return { ...state, status: stepLabel(e.stepName) };
+          return { ...state, step: e.stepName };
         case "STATE_SNAPSHOT":
           return { ...state, snapshot: e.snapshot };
         case "TEXT_MESSAGE_CONTENT":
@@ -67,12 +56,12 @@ function reducer(state, ev) {
           }
           return state;
         case "RUN_FINISHED":
-          return { ...state, running: false, status: "" };
+          return { ...state, running: false, step: null };
         case "RUN_ERROR":
           return {
             ...state,
             running: false,
-            status: "",
+            step: null,
             transcript: [
               ...state.transcript,
               {
@@ -92,7 +81,7 @@ function reducer(state, ev) {
       return {
         ...state,
         running: false,
-        status: "",
+        step: null,
         transcript: [
           ...state.transcript,
           { type: "note", id: crypto.randomUUID(), text: ev.text },
@@ -110,7 +99,7 @@ function initialState() {
     toolCalls: {},
     summary: "",
     running: false,
-    status: "",
+    step: null,
   };
 }
 
@@ -219,7 +208,7 @@ export default function DebateView({ panelists, selected, toggleModel }) {
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [state.snapshot, state.summary, state.status]);
+  }, [state.snapshot, state.summary, state.step]);
 
   async function submit() {
     const question = draft.trim();
@@ -297,7 +286,7 @@ export default function DebateView({ panelists, selected, toggleModel }) {
             )}
           </>
         )}
-        {state.running && <div className="status">{state.status}</div>}
+        {state.running && <Spinner step={state.step} />}
         <div ref={endRef} />
       </main>
       <footer className="composer">

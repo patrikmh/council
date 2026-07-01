@@ -7,12 +7,7 @@ import { runAgent } from "./aguiClient.js";
 import A2UISurface from "./A2UIRenderer.jsx";
 import DebateView from "./DebateView.jsx";
 import StatsView from "./StatsView.jsx";
-
-const STEP_LABELS = {
-  frame_question: "Framing the motion…",
-  collect_ballots: "The table is voting…",
-  summarize: "Drafting the summary…",
-};
+import Spinner from "./Spinner.jsx";
 
 function reducer(state, ev) {
   switch (ev.kind) {
@@ -21,13 +16,13 @@ function reducer(state, ev) {
         ...state,
         items: [...state.items, { type: "user", id: ev.id, text: ev.text }],
         running: true,
-        status: "Convening the panel…",
+        step: "_default",
       };
     case "agui": {
       const e = ev.event;
       switch (e.type) {
         case "STEP_STARTED":
-          return { ...state, status: STEP_LABELS[e.stepName] ?? e.stepName };
+          return { ...state, step: e.stepName };
         case "TEXT_MESSAGE_START":
           return {
             ...state,
@@ -73,12 +68,12 @@ function reducer(state, ev) {
           }
           return state;
         case "RUN_FINISHED":
-          return { ...state, running: false, status: "" };
+          return { ...state, running: false, step: null };
         case "RUN_ERROR":
           return {
             ...state,
             running: false,
-            status: "",
+            step: null,
             items: [
               ...state.items,
               { type: "note", id: crypto.randomUUID(), text: `Run failed: ${e.message}` },
@@ -89,12 +84,12 @@ function reducer(state, ev) {
       }
     }
     case "clear":
-      return { items: [], running: false, status: "" };
+      return { items: [], running: false, step: null };
     case "fail":
       return {
         ...state,
         running: false,
-        status: "",
+        step: null,
         items: [
           ...state.items,
           { type: "note", id: crypto.randomUUID(), text: ev.text },
@@ -153,7 +148,7 @@ function PollView({ panelists, selected, toggleModel }) {
   const [state, dispatch] = useReducer(reducer, {
     items: [],
     running: false,
-    status: "",
+    step: null,
   });
   const [draft, setDraft] = useState("");
   const threadId = useRef(crypto.randomUUID());
@@ -161,7 +156,7 @@ function PollView({ panelists, selected, toggleModel }) {
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [state.items, state.status]);
+  }, [state.items, state.step]);
 
   async function submit() {
     const question = draft.trim();
@@ -231,7 +226,7 @@ function PollView({ panelists, selected, toggleModel }) {
             </div>
           );
         })}
-        {state.running && <div className="status">{state.status}</div>}
+        {state.running && <Spinner step={state.step} />}
         <div ref={endRef} />
       </main>
       <footer className="composer">
