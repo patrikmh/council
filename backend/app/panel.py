@@ -48,10 +48,15 @@ def _preamble(context: str = "") -> str:
 class Framing(BaseModel):
     options: list[str] = Field(
         description=(
-            "Two to six mutually exclusive answer options as short labels "
-            "(1-4 words each). If the question already names options, keep them. "
-            "Use exactly as many options as the question implies: two for a "
-            "simple either/or, more for ranking or multi-way choices."
+            "Between 2 and 6 mutually exclusive answer options as short labels "
+            "(1-4 words each). Default to 3-6 options for open-ended questions "
+            "so the panel has real choices to weigh. Only use exactly 2 options "
+            "when the question itself is explicitly binary — either it literally "
+            "names two alternatives ('X or Y?', 'Should we A or B?') or the "
+            "answer space is truly boolean (yes/no, true/false). For 'What/"
+            "which/who is best…' style questions, list the real contenders "
+            "(usually 4-6). If the question already names candidates, keep "
+            "them all, even if that means 3+ options."
         ),
         min_length=2,
         max_length=6,
@@ -70,11 +75,26 @@ class Ballot(BaseModel):
 
 FRAMER_PROMPT = (
     "You frame questions for a poll of AI models. Given the user's question, "
-    "produce 2-6 mutually exclusive answer options, each a label of 1-4 words. "
-    "If the question already names options, keep them. Use exactly as many "
-    "options as the question implies: two for a simple either/or, more for "
-    "multi-way choices (e.g. 'Which season is best?' -> Spring, Summer, "
-    "Autumn, Winter). Do not answer the question yourself."
+    "produce mutually exclusive answer options as short labels (1-4 words). "
+    "\n\n"
+    "Default: 3-6 options — enough real contenders to make the vote "
+    "interesting. Examples:\n"
+    "  • 'Which season is best?' → Spring, Summer, Autumn, Winter\n"
+    "  • 'What Nordic country is best at sports?' → Norway, Sweden, "
+    "Denmark, Finland, Iceland\n"
+    "  • 'Best programming language for a beginner?' → Python, JavaScript, "
+    "Go, Ruby, C\n"
+    "  • 'Who wins the 2026 World Cup?' → France, Argentina, Brazil, "
+    "Spain, England, Germany\n"
+    "\n"
+    "Only use exactly 2 options when the question is EXPLICITLY binary: "
+    "it names two alternatives ('Sweden or Norway?', 'Coffee or tea?', "
+    "'Should we A or B?'), or the answer space is truly boolean (yes/no, "
+    "true/false). Do not force 2 options on an open-ended question — "
+    "'What country is best?' deserves the real contenders, not just two.\n"
+    "\n"
+    "If the question already names candidates, KEEP THEM ALL. Do not answer "
+    "the question yourself."
 )
 
 PANELIST_PROMPT = (
