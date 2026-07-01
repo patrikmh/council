@@ -1,25 +1,16 @@
 // AG-UI client. EventSource can't POST, so we read the SSE stream off a
 // fetch body and parse frames by hand. Each `data:` line is one AG-UI event.
 
-export async function runAgent({ question, threadId, selectedModels, signal, onEvent }) {
-  const res = await fetch("/agui", {
+async function streamAGUI(url, body, onEvent, signal) {
+  const res = await fetch(url, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     signal,
-    body: JSON.stringify({
-      threadId,
-      runId: crypto.randomUUID(),
-      messages: [{ role: "user", content: question }],
-      selectedModels: selectedModels ?? [],
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.body) {
     throw new Error(`Backend responded ${res.status}`);
   }
-
-  // For 429/400, the body is still an SSE stream with a run_error event —
-  // read it so the UI shows the guard message instead of a generic error.
-  // For other non-OK codes, throw immediately.
   if (!res.ok && res.status !== 429 && res.status !== 400) {
     throw new Error(`Backend responded ${res.status}`);
   }
@@ -47,4 +38,32 @@ export async function runAgent({ question, threadId, selectedModels, signal, onE
       }
     }
   }
+}
+
+export function runAgent({ question, threadId, selectedModels, signal, onEvent }) {
+  return streamAGUI(
+    "/agui",
+    {
+      threadId,
+      runId: crypto.randomUUID(),
+      messages: [{ role: "user", content: question }],
+      selectedModels: selectedModels ?? [],
+    },
+    onEvent,
+    signal,
+  );
+}
+
+export function runDebate({ question, threadId, selectedModels, signal, onEvent }) {
+  return streamAGUI(
+    "/agui/debate",
+    {
+      threadId,
+      runId: crypto.randomUUID(),
+      messages: [{ role: "user", content: question }],
+      selectedModels: selectedModels ?? [],
+    },
+    onEvent,
+    signal,
+  );
 }

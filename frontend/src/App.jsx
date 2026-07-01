@@ -1,10 +1,12 @@
-// Rabble chat. The transcript is a list of items: user questions,
-// A2UI surfaces (the poll cards), streamed assistant text, and step notes.
-// A single reducer folds the AG-UI event stream into that transcript.
+// Rabble shell: three tabs — Poll (original), Debate (agents argue + browse),
+// Stats (influence + questions feed). Poll and Debate share the panel picker
+// and thread lifecycle; Stats is a read-only view.
 
 import React, { useEffect, useReducer, useRef, useState } from "react";
 import { runAgent } from "./aguiClient.js";
 import A2UISurface from "./A2UIRenderer.jsx";
+import DebateView from "./DebateView.jsx";
+import StatsView from "./StatsView.jsx";
 
 const STEP_LABELS = {
   frame_question: "Framing the motion…",
@@ -40,6 +42,22 @@ function reducer(state, ev) {
           };
         case "CUSTOM":
           if (e.name === "a2ui") return applyA2UI(state, e.value);
+          if (e.name === "tool_call") {
+            return {
+              ...state,
+              items: [
+                ...state.items,
+                {
+                  type: "tool",
+                  id: crypto.randomUUID(),
+                  agent: e.value.agent,
+                  tool: e.value.tool,
+                  query: e.value.query,
+                  url: e.value.url,
+                },
+              ],
+            };
+          }
           if (e.name === "panelist_error") {
             return {
               ...state,
@@ -108,37 +126,38 @@ function applyA2UI(state, msg) {
   return state;
 }
 
-export default function App() {
+function ToolNote({ item }) {
+  if (item.tool === "web_search")
+    return (
+      <div className="tool-note">
+        <span className="tool-note-agent">{item.agent}</span>
+        <span className="tool-badge">🔎 searched “{(item.query || "").slice(0, 60)}”</span>
+      </div>
+    );
+  if (item.tool === "browse") {
+    let host = item.url || "";
+    try {
+      host = new URL(item.url).host;
+    } catch {}
+    return (
+      <div className="tool-note">
+        <span className="tool-note-agent">{item.agent}</span>
+        <span className="tool-badge">🌐 browsed {host}</span>
+      </div>
+    );
+  }
+  return null;
+}
+
+function PollView({ panelists, selected, toggleModel }) {
   const [state, dispatch] = useReducer(reducer, {
     items: [],
     running: false,
     status: "",
   });
   const [draft, setDraft] = useState("");
-  const [panelists, setPanelists] = useState([]);       // {name, provider}[]
-  const [selected, setSelected] = useState(new Set());  // names
   const threadId = useRef(crypto.randomUUID());
   const endRef = useRef(null);
-
-  // Fetch the panel on mount
-  useEffect(() => {
-    fetch("/panel")
-      .then((r) => r.json())
-      .then((list) => {
-        setPanelists(list);
-        setSelected(new Set(list.map((p) => p.name))); // all on by default
-      })
-      .catch(() => {});
-  }, []);
-
-  function toggleModel(name) {
-    setSelected((prev) => {
-      const next = new Set(prev);
-      if (next.has(name)) next.delete(name);
-      else next.add(name);
-      return next;
-    });
-  }
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -162,14 +181,7 @@ export default function App() {
   }
 
   return (
-    <div className="shell">
-      <header className="masthead">
-        <img src="/logo.png" alt="Rabble" className="masthead-logo" />
-        <span className="masthead-name">Rabble</span>
-        <span className="masthead-sub">one question · every model votes</span>
-      </header>
-      <div className="masthead-rule" />
-
+    <>
       {panelists.length > 0 && (
         <div className="model-picker">
           <span className="model-picker-label">Panel</span>
@@ -186,7 +198,6 @@ export default function App() {
           ))}
         </div>
       )}
-
       <main className="transcript">
         {state.items.length === 0 && !state.running && (
           <div className="empty">
@@ -194,7 +205,8 @@ export default function App() {
             <p className="empty-display">Put it to the table.</p>
             <p className="empty-hint">
               Ask any question — the panel frames the options (2–6), each member
-              votes, and one writes the minutes.
+              votes, and one writes the minutes. Panelists can browse the web
+              if a fact needs checking.
             </p>
           </div>
         )}
@@ -212,6 +224,7 @@ export default function App() {
                 {it.text}
               </div>
             );
+          if (it.type === "tool") return <ToolNote key={it.id} item={it} />;
           return (
             <div key={it.id} className="note">
               {it.text}
@@ -221,7 +234,6 @@ export default function App() {
         {state.running && <div className="status">{state.status}</div>}
         <div ref={endRef} />
       </main>
-
       <footer className="composer">
         <textarea
           value={draft}
@@ -250,6 +262,73 @@ export default function App() {
           {state.running ? "In session" : "Ask the table"}
         </button>
       </footer>
+    </>
+  );
+}
+
+export default function App() {
+  const [mode, setMode] = useState("poll");
+  const [panelists, setPanelists] = useState([]);
+  const [selected, setSelected] = useState(new Set());
+
+  useEffect(() => {
+    fetch("/panel")
+      .then((r) => r.json())
+      .then((list) => {
+        setPanelists(list);
+        setSelected(new Set(list.map((p) => p.name)));
+      })
+      .catch(() => {});
+  }, []);
+
+  function toggleModel(name) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
+
+  return (
+    <div className="shell">
+      <header className="masthead">
+        <img src="/logo.png" alt="Rabble" className="masthead-logo" />
+        <span className="masthead-name">Rabble</span>
+        <span className="masthead-sub">one question · every model votes</span>
+        <nav className="tabs">
+          {[
+            ["poll", "Poll"],
+            ["debate", "Debate"],
+            ["stats", "Stats"],
+          ].map(([key, label]) => (
+            <button
+              key={key}
+              className={`tab ${mode === key ? "is-on" : ""}`}
+              onClick={() => setMode(key)}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+      </header>
+      <div className="masthead-rule" />
+
+      {mode === "poll" && (
+        <PollView
+          panelists={panelists}
+          selected={selected}
+          toggleModel={toggleModel}
+        />
+      )}
+      {mode === "debate" && (
+        <DebateView
+          panelists={panelists}
+          selected={selected}
+          toggleModel={toggleModel}
+        />
+      )}
+      {mode === "stats" && <StatsView />}
     </div>
   );
 }

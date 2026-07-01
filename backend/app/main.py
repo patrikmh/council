@@ -1,37 +1,55 @@
-"""Rabble backend — one AG-UI endpoint.
+"""Rabble backend — poll, debate, and stats endpoints.
 
-POST /agui takes an AG-UI RunAgentInput and streams AG-UI events back as
-SSE. The poll card itself travels inside CUSTOM events as A2UI surface
-messages; live vote counts travel as STATE_SNAPSHOT + dataModelUpdate.
+  POST /agui         — original one-shot poll (SSE, AG-UI events)
+  POST /agui/debate  — multi-round debate with tools (SSE, AG-UI events)
+  GET  /panel        — panelist chips for the frontend picker
+  GET  /stats/*      — leaderboard + recent-questions feed
+  GET  /health       — liveness
 
-Event choreography per run:
-  RUN_STARTED
-  STEP frame_question        -> derive A/B options
-  CUSTOM a2ui beginRendering -> mount the (empty) poll card
-  STEP collect_ballots       -> per ballot: STATE_SNAPSHOT + dataModelUpdate
-  STEP summarize             -> TEXT_MESSAGE_* streamed into the card's
-                                data model and the chat transcript
-  CUSTOM a2ui dataModelUpdate (final, with winner flags)
-  RUN_FINISHED
+Panelists have access to two tools in both modes: web_search and browse.
+Tool calls are surfaced to the UI via CUSTOM tool_call events so the
+transcript can show a badge under each ballot.
 """
 
+import asyncio
 import json
-import uuid
-
 import os
+import uuid
+from collections import Counter
+from contextlib import asynccontextmanager
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import a2ui, agui
+from . import a2ui, agui, browser, store
 from .config import build_panel, framer_model
+from .debate import (
+    DEBATE_ROUNDS,
+    debate_round,
+    initial_ballots,
+    stream_debate_summary,
+)
 from .guard import GuardError, client_ip, limiter, validate_question
 from .panel import cast_ballots, frame_question, stream_summary
 
-app = FastAPI(title="Rabble")
+
+PUBLIC_FEED = os.getenv("PUBLIC_FEED", "1") == "1"
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    await store.init_db()
+    # Warm the browser lazily on first request instead of at startup —
+    # cold-start on Render is faster and the browser only matters if a
+    # panelist actually calls a tool.
+    yield
+    await browser.pool.stop()
+
+
+app = FastAPI(title="Rabble", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
@@ -60,64 +78,92 @@ class RunAgentInput(BaseModel):
 
 @app.get("/panel")
 async def get_panel():
-    """Return the available panelists so the frontend can render a picker."""
     panel = build_panel()
-    return [
-        {"name": p.name, "provider": p.provider}
-        for p in panel
-    ]
+    return [{"name": p.name, "provider": p.provider} for p in panel]
 
 
 async def _error_stream(body: RunAgentInput, message: str):
-    """SSE stream for guard rejections (rate limit / validation)."""
     yield agui.sse(agui.run_started(body.thread_id, body.run_id))
     yield agui.sse(agui.run_error(message))
 
 
-@app.post("/agui")
-async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
-    # ── Rate limit ────────────────────────────────────────────────────
+def _normalize_vote(raw: str, options: list[str]) -> str:
+    """Map a model's freeform vote back to one of the option labels."""
+    stripped = raw.strip()
+    for opt in options:
+        if stripped.lower() == opt.lower():
+            return opt
+    for idx, opt in enumerate(options):
+        letter = chr(65 + idx)
+        u = stripped.upper()
+        if u == letter or u.startswith(f"OPTION {letter}"):
+            return opt
+    return raw
+
+
+def _winner(options: list[str], ballots: list[dict]) -> str | None:
+    if not ballots:
+        return None
+    counts = Counter(b["vote"] for b in ballots)
+    top = max(counts.values())
+    # Deterministic tiebreak: original option order.
+    for opt in options:
+        if counts.get(opt) == top:
+            return opt
+    return None
+
+
+def _select_panel(body: RunAgentInput):
+    full_panel = build_panel()
+    if body.selected_models:
+        chosen = set(body.selected_models)
+        panel = [p for p in full_panel if p.name in chosen]
+        return panel or full_panel
+    return full_panel
+
+
+def _guard(body: RunAgentInput, request: Request) -> tuple[StreamingResponse | None, str]:
     ip = client_ip(request)
     allowed, reason = limiter.check(ip)
     if not allowed:
-        return StreamingResponse(
-            _error_stream(body, reason),
-            media_type="text/event-stream",
-            status_code=429,
+        return (
+            StreamingResponse(
+                _error_stream(body, reason),
+                media_type="text/event-stream",
+                status_code=429,
+            ),
+            "",
         )
-
-    # ── Extract & validate question ───────────────────────────────────
     raw_question = next(
         (m.content for m in reversed(body.messages) if m.role == "user"), ""
     )
     try:
         question = validate_question(raw_question)
     except GuardError as e:
-        return StreamingResponse(
-            _error_stream(body, e.reason),
-            media_type="text/event-stream",
-            status_code=400,
+        return (
+            StreamingResponse(
+                _error_stream(body, e.reason),
+                media_type="text/event-stream",
+                status_code=400,
+            ),
+            "",
         )
-
-    # Request accepted — count against rate limit
     limiter.record(ip)
+    return None, question
+
+
+@app.post("/agui")
+async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
+    early, question = _guard(body, request)
+    if early is not None:
+        return early
 
     async def events():
         yield agui.sse(agui.run_started(body.thread_id, body.run_id))
         try:
-
-            full_panel = build_panel()
-            # Filter to user-selected models, or use the full panel
-            if body.selected_models:
-                selected_set = set(body.selected_models)
-                panel = [p for p in full_panel if p.name in selected_set]
-                if not panel:
-                    panel = full_panel
-            else:
-                panel = full_panel
+            panel = _select_panel(body)
             surface = f"poll-{body.run_id}"
 
-            # 1. Frame the question into 2-6 options
             yield agui.sse(agui.step_started("frame_question"))
             framing = await frame_question(framer_model(panel), question)
             yield agui.sse(agui.step_finished("frame_question"))
@@ -131,7 +177,6 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
                 "summary": "",
             }
 
-            # 2. Mount the A2UI poll surface, then seed its data model
             yield agui.sse(agui.custom(
                 "a2ui", a2ui.begin_rendering(
                     surface, a2ui.poll_card_root(num_options=len(framing.options)))))
@@ -139,30 +184,36 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
                 "a2ui", a2ui.data_model_update(surface, a2ui.poll_data_model(state))))
             yield agui.sse(agui.state_snapshot(state))
 
-            # 3. Ballots land as each model finishes
+            tool_events: asyncio.Queue = asyncio.Queue()
+
+            async def on_tool_call(payload: dict) -> None:
+                await tool_events.put(payload)
+
             yield agui.sse(agui.step_started("collect_ballots"))
-            async for panelist, ballot in cast_ballots(panel, question, framing):
+            pump = _pump(cast_ballots(panel, question, framing, on_tool_call))
+            get_ballot = asyncio.create_task(pump.results_get())
+
+            while True:
+                get_tool = asyncio.create_task(tool_events.get())
+                done, _ = await asyncio.wait(
+                    {get_ballot, get_tool}, return_when=asyncio.FIRST_COMPLETED
+                )
+                if get_tool in done and get_ballot not in done:
+                    payload = get_tool.result()
+                    yield agui.sse(agui.custom("tool_call", payload))
+                    continue
+                get_tool.cancel()
+                item = get_ballot.result()
+                if item is _DONE:
+                    break
+                get_ballot = asyncio.create_task(pump.results_get())
+                panelist, ballot = item
                 if isinstance(ballot, Exception):
                     state["expected"] -= 1
                     yield agui.sse(agui.custom("panelist_error", {
                         "name": panelist.name, "error": str(ballot)[:200]}))
                     continue
-                vote_raw = ballot.vote
-                # Normalise vote to the matching option label
-                vote_label = vote_raw
-                for opt in framing.options:
-                    if vote_raw.strip().lower() == opt.lower():
-                        vote_label = opt
-                        break
-                else:
-                    # Try matching by letter (A, B, C…)
-                    for idx, opt in enumerate(framing.options):
-                        letter = chr(65 + idx)
-                        if (vote_raw.strip().upper() == letter
-                                or vote_raw.strip().upper().startswith(f"OPTION {letter}")):
-                            vote_label = opt
-                            break
-
+                vote_label = _normalize_vote(ballot.vote, framing.options)
                 state["ballots"].append({
                     "name": panelist.name,
                     "provider": panelist.provider,
@@ -175,7 +226,6 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
                     a2ui.data_model_update(surface, a2ui.poll_data_model(state))))
             yield agui.sse(agui.step_finished("collect_ballots"))
 
-            # 4. Stream the summary as a chat message + into the card
             yield agui.sse(agui.step_started("summarize"))
             msg_id = str(uuid.uuid4())
             yield agui.sse(agui.text_start(msg_id))
@@ -185,14 +235,35 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
             yield agui.sse(agui.text_end(msg_id))
             yield agui.sse(agui.step_finished("summarize"))
 
-            # 5. Final card with winner flags lit
             state["done"] = True
             yield agui.sse(agui.custom(
                 "a2ui",
                 a2ui.data_model_update(surface, a2ui.poll_data_model(state))))
             yield agui.sse(agui.state_snapshot(state))
-            yield agui.sse(agui.run_finished(body.thread_id, body.run_id))
 
+            winner = _winner(framing.options, state["ballots"])
+            try:
+                await store.record_run(
+                    thread_id=body.thread_id,
+                    mode="poll",
+                    question=question,
+                    winner=winner,
+                    ballots=[
+                        {
+                            "name": b["name"],
+                            "provider": b["provider"],
+                            "round_index": 0,
+                            "vote": b["vote"],
+                            "flipped_from": None,
+                            "reasoning": b["reasoning"],
+                        }
+                        for b in state["ballots"]
+                    ],
+                )
+            except Exception:
+                pass  # stats are best-effort
+
+            yield agui.sse(agui.run_finished(body.thread_id, body.run_id))
         except Exception as exc:
             yield agui.sse(agui.run_error(str(exc)[:300]))
 
@@ -201,6 +272,210 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# ── Helpers for interleaving tool events with ballot arrivals ────────────────
+
+class _Done:
+    pass
+
+
+_DONE = _Done()
+
+
+class _AsyncPump:
+    """Adapter that lets us call `results_get()` to await the next item
+    from an async iterator, returning a sentinel when exhausted."""
+
+    def __init__(self, agen):
+        self._agen = agen
+        self._exhausted = False
+
+    async def results_get(self):
+        if self._exhausted:
+            return _DONE
+        try:
+            return await self._agen.__anext__()
+        except StopAsyncIteration:
+            self._exhausted = True
+            return _DONE
+
+
+def _pump(agen):
+    """Wrap an async iterator so we can `await pump.results_get()`."""
+    return _AsyncPump(agen)
+
+
+@app.post("/agui/debate")
+async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse:
+    early, question = _guard(body, request)
+    if early is not None:
+        return early
+
+    async def events():
+        yield agui.sse(agui.run_started(body.thread_id, body.run_id))
+        try:
+            panel = _select_panel(body)
+
+            yield agui.sse(agui.step_started("frame_question"))
+            framing = await frame_question(framer_model(panel), question)
+            yield agui.sse(agui.step_finished("frame_question"))
+
+            state: dict = {
+                "question": question,
+                "options": framing.options,
+                "rounds": [],
+                "tally": {opt: 0 for opt in framing.options},
+                "summary": "",
+                "done": False,
+            }
+            yield agui.sse(agui.state_snapshot(state))
+
+            tool_events: asyncio.Queue = asyncio.Queue()
+
+            async def on_tool_call(payload: dict) -> None:
+                await tool_events.put(payload)
+
+            async def _run_round(index: int, iterator):
+                round_ballots: list[dict] = []
+                state["rounds"].append({"index": index, "ballots": round_ballots})
+                pump = _pump(iterator)
+                yield agui.sse(agui.step_started(f"round_{index + 1}"))
+                get_ballot = asyncio.create_task(pump.results_get())
+                while True:
+                    get_tool = asyncio.create_task(tool_events.get())
+                    done, _ = await asyncio.wait(
+                        {get_ballot, get_tool}, return_when=asyncio.FIRST_COMPLETED
+                    )
+                    if get_tool in done and get_ballot not in done:
+                        payload = get_tool.result()
+                        payload = {"round": index, **payload}
+                        yield agui.sse(agui.custom("tool_call", payload))
+                        continue
+                    get_tool.cancel()
+                    item = get_ballot.result()
+                    if item is _DONE:
+                        break
+                    get_ballot = asyncio.create_task(pump.results_get())
+                    panelist, ballot = item
+                    if isinstance(ballot, Exception):
+                        yield agui.sse(agui.custom("panelist_error", {
+                            "name": panelist.name, "round": index,
+                            "error": str(ballot)[:200]}))
+                        continue
+                    vote_label = _normalize_vote(ballot.vote, framing.options)
+                    prior = _prior_vote(state, panelist.name, index)
+                    entry = {
+                        "name": panelist.name,
+                        "provider": panelist.provider,
+                        "round": index,
+                        "vote": vote_label,
+                        "reasoning": ballot.reasoning,
+                        "flipped_from": prior if prior and prior != vote_label else None,
+                    }
+                    round_ballots.append(entry)
+                    state["tally"] = _current_tally(state, framing.options)
+                    yield agui.sse(agui.state_snapshot(state))
+                yield agui.sse(agui.step_finished(f"round_{index + 1}"))
+
+            # Round 0 — initial ballots
+            async for ev in _run_round(0, initial_ballots(panel, question, framing, on_tool_call)):
+                yield ev
+
+            # Rounds 1..N — persuasion
+            for r in range(1, DEBATE_ROUNDS + 1):
+                prior_round = state["rounds"][r - 1]["ballots"]
+                if not prior_round:
+                    break
+                async for ev in _run_round(
+                    r, debate_round(panel, question, framing, prior_round, on_tool_call)
+                ):
+                    yield ev
+
+            # Summary
+            yield agui.sse(agui.step_started("summarize"))
+            msg_id = str(uuid.uuid4())
+            yield agui.sse(agui.text_start(msg_id))
+            async for delta in stream_debate_summary(framer_model(panel), state):
+                state["summary"] += delta
+                yield agui.sse(agui.text_content(msg_id, delta))
+            yield agui.sse(agui.text_end(msg_id))
+            yield agui.sse(agui.step_finished("summarize"))
+
+            state["done"] = True
+            yield agui.sse(agui.state_snapshot(state))
+
+            final_round = state["rounds"][-1]["ballots"] if state["rounds"] else []
+            winner = _winner(framing.options, final_round)
+            try:
+                await store.record_run(
+                    thread_id=body.thread_id,
+                    mode="debate",
+                    question=question,
+                    winner=winner,
+                    ballots=[
+                        {
+                            "name": b["name"],
+                            "provider": b["provider"],
+                            "round_index": b["round"],
+                            "vote": b["vote"],
+                            "flipped_from": b.get("flipped_from"),
+                            "reasoning": b["reasoning"],
+                        }
+                        for r in state["rounds"] for b in r["ballots"]
+                    ],
+                )
+            except Exception:
+                pass
+
+            yield agui.sse(agui.run_finished(body.thread_id, body.run_id))
+        except Exception as exc:
+            yield agui.sse(agui.run_error(str(exc)[:300]))
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
+
+
+def _prior_vote(state: dict, name: str, round_index: int) -> str | None:
+    if round_index == 0:
+        return None
+    for b in state["rounds"][round_index - 1]["ballots"]:
+        if b["name"] == name:
+            return b["vote"]
+    return None
+
+
+def _current_tally(state: dict, options: list[str]) -> dict:
+    """Use each panelist's most recent vote across all rounds so far."""
+    latest: dict[str, str] = {}
+    for r in state["rounds"]:
+        for b in r["ballots"]:
+            latest[b["name"]] = b["vote"]
+    counts = {opt: 0 for opt in options}
+    for v in latest.values():
+        counts[v] = counts.get(v, 0) + 1
+    return counts
+
+
+# ── Stats endpoints ──────────────────────────────────────────────────────────
+
+@app.get("/stats/leaderboard")
+async def stats_leaderboard(days: int = 30):
+    if days <= 0 or days > 3650:
+        raise HTTPException(400, "days out of range")
+    return await store.leaderboard(days=days)
+
+
+@app.get("/stats/questions")
+async def stats_questions(limit: int = 50):
+    if not PUBLIC_FEED:
+        raise HTTPException(404, "Public feed disabled")
+    if limit <= 0 or limit > 500:
+        raise HTTPException(400, "limit out of range")
+    return await store.recent_questions(limit=limit)
 
 
 @app.get("/health")

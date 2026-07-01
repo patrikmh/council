@@ -13,6 +13,7 @@ from pydantic import BaseModel, Field
 from pydantic_ai import Agent
 
 from .config import Panelist
+from .tools import make_tools, OnToolCall
 
 
 class Framing(BaseModel):
@@ -53,7 +54,9 @@ PANELIST_PROMPT = (
     "your choice in one or two sentences. Commit to a choice even if the "
     "question is silly or underspecified; if the premise is flawed, vote for "
     "the option that survives the flaw and say why. Be yourself — your "
-    "reasoning will be quoted."
+    "reasoning will be quoted. If the question depends on facts that may have "
+    "changed recently, you may call web_search and browse before deciding, "
+    "but keep tool use to a minimum — decide fast."
 )
 
 SUMMARIZER_PROMPT = (
@@ -80,7 +83,10 @@ def tone_for(index: int) -> str:
 
 
 async def cast_ballots(
-    panel: list[Panelist], question: str, framing: Framing
+    panel: list[Panelist],
+    question: str,
+    framing: Framing,
+    on_tool_call: OnToolCall | None = None,
 ) -> AsyncIterator[tuple[Panelist, Ballot | Exception]]:
     """Fan the question out to every panelist; yield ballots as they land."""
     options_text = "\n".join(
@@ -91,8 +97,12 @@ async def cast_ballots(
 
     async def one(p: Panelist) -> tuple[Panelist, Ballot | Exception]:
         try:
-            agent = Agent(p.model, output_type=Ballot,
-                          system_prompt=PANELIST_PROMPT)
+            agent = Agent(
+                p.model,
+                output_type=Ballot,
+                system_prompt=PANELIST_PROMPT,
+                tools=make_tools(p.name, on_tool_call),
+            )
             result = await agent.run(prompt)
             return p, result.output
         except Exception as exc:  # a dead panelist shouldn't kill the run

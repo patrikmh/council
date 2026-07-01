@@ -565,3 +565,253 @@ body {
   background: var(--lamp-glow);
   color: #f9fafb;
 }
+
+/* ── Tabs (Poll / Debate / Stats) ───────────────────────────────────────── */
+.tabs {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+.tab {
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1px solid transparent;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.tab:hover { color: var(--paper); }
+.tab.is-on {
+  color: var(--paper);
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+/* ── Tool-call badges (poll transcript + debate cards) ──────────────────── */
+.tool-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 4px 16px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.tool-note-agent {
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--paper);
+  opacity: 0.8;
+}
+.tool-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(125, 211, 252, 0.12);
+  color: var(--sky);
+  font-size: 11px;
+  font-family: "IBM Plex Mono", monospace;
+  border: 1px solid rgba(125, 211, 252, 0.25);
+}
+
+/* ── Debate view ────────────────────────────────────────────────────────── */
+.debate-transcript { max-width: 900px; }
+.tally-bar {
+  display: flex;
+  width: 100%;
+  height: 22px;
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 12px 0 24px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.tally-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink);
+  font-size: 11px;
+  font-family: "IBM Plex Mono", monospace;
+  transition: width 0.5s ease;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+.tally-seg.tone-aqua   { background: var(--aqua); }
+.tally-seg.tone-clay   { background: var(--clay); }
+.tally-seg.tone-violet { background: var(--violet); }
+.tally-seg.tone-rose   { background: var(--rose); }
+.tally-seg.tone-mint   { background: var(--mint); }
+.tally-seg.tone-sky    { background: var(--sky); }
+.tally-seg.tone-coral  { background: var(--coral); }
+.tally-seg.tone-gold   { background: var(--gold); }
+
+.debate-round { margin-bottom: 24px; }
+.debate-round-title {
+  font-family: "Fraunces", serif;
+  font-size: 15px;
+  color: var(--ink-soft);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.debate-round-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+.debate-card {
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 10px;
+  padding: 12px 14px;
+  border-left: 4px solid var(--aqua-deep);
+}
+.debate-card.tone-aqua   { border-left-color: var(--aqua-deep); }
+.debate-card.tone-clay   { border-left-color: var(--clay-deep); }
+.debate-card.tone-violet { border-left-color: var(--violet-deep); }
+.debate-card.tone-rose   { border-left-color: var(--rose-deep); }
+.debate-card.tone-mint   { border-left-color: var(--mint-deep); }
+.debate-card.tone-sky    { border-left-color: var(--sky-deep); }
+.debate-card.tone-coral  { border-left-color: var(--coral-deep); }
+.debate-card.tone-gold   { border-left-color: var(--gold-deep); }
+.debate-card-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-family: "IBM Plex Mono", monospace;
+}
+.debate-card-name { font-weight: 600; }
+.debate-card-vote { color: var(--ink-soft); }
+.debate-card-flip {
+  margin-left: auto;
+  color: var(--clay-deep);
+  font-size: 10px;
+}
+.debate-card-reason {
+  font-size: 13px;
+  line-height: 1.5;
+}
+.debate-card-tools {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.debate-summary { margin-top: 24px; }
+
+/* ── Stats view ─────────────────────────────────────────────────────────── */
+.stats-view { max-width: 900px; }
+.stats-section { margin-bottom: 40px; }
+.stats-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.stats-head h2 {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--paper);
+}
+.stats-window { display: flex; gap: 4px; }
+.stats-window-btn {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--ink-soft);
+  border-radius: 6px;
+  padding: 3px 10px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.stats-window-btn.is-on {
+  background: var(--paper);
+  color: var(--ink);
+  border-color: var(--paper);
+}
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--paper);
+}
+.stats-table th,
+.stats-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.stats-table th {
+  color: var(--ink-soft);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.score-cell {
+  position: relative;
+  height: 18px;
+  width: 100%;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+}
+.score-bar {
+  position: absolute;
+  left: 0;
+  top: 4px;
+  height: 10px;
+  background: linear-gradient(90deg, var(--aqua) 0%, var(--sky) 100%);
+  border-radius: 3px;
+  opacity: 0.5;
+}
+.score-cell span {
+  position: relative;
+  z-index: 1;
+  padding-left: 6px;
+}
+.stats-hint {
+  color: var(--ink-soft);
+  font-size: 11px;
+  margin-top: 8px;
+}
+.questions-feed {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.questions-feed li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  font-size: 13px;
+  color: var(--paper);
+}
+.mode-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-family: "IBM Plex Mono", monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.mode-badge.mode-poll   { background: rgba(94, 234, 212, 0.16); color: var(--aqua); }
+.mode-badge.mode-debate { background: rgba(196, 181, 253, 0.16); color: var(--violet); }
+.q-text { flex: 1; }
+.q-meta {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--ink-soft);
+}

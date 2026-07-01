@@ -75,12 +75,43 @@ npm run dev   # http://localhost:5173
 Ask it the canonical question: *"I want to wash my car. The car wash is
 50 meters away. Should I walk or drive?"*
 
+## Debate mode + web tools
+
+The **Debate** tab runs the same panel through multiple rounds. Round 0 is
+a fresh ballot; rounds 1..`DEBATE_ROUNDS` (default 2 → 3 rounds total) show
+each panelist what everyone else said last round and let them hold or flip
+with a rebuttal aimed by name at their peers. Panelists in both Poll and
+Debate mode have two tools — `web_search` and `browse` — backed by a
+shared headless Chromium (`backend/app/browser.py`). Tool calls surface in
+the UI as small badges. Budget cap: 3 tool calls per panelist per round;
+non-http(s) and private-network URLs are refused.
+
+## Stats
+
+The **Stats** tab reads from a SQLite database (`RABBLE_DB_PATH`, defaults
+to `backend/rabble.db` locally, `/var/data/rabble.db` on Render). It shows:
+
+- **Influence leaderboard** — per model, ballots cast, wins in the final
+  round, and how often another panelist flipped *toward* this model's
+  prior-round vote. Influence = wins + 2 × flips-toward.
+- **Recent questions** — public feed of what other people asked. Toggle
+  off with `PUBLIC_FEED=0`.
+
+## Deploying on Render
+
+`render.yaml` at the repo root wires it up: `pip install`,
+`playwright install --with-deps chromium`, then `npm ci && npm run build`.
+The service needs the `standard` plan (Chromium wants ~1 GB) and a 1 GB
+persistent disk mounted at `/var/data` for the stats DB. Set
+`OPENROUTER_API_KEY` and `ROUNDTABLE_PANEL` as unsynced env vars.
+
 ## Where to take it
 
 - Replace snapshots with JSON Patch `STATE_DELTA`s if state grows.
-- Add a debate round: panelists see each other's ballots and may flip.
+- Per-round token streaming for each panelist (currently one shot per
+  ballot).
 - Swap the hand-rolled AG-UI layer for `pydantic-ai`'s native AG-UI app
-  (`agent.to_ag_ui()`) once you want tool calls and human-in-the-loop.
+  (`agent.to_ag_ui()`) once you want native tool-call events.
 - N-way polls: the A2UI card is data-driven, so it's mostly a framer change.
 
 Pin note: `pydantic-ai` moves fast — if `OpenAIChatModel` isn't found in
