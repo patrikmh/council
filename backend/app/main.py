@@ -31,7 +31,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import a2ui, agui, browser, openrouter as orcatalog, store
+from . import a2ui, agui, openrouter as orcatalog, store, tavily
 from .config import build_panel, framer_model
 from .debate import (
     DEBATE_ROUNDS,
@@ -52,18 +52,11 @@ log = logging.getLogger("rabble")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await store.init_db()
-    # Probe the browser once at startup so make_tools() knows whether to
-    # hand out real tools or nothing at all. A missing Chromium (common on
-    # Render deploys without `playwright install`) shouldn't be discovered
-    # mid-run by a panelist burning its retry budget.
-    try:
-        await browser.pool.start()
-        log.info("browser_ok chromium launched at startup")
-    except Exception as exc:
-        log.warning("browser_disabled %s: %s — panelists will run without web tools",
-                    type(exc).__name__, str(exc)[:200])
+    if tavily.client.available:
+        log.info("tavily_ok panelists will have web_search + browse tools")
+    else:
+        log.warning("tavily_disabled TAVILY_API_KEY not set — panelists will run without web tools")
     yield
-    await browser.pool.stop()
 
 
 app = FastAPI(title="Rabble", lifespan=lifespan)

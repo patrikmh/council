@@ -1,4 +1,4 @@
-"""Per-panelist internet tools.
+"""Per-panelist internet tools, backed by Tavily.
 
 Each panelist gets a fresh set of tool closures so we can attribute tool
 calls to the calling agent and enforce a per-agent budget. `on_tool_call`
@@ -11,15 +11,14 @@ import os
 import time
 from typing import Awaitable, Callable
 
-from . import browser
+from . import tavily
 
 log = logging.getLogger("rabble")
 
 OnToolCall = Callable[[dict], Awaitable[None] | None]
 
-# How many tool calls each panelist may make per round. Bumped from 3 so a
-# search → browse-source-A → browse-source-B → decide flow fits under the
-# cap without the model being told mid-thought to stop researching.
+# How many tool calls each panelist may make per round. A search + browse-A
+# + browse-B + decide flow needs about 4; 6 gives a small margin.
 _DEFAULT_BUDGET = int(os.getenv("TOOL_BUDGET_PER_AGENT", "6"))
 
 
@@ -30,17 +29,12 @@ def make_tools(
 ) -> list:
     """Return [web_search, browse] tool functions bound to *agent_name*.
 
-    The tools are plain async functions — pydantic-ai wraps them into Tool
-    objects when passed via ``Agent(tools=[...])``.
-
-    If a prior call to the browser pool confirmed Chromium is missing
-    (e.g. on a Render deploy without ``playwright install``), we return
-    an empty list — better to give the model no tools than to hand it
-    tools that always fail and let it burn its retry budget.
+    If Tavily is not configured (no ``TAVILY_API_KEY``), returns an empty
+    list — better to hand the model no tools than to hand it tools that
+    always fail and let it burn its retry budget.
     """
-    if browser.pool.available is False:
-        log.info("tools_disabled name=%r reason=%r",
-                 agent_name, browser.pool.unavailable_reason)
+    if not tavily.client.available:
+        log.info("tools_disabled name=%r reason=%r", agent_name, "TAVILY_API_KEY not set")
         return []
     state = {"used": 0}
 
@@ -73,7 +67,7 @@ def make_tools(
         t0 = time.monotonic()
         log.info("tool_call name=%r tool=web_search q=%r", agent_name, query[:80])
         try:
-            hits = await browser.ddg_search(query, limit=5)
+            hits = await tavily.client.search(query, limit=5)
         except Exception as exc:
             log.exception("tool_error name=%r tool=web_search", agent_name)
             return f"web_search failed: {type(exc).__name__}: {exc}"
@@ -98,7 +92,7 @@ def make_tools(
         t0 = time.monotonic()
         log.info("tool_call name=%r tool=browse url=%r", agent_name, url[:80])
         try:
-            page = await browser.fetch_page(url)
+            page = await tavily.client.extract(url)
         except Exception as exc:
             log.exception("tool_error name=%r tool=browse", agent_name)
             return f"browse failed: {type(exc).__name__}: {exc}"

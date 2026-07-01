@@ -1,15 +1,18 @@
 services:
   - type: web
     name: rabble
-    env: docker
-    plan: standard  # Playwright/Chromium wants ~1 GB RAM
-    dockerfilePath: ./Dockerfile
+    env: python
+    plan: starter
+    buildCommand: pip install -r backend/requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --app-dir backend
     envVars:
       - key: OPENROUTER_API_KEY
         sync: false
       - key: ROUNDTABLE_PANEL
         sync: false
       - key: FRAMER_MODEL
+        sync: false
+      - key: TAVILY_API_KEY
         sync: false
       - key: DEBATE_ROUNDS
         value: "2"
