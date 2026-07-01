@@ -591,13 +591,8 @@ function narrateRound(round, options) {
   return parts.join("   ·   ");
 }
 
-function Round({ round, toolCalls, snapshot, isLatest }) {
-  const [open, setOpen] = useState(isLatest);
-  useEffect(() => {
-    // When a new "latest" round arrives, auto-expand it. Older rounds
-    // keep their user-toggled state.
-    if (isLatest) setOpen(true);
-  }, [isLatest]);
+function Round({ round, toolCalls, snapshot }) {
+  const [open, setOpen] = useState(false);
   const narrated = narrateRound(round, snapshot?.options || []);
   return (
     <div className={`debate-round ${open ? "is-open" : "is-collapsed"}`}>
@@ -720,13 +715,12 @@ export default function DebateView({ panelists, selected, toggleModel }) {
           <>
             <TallyBar snapshot={state.snapshot} />
             <VoteMatrix snapshot={state.snapshot} />
-            {state.snapshot.rounds?.map((r, i) => (
+            {state.snapshot.rounds?.map((r) => (
               <Round
                 key={r.index}
                 round={r}
                 snapshot={state.snapshot}
                 toolCalls={state.toolCalls}
-                isLatest={i === state.snapshot.rounds.length - 1}
               />
             ))}
             {state.summary && (
