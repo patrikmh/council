@@ -826,3 +826,97 @@ body {
   font-size: 11px;
   color: var(--ink-soft);
 }
+
+/* ── Debate verdict card ───────────────────────────────────────────────── */
+.verdict {
+  margin: 28px 0 16px;
+  padding: 24px 26px 20px;
+  background: var(--paper);
+  color: var(--ink);
+  border-radius: 14px;
+  border-left: 6px solid var(--aqua-deep);
+  position: relative;
+  overflow: hidden;
+}
+.verdict.tone-aqua   { border-left-color: var(--aqua-deep); }
+.verdict.tone-clay   { border-left-color: var(--clay-deep); }
+.verdict.tone-violet { border-left-color: var(--violet-deep); }
+.verdict.tone-rose   { border-left-color: var(--rose-deep); }
+.verdict.tone-mint   { border-left-color: var(--mint-deep); }
+.verdict.tone-sky    { border-left-color: var(--sky-deep); }
+.verdict.tone-coral  { border-left-color: var(--coral-deep); }
+.verdict.tone-gold   { border-left-color: var(--gold-deep); }
+.verdict-eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.verdict-headline {
+  font-family: "Fraunces", serif;
+  font-weight: 640;
+  font-size: 40px;
+  line-height: 1.05;
+  letter-spacing: -0.015em;
+  margin-bottom: 4px;
+}
+.verdict-sub {
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-bottom: 18px;
+}
+.verdict-tally {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.verdict-tally li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.04);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--ink);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+.verdict-tally li.is-won {
+  background: rgba(0, 0, 0, 0.08);
+  border-color: rgba(0, 0, 0, 0.15);
+  font-weight: 600;
+}
+.verdict-tally li.tone-aqua.is-won   { background: var(--aqua-bg); border-color: var(--aqua-deep); }
+.verdict-tally li.tone-clay.is-won   { background: var(--clay-bg); border-color: var(--clay-deep); }
+.verdict-tally li.tone-violet.is-won { background: var(--violet-bg); border-color: var(--violet-deep); }
+.verdict-tally li.tone-rose.is-won   { background: var(--rose-bg); border-color: var(--rose-deep); }
+.verdict-tally li.tone-mint.is-won   { background: var(--mint-bg); border-color: var(--mint-deep); }
+.verdict-tally li.tone-sky.is-won    { background: var(--sky-bg); border-color: var(--sky-deep); }
+.verdict-tally li.tone-coral.is-won  { background: var(--coral-bg); border-color: var(--coral-deep); }
+.verdict-tally li.tone-gold.is-won   { background: var(--gold-bg); border-color: var(--gold-deep); }
+.verdict-opt { font-weight: 500; }
+.verdict-count {
+  font-variant-numeric: tabular-nums;
+  padding: 1px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.05);
+}
+.verdict-voters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+}
+.verdict-voter { display: inline-flex; align-items: center; gap: 4px; }
+.verdict-voter-name { color: var(--ink); font-weight: 500; }
+.verdict-voter-vote { color: var(--ink); }

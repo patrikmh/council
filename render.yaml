@@ -1,13 +1,9 @@
 services:
   - type: web
     name: rabble
-    env: python
-    plan: standard  # Playwright needs ~1GB
-    buildCommand: |
-      pip install -r backend/requirements.txt
-      playwright install --with-deps chromium
-      cd frontend && npm ci && npm run build
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT --app-dir backend
+    env: docker
+    plan: standard  # Playwright/Chromium wants ~1 GB RAM
+    dockerfilePath: ./Dockerfile
     envVars:
       - key: OPENROUTER_API_KEY
         sync: false
@@ -17,12 +13,14 @@ services:
         sync: false
       - key: DEBATE_ROUNDS
         value: "2"
+      - key: PANELIST_TIMEOUT_SEC
+        value: "60"
       - key: PUBLIC_FEED
         value: "1"
       - key: RABBLE_DB_PATH
         value: /var/data/rabble.db
-      - key: PYTHONUNBUFFERED
-        value: "1"
+      - key: RABBLE_LOG_LEVEL
+        value: INFO
     disk:
       name: rabble-data
       mountPath: /var/data

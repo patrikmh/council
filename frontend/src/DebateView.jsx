@@ -183,6 +183,54 @@ function AgentCard({ ballot, toolCalls, snapshot }) {
   );
 }
 
+function Verdict({ snapshot }) {
+  if (!snapshot?.done || !snapshot.rounds?.length) return null;
+  const finalRound = snapshot.rounds[snapshot.rounds.length - 1].ballots;
+  const tally = snapshot.tally || {};
+  const counts = snapshot.options.map((opt) => ({ opt, n: tally[opt] || 0 }));
+  const top = Math.max(...counts.map((c) => c.n));
+  const winners = counts.filter((c) => c.n === top && top > 0);
+  const total = counts.reduce((a, c) => a + c.n, 0);
+  const idx = snapshot.options.indexOf(winners[0]?.opt);
+  const tone = idx >= 0 ? toneFor(idx) : "aqua";
+  const tie = winners.length > 1;
+
+  return (
+    <section className={`verdict tone-${tone}`}>
+      <div className="verdict-eyebrow">The verdict</div>
+      <div className="verdict-headline">
+        {tie ? "Split decision" : winners[0]?.opt}
+      </div>
+      <div className="verdict-sub">
+        {tie
+          ? `${winners.map((w) => w.opt).join(" / ")} tied at ${top} vote${top === 1 ? "" : "s"} each`
+          : `${top} of ${total} panelist${total === 1 ? "" : "s"} sided with ${winners[0]?.opt}`}
+      </div>
+      <ul className="verdict-tally">
+        {counts.map((c) => {
+          const i = snapshot.options.indexOf(c.opt);
+          const won = c.n === top && top > 0;
+          return (
+            <li key={c.opt} className={`tone-${toneFor(i)} ${won ? "is-won" : ""}`}>
+              <span className="verdict-opt">{c.opt}</span>
+              <span className="verdict-count">{c.n}</span>
+            </li>
+          );
+        })}
+      </ul>
+      <div className="verdict-voters">
+        {finalRound.map((b) => (
+          <span key={b.name} className="verdict-voter">
+            <span className="verdict-voter-name">{b.name}</span>
+            <span className="verdict-voter-arrow">→</span>
+            <span className="verdict-voter-vote">{b.vote}</span>
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function Round({ round, toolCalls, snapshot }) {
   return (
     <div className="debate-round">
@@ -285,6 +333,7 @@ export default function DebateView({ panelists, selected, toggleModel }) {
                 {state.summary}
               </div>
             )}
+            <Verdict snapshot={state.snapshot} />
           </>
         )}
         {state.running && <Spinner step={state.step} />}
