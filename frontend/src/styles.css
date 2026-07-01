@@ -1665,8 +1665,7 @@ body::after {
 .chair.is-on .chair-disc {
   background: var(--tc-bg);
   border-color: var(--tc-deep);
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.25),
-              0 0 12px color-mix(in srgb, var(--tc) 40%, transparent);
+  border-width: 2px;
 }
 .chair.is-on .chair-disc-inner { color: var(--tc); }
 .chair.is-on { color: var(--tc); }
@@ -1698,11 +1697,15 @@ body::after {
 
 .chair.is-thinking .chair-halo {
   position: absolute;
-  inset: -4px;
+  inset: -3px;
   border-radius: 50%;
-  border: 1.5px solid var(--tc);
-  opacity: 0.6;
-  animation: seat-pulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border: 1.5px dashed var(--tc);
+  opacity: 0.55;
+  animation: seat-spin 6s linear infinite;
+}
+@keyframes seat-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
 }
 
 .chair.is-dead {
