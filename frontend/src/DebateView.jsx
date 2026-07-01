@@ -353,7 +353,7 @@ function Verdict({ snapshot }) {
   );
 }
 
-function VoteMatrix({ snapshot }) {
+function VoteMatrix({ snapshot, thinkingSet }) {
   const gridRef = useRef(null);
   const dotRefs = useRef({}); // key: `${name}:${ri}` -> HTMLElement
   const [lines, setLines] = useState([]); // {rowKey, x1, y1, x2, y2, color}
@@ -491,6 +491,14 @@ function VoteMatrix({ snapshot }) {
                 className={`matrix-row-head tone-${tone} ${isHot ? "is-hot" : ""}`}
                 onMouseEnter={() => setHoveredRow(p.name)}
               >
+                <span
+                  className={`matrix-work ${thinkingSet?.has(p.name) ? "is-working" : ""}`}
+                  aria-hidden="true"
+                >
+                  <span className="matrix-work-bar" />
+                  <span className="matrix-work-bar" />
+                  <span className="matrix-work-bar" />
+                </span>
                 <span className="matrix-disc" aria-hidden="true">
                   <span>{initialsOf(p.name)}</span>
                 </span>
@@ -700,21 +708,36 @@ export default function DebateView({ panelists, selected, toggleModel }) {
             </p>
           </div>
         )}
-        {state.transcript.map((it) =>
-          it.type === "user" ? (
-            <div key={it.id} className="bubble bubble-user">
-              {it.text}
-            </div>
-          ) : (
+        {state.transcript
+          .filter((it) => it.type !== "user")
+          .map((it) => (
             <div key={it.id} className="note">
               {it.text}
             </div>
-          ),
-        )}
+          ))}
         {state.snapshot && (
           <>
+            <h1 className="motion-headline">
+              <span className="motion-eyebrow">The motion</span>
+              <span className="motion-quote">“{state.snapshot.question}”</span>
+            </h1>
             <TallyBar snapshot={state.snapshot} />
-            <VoteMatrix snapshot={state.snapshot} />
+            <VoteMatrix
+              snapshot={state.snapshot}
+              thinkingSet={
+                state.running
+                  ? new Set(
+                      [...selected].filter((name) => {
+                        const lastRound = state.snapshot?.rounds?.length
+                          ? state.snapshot.rounds[state.snapshot.rounds.length - 1]
+                          : null;
+                        const voted = lastRound?.ballots?.some((b) => b.name === name);
+                        return !voted;
+                      }),
+                    )
+                  : null
+              }
+            />
             {state.snapshot.rounds?.map((r) => (
               <Round
                 key={r.index}
