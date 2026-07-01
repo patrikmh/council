@@ -13,10 +13,17 @@ transcript can show a badge under each ballot.
 
 import asyncio
 import json
+import logging
 import os
 import uuid
 from collections import Counter
 from contextlib import asynccontextmanager
+
+logging.basicConfig(
+    level=os.getenv("RABBLE_LOG_LEVEL", "INFO"),
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    datefmt="%H:%M:%S",
+)
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware

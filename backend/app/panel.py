@@ -7,6 +7,9 @@ Three agent roles, all Pydantic AI:
 """
 
 import asyncio
+import logging
+import os
+import time
 from typing import AsyncIterator
 
 from pydantic import BaseModel, Field
@@ -14,6 +17,10 @@ from pydantic_ai import Agent
 
 from .config import Panelist
 from .tools import make_tools, OnToolCall
+
+log = logging.getLogger("rabble")
+
+PANELIST_TIMEOUT = float(os.getenv("PANELIST_TIMEOUT_SEC", "60"))
 
 
 class Framing(BaseModel):
@@ -96,6 +103,8 @@ async def cast_ballots(
     prompt = f"Question: {question}\n{options_text}"
 
     async def one(p: Panelist) -> tuple[Panelist, Ballot | Exception]:
+        t0 = time.monotonic()
+        log.info("panelist_start name=%r timeout=%.1fs", p.name, PANELIST_TIMEOUT)
         try:
             agent = Agent(
                 p.model,
@@ -103,9 +112,17 @@ async def cast_ballots(
                 system_prompt=PANELIST_PROMPT,
                 tools=make_tools(p.name, on_tool_call),
             )
-            result = await agent.run(prompt)
+            result = await asyncio.wait_for(agent.run(prompt), timeout=PANELIST_TIMEOUT)
+            log.info("panelist_done  name=%r vote=%r elapsed=%.1fs",
+                     p.name, result.output.vote, time.monotonic() - t0)
             return p, result.output
+        except asyncio.TimeoutError:
+            log.warning("panelist_timeout name=%r elapsed=%.1fs",
+                        p.name, time.monotonic() - t0)
+            return p, TimeoutError(f"timed out after {PANELIST_TIMEOUT:.0f}s")
         except Exception as exc:  # a dead panelist shouldn't kill the run
+            log.exception("panelist_error name=%r elapsed=%.1fs",
+                          p.name, time.monotonic() - t0)
             return p, exc
 
     tasks = [asyncio.create_task(one(p)) for p in panel]

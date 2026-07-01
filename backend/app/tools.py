@@ -6,9 +6,13 @@ is invoked once per call with a small summary dict so the SSE stream can
 render a badge in the UI.
 """
 
+import logging
+import time
 from typing import Awaitable, Callable
 
 from . import browser
+
+log = logging.getLogger("rabble")
 
 OnToolCall = Callable[[dict], Awaitable[None] | None]
 
@@ -50,9 +54,18 @@ def make_tools(
         one in detail."""
         gate = _over_budget()
         if gate:
+            log.info("tool_budget name=%r tool=web_search", agent_name)
             return gate
         await _notify({"tool": "web_search", "query": query[:200]})
-        hits = await browser.ddg_search(query, limit=5)
+        t0 = time.monotonic()
+        log.info("tool_call name=%r tool=web_search q=%r", agent_name, query[:80])
+        try:
+            hits = await browser.ddg_search(query, limit=5)
+        except Exception as exc:
+            log.exception("tool_error name=%r tool=web_search", agent_name)
+            return f"web_search failed: {type(exc).__name__}: {exc}"
+        log.info("tool_ok   name=%r tool=web_search hits=%d elapsed=%.1fs",
+                 agent_name, len(hits), time.monotonic() - t0)
         if not hits:
             return f"No results for {query!r}."
         lines = [f"Search results for {query!r}:"]
@@ -66,9 +79,18 @@ def make_tools(
         in detail."""
         gate = _over_budget()
         if gate:
+            log.info("tool_budget name=%r tool=browse", agent_name)
             return gate
         await _notify({"tool": "browse", "url": url[:300]})
-        page = await browser.fetch_page(url)
+        t0 = time.monotonic()
+        log.info("tool_call name=%r tool=browse url=%r", agent_name, url[:80])
+        try:
+            page = await browser.fetch_page(url)
+        except Exception as exc:
+            log.exception("tool_error name=%r tool=browse", agent_name)
+            return f"browse failed: {type(exc).__name__}: {exc}"
+        log.info("tool_ok   name=%r tool=browse bytes=%d elapsed=%.1fs",
+                 agent_name, len(page.text), time.monotonic() - t0)
         header = f"Title: {page.title}\nURL: {page.final_url}\n\n"
         return header + (page.text or "(no readable text extracted)")
 

@@ -10,14 +10,18 @@ Yields (panelist, ballot_or_exception) as each result lands, mirroring
 """
 
 import asyncio
+import logging
 import os
+import time
 from typing import AsyncIterator
 
 from pydantic_ai import Agent
 
 from .config import Panelist
-from .panel import Ballot, Framing, cast_ballots
+from .panel import Ballot, Framing, PANELIST_TIMEOUT, cast_ballots
 from .tools import make_tools, OnToolCall
+
+log = logging.getLogger("rabble")
 
 DEBATE_ROUNDS = int(os.getenv("DEBATE_ROUNDS", "2"))
 
@@ -70,6 +74,8 @@ async def debate_round(
     options_text = _options_text(framing)
 
     async def one(p: Panelist) -> tuple[Panelist, Ballot | Exception]:
+        t0 = time.monotonic()
+        log.info("debate_start name=%r timeout=%.1fs", p.name, PANELIST_TIMEOUT)
         try:
             others = _render_others(prior_round, p.name)
             prompt = (
@@ -82,9 +88,17 @@ async def debate_round(
                 system_prompt=DEBATE_PROMPT,
                 tools=make_tools(p.name, on_tool_call),
             )
-            result = await agent.run(prompt)
+            result = await asyncio.wait_for(agent.run(prompt), timeout=PANELIST_TIMEOUT)
+            log.info("debate_done  name=%r vote=%r elapsed=%.1fs",
+                     p.name, result.output.vote, time.monotonic() - t0)
             return p, result.output
+        except asyncio.TimeoutError:
+            log.warning("debate_timeout name=%r elapsed=%.1fs",
+                        p.name, time.monotonic() - t0)
+            return p, TimeoutError(f"timed out after {PANELIST_TIMEOUT:.0f}s")
         except Exception as exc:
+            log.exception("debate_error name=%r elapsed=%.1fs",
+                          p.name, time.monotonic() - t0)
             return p, exc
 
     tasks = [asyncio.create_task(one(p)) for p in panel]
