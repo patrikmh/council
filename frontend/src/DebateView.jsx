@@ -5,6 +5,7 @@
 import React, { useEffect, useReducer, useRef, useState } from "react";
 import { runDebate } from "./aguiClient.js";
 import Spinner from "./Spinner.jsx";
+import { PanelPicker } from "./App.jsx";
 
 function reducer(state, ev) {
   switch (ev.kind) {
@@ -286,22 +287,12 @@ export default function DebateView({ panelists, selected, toggleModel }) {
 
   return (
     <>
-      {panelists.length > 0 && (
-        <div className="model-picker">
-          <span className="model-picker-label">Panel</span>
-          {panelists.map((p) => (
-            <button
-              key={p.name}
-              className={`model-toggle ${selected.has(p.name) ? "is-on" : ""}`}
-              disabled={state.running}
-              onClick={() => toggleModel(p.name)}
-            >
-              <span className="model-toggle-provider">{p.provider}</span>
-              {p.name}
-            </button>
-          ))}
-        </div>
-      )}
+      <PanelPicker
+        panelists={panelists}
+        selected={selected}
+        toggleModel={toggleModel}
+        disabled={state.running}
+      />
       <main className="transcript debate-transcript">
         {state.transcript.length === 0 && !state.snapshot && !state.running && (
           <div className="empty">

@@ -16,6 +16,38 @@ function cleanSummary(text) {
     .trim();
 }
 
+export function PanelPicker({ panelists, selected, toggleModel, disabled }) {
+  if (panelists.length === 0) return null;
+  const deadCount = panelists.filter((p) => p.available === false).length;
+  return (
+    <div className="model-picker">
+      <span className="model-picker-label">Panel</span>
+      {panelists.map((p) => {
+        const dead = p.available === false;
+        const on = selected.has(p.name);
+        return (
+          <button
+            key={p.name}
+            className={`model-toggle ${on ? "is-on" : ""} ${dead ? "is-dead" : ""}`}
+            disabled={disabled || dead}
+            onClick={() => !dead && toggleModel(p.name)}
+            title={dead ? `${p.slug} is not on OpenRouter right now` : ""}
+          >
+            <span className="model-toggle-provider">{p.provider}</span>
+            {p.name}
+            {dead && <span className="model-toggle-dead">·404</span>}
+          </button>
+        );
+      })}
+      {deadCount > 0 && (
+        <span className="model-picker-hint">
+          {deadCount} slug{deadCount === 1 ? "" : "s"} not on OpenRouter — greyed out
+        </span>
+      )}
+    </div>
+  );
+}
+
 function reducer(state, ev) {
   switch (ev.kind) {
     case "user":
@@ -184,22 +216,12 @@ function PollView({ panelists, selected, toggleModel }) {
 
   return (
     <>
-      {panelists.length > 0 && (
-        <div className="model-picker">
-          <span className="model-picker-label">Panel</span>
-          {panelists.map((p) => (
-            <button
-              key={p.name}
-              className={`model-toggle ${selected.has(p.name) ? "is-on" : ""}`}
-              disabled={state.running}
-              onClick={() => toggleModel(p.name)}
-            >
-              <span className="model-toggle-provider">{p.provider}</span>
-              {p.name}
-            </button>
-          ))}
-        </div>
-      )}
+      <PanelPicker
+        panelists={panelists}
+        selected={selected}
+        toggleModel={toggleModel}
+        disabled={state.running}
+      />
       <main className="transcript">
         {state.items.length === 0 && !state.running && (
           <div className="empty">
@@ -279,7 +301,15 @@ export default function App() {
       .then((r) => r.json())
       .then((list) => {
         setPanelists(list);
-        setSelected(new Set(list.map((p) => p.name)));
+        // Default: select every panelist except ones the backend
+        // confirmed are missing from OpenRouter's catalog.
+        setSelected(
+          new Set(
+            list
+              .filter((p) => p.available !== false)
+              .map((p) => p.name),
+          ),
+        );
       })
       .catch(() => {});
   }, []);

@@ -968,3 +968,31 @@ body {
 .minutes-body::first-letter {
   font-weight: 500;
 }
+
+/* ── Panel picker dead-slug state ───────────────────────────────────────── */
+.model-toggle.is-dead {
+  opacity: 0.42;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: rgba(239, 68, 68, 0.6);
+  background: rgba(239, 68, 68, 0.05);
+  border-color: rgba(239, 68, 68, 0.15);
+}
+.model-toggle.is-dead:hover {
+  transform: none;
+}
+.model-toggle-dead {
+  margin-left: 6px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  color: rgba(239, 68, 68, 0.8);
+  letter-spacing: 0.04em;
+}
+.model-picker-hint {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: rgba(239, 68, 68, 0.7);
+  letter-spacing: 0.02em;
+  margin-left: 6px;
+}

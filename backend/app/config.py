@@ -34,6 +34,7 @@ DEFAULT_PANEL = ",".join([
 class Panelist:
     name: str        # display name on the chip, e.g. "Claude Sonnet 4.6"
     provider: str    # short tag from the slug, e.g. "anthropic"
+    slug: str        # full OpenRouter slug, e.g. "anthropic/claude-sonnet-4.6"
     model: object    # pydantic-ai model instance
 
 
@@ -67,6 +68,7 @@ def build_panel() -> list[Panelist]:
         panel.append(Panelist(
             name=name.strip() or _display_name(slug),
             provider=slug.split("/", 1)[0],
+            slug=slug,
             model=_openrouter_model(slug),
         ))
     if not panel:

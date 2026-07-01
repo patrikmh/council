@@ -31,7 +31,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import a2ui, agui, browser, store
+from . import a2ui, agui, browser, openrouter as orcatalog, store
 from .config import build_panel, framer_model
 from .debate import (
     DEBATE_ROUNDS,
@@ -96,7 +96,19 @@ class RunAgentInput(BaseModel):
 @app.get("/panel")
 async def get_panel():
     panel = build_panel()
-    return [{"name": p.name, "provider": p.provider} for p in panel]
+    catalog = await orcatalog.available_slugs()
+    return [
+        {
+            "name": p.name,
+            "provider": p.provider,
+            "slug": p.slug,
+            # `available` is True when the slug exists on OpenRouter today,
+            # False when it definitely doesn't, and None when we couldn't
+            # reach the catalog (fail open — treat as available client-side).
+            "available": (p.slug in catalog) if catalog is not None else None,
+        }
+        for p in panel
+    ]
 
 
 async def _error_stream(body: RunAgentInput, message: str):
@@ -130,8 +142,16 @@ def _winner(options: list[str], ballots: list[dict]) -> str | None:
     return None
 
 
-def _select_panel(body: RunAgentInput):
+async def _select_panel(body: RunAgentInput):
     full_panel = build_panel()
+    catalog = await orcatalog.available_slugs()
+    if catalog is not None:
+        alive = [p for p in full_panel if p.slug in catalog]
+        # Only apply the catalog filter if it still leaves at least one
+        # panelist standing — otherwise something is off (stale catalog,
+        # unusual private slugs) and we shouldn't lock the user out.
+        if alive:
+            full_panel = alive
     if body.selected_models:
         chosen = set(body.selected_models)
         panel = [p for p in full_panel if p.name in chosen]
@@ -178,7 +198,7 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
     async def events():
         yield agui.sse(agui.run_started(body.thread_id, body.run_id))
         try:
-            panel = _select_panel(body)
+            panel = await _select_panel(body)
             surface = f"poll-{body.run_id}"
 
             yield agui.sse(agui.step_started("frame_question"))
@@ -332,7 +352,7 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
     async def events():
         yield agui.sse(agui.run_started(body.thread_id, body.run_id))
         try:
-            panel = _select_panel(body)
+            panel = await _select_panel(body)
 
             yield agui.sse(agui.step_started("frame_question"))
             framing = await frame_question(framer_model(panel), question)
