@@ -28,7 +28,16 @@ def make_tools(
 
     The tools are plain async functions — pydantic-ai wraps them into Tool
     objects when passed via ``Agent(tools=[...])``.
+
+    If a prior call to the browser pool confirmed Chromium is missing
+    (e.g. on a Render deploy without ``playwright install``), we return
+    an empty list — better to give the model no tools than to hand it
+    tools that always fail and let it burn its retry budget.
     """
+    if browser.pool.available is False:
+        log.info("tools_disabled name=%r reason=%r",
+                 agent_name, browser.pool.unavailable_reason)
+        return []
     state = {"used": 0}
 
     async def _notify(payload: dict) -> None:

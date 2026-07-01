@@ -46,12 +46,22 @@ from .panel import cast_ballots, frame_question, stream_summary
 PUBLIC_FEED = os.getenv("PUBLIC_FEED", "1") == "1"
 
 
+log = logging.getLogger("rabble")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await store.init_db()
-    # Warm the browser lazily on first request instead of at startup —
-    # cold-start on Render is faster and the browser only matters if a
-    # panelist actually calls a tool.
+    # Probe the browser once at startup so make_tools() knows whether to
+    # hand out real tools or nothing at all. A missing Chromium (common on
+    # Render deploys without `playwright install`) shouldn't be discovered
+    # mid-run by a panelist burning its retry budget.
+    try:
+        await browser.pool.start()
+        log.info("browser_ok chromium launched at startup")
+    except Exception as exc:
+        log.warning("browser_disabled %s: %s — panelists will run without web tools",
+                    type(exc).__name__, str(exc)[:200])
     yield
     await browser.pool.stop()
 

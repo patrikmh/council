@@ -40,16 +40,27 @@ class BrowserPool:
         self._pw: Playwright | None = None
         self._browser: Browser | None = None
         self._lock = asyncio.Lock()
+        # None = untried, True = confirmed working, False = confirmed missing
+        self.available: bool | None = None
+        self.unavailable_reason: str = ""
 
     async def start(self) -> None:
         async with self._lock:
             if self._browser is not None:
                 return
-            self._pw = await async_playwright().start()
-            self._browser = await self._pw.chromium.launch(
-                headless=True,
-                args=["--no-sandbox", "--disable-dev-shm-usage"],
-            )
+            if self.available is False:
+                raise RuntimeError(self.unavailable_reason or "browser unavailable")
+            try:
+                self._pw = await async_playwright().start()
+                self._browser = await self._pw.chromium.launch(
+                    headless=True,
+                    args=["--no-sandbox", "--disable-dev-shm-usage"],
+                )
+                self.available = True
+            except Exception as exc:
+                self.available = False
+                self.unavailable_reason = f"{type(exc).__name__}: {str(exc)[:200]}"
+                raise
 
     async def stop(self) -> None:
         async with self._lock:
