@@ -5,7 +5,7 @@
 import React, { useEffect, useReducer, useRef, useState } from "react";
 import { runDebate } from "./aguiClient.js";
 import Spinner from "./Spinner.jsx";
-import { PanelPicker } from "./App.jsx";
+import { PanelPicker, toneForProvider, initialsOf } from "./App.jsx";
 
 function reducer(state, ev) {
   switch (ev.kind) {
@@ -273,6 +273,30 @@ function cleanSummary(text) {
     .trim();
 }
 
+function useCountUp(target, duration = 700) {
+  const [n, setN] = useState(0);
+  useEffect(() => {
+    let start = 0;
+    let frame = 0;
+    function step(t) {
+      if (!start) start = t;
+      const p = Math.min(1, (t - start) / duration);
+      // ease-out cubic
+      const eased = 1 - Math.pow(1 - p, 3);
+      setN(Math.round(target * eased));
+      if (p < 1) frame = requestAnimationFrame(step);
+    }
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [target, duration]);
+  return n;
+}
+
+function CountUp({ target }) {
+  const n = useCountUp(target, 700);
+  return <>{n}</>;
+}
+
 function Verdict({ snapshot }) {
   if (!snapshot?.done || !snapshot.rounds?.length) return null;
   const finalRound = snapshot.rounds[snapshot.rounds.length - 1].ballots;
@@ -286,15 +310,21 @@ function Verdict({ snapshot }) {
   const tie = winners.length > 1;
 
   return (
-    <section className={`verdict tone-${tone}`}>
+    <section className={`verdict tone-${tone} ${tie ? "is-tied" : "is-carried"}`}>
       <div className="verdict-eyebrow">The verdict</div>
       <div className="verdict-headline">
         {tie ? "Split decision" : winners[0]?.opt}
       </div>
+      {!tie && <span className="verdict-stamp" aria-hidden="true">Carried</span>}
+      {tie && <span className="verdict-stamp verdict-stamp-tied" aria-hidden="true">Tied</span>}
       <div className="verdict-sub">
         {tie
           ? `${winners.map((w) => w.opt).join(" / ")} tied at ${top} vote${top === 1 ? "" : "s"} each`
-          : `${top} of ${total} panelist${total === 1 ? "" : "s"} sided with ${winners[0]?.opt}`}
+          : (
+            <>
+              <CountUp target={top} /> of {total} panelist{total === 1 ? "" : "s"} sided with {winners[0]?.opt}
+            </>
+          )}
       </div>
       <ul className="verdict-tally">
         {counts.map((c) => {
@@ -303,7 +333,9 @@ function Verdict({ snapshot }) {
           return (
             <li key={c.opt} className={`tone-${toneFor(i)} ${won ? "is-won" : ""}`}>
               <span className="verdict-opt">{c.opt}</span>
-              <span className="verdict-count">{c.n}</span>
+              <span className="verdict-count">
+                <CountUp target={c.n} />
+              </span>
             </li>
           );
         })}
@@ -316,6 +348,80 @@ function Verdict({ snapshot }) {
             <span className="verdict-voter-vote">{b.vote}</span>
           </span>
         ))}
+      </div>
+    </section>
+  );
+}
+
+function VoteMatrix({ snapshot }) {
+  if (!snapshot?.rounds?.length) return null;
+  const rounds = snapshot.rounds;
+  // Union of all panelists that ever voted across any round
+  const seen = new Map(); // name -> {name, provider}
+  for (const r of rounds) {
+    for (const b of r.ballots) {
+      if (!seen.has(b.name)) seen.set(b.name, { name: b.name, provider: b.provider });
+    }
+  }
+  const panelists = [...seen.values()];
+  if (!panelists.length) return null;
+
+  // Index per (name, round) → ballot | null
+  function ballotFor(name, ri) {
+    return rounds[ri]?.ballots.find((b) => b.name === name) || null;
+  }
+
+  return (
+    <section className="matrix">
+      <div className="matrix-head">
+        <div className="matrix-eyebrow">The arc</div>
+        <div className="matrix-legend">each dot is a vote · arrow marks a flip</div>
+      </div>
+      <div className="matrix-grid" style={{ gridTemplateColumns: `minmax(140px, 1.4fr) repeat(${rounds.length}, 1fr) minmax(70px, auto)` }}>
+        <div className="matrix-corner" />
+        {rounds.map((r) => (
+          <div key={r.index} className="matrix-col-head">
+            <span className="round-mark">R</span>
+            <span className="round-numeral">{romanOf(r.index)}</span>
+          </div>
+        ))}
+        <div className="matrix-col-head matrix-final">Final</div>
+
+        {panelists.map((p) => {
+          const cells = rounds.map((r, ri) => ballotFor(p.name, ri));
+          const final = [...cells].reverse().find((c) => c) || null;
+          const tone = toneForProvider(p.provider);
+          return (
+            <React.Fragment key={p.name}>
+              <div className={`matrix-row-head tone-${tone}`}>
+                <span className="matrix-disc" aria-hidden="true">
+                  <span>{initialsOf(p.name)}</span>
+                </span>
+                <span className="matrix-row-name">{p.name}</span>
+              </div>
+              {cells.map((b, ri) => {
+                const optIdx = b ? snapshot.options.indexOf(b.vote) : -1;
+                const cellTone = optIdx >= 0 ? toneFor(optIdx) : null;
+                const flipped = !!b?.flipped_from;
+                return (
+                  <div key={ri} className={`matrix-cell ${cellTone ? "tone-" + cellTone : "is-abstain"}`}>
+                    {b ? (
+                      <>
+                        <span className="matrix-dot" title={b.vote} />
+                        {flipped && <span className="matrix-flip" title={`flipped from ${b.flipped_from}`}>↷</span>}
+                      </>
+                    ) : (
+                      <span className="matrix-dash">—</span>
+                    )}
+                  </div>
+                );
+              })}
+              <div className="matrix-final-cell">
+                {final ? final.vote : <span className="matrix-dash">—</span>}
+              </div>
+            </React.Fragment>
+          );
+        })}
       </div>
     </section>
   );
@@ -421,6 +527,7 @@ export default function DebateView({ panelists, selected, toggleModel }) {
         {state.snapshot && (
           <>
             <TallyBar snapshot={state.snapshot} />
+            <VoteMatrix snapshot={state.snapshot} />
             {state.snapshot.rounds?.map((r) => (
               <Round
                 key={r.index}

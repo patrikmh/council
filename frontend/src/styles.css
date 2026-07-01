@@ -1374,3 +1374,178 @@ body::after {
 /* ── Old .model-picker classes: leave in place for backward compat but
    they're no longer emitted by the JSX. Nothing to remove — dead CSS
    costs less than a rebuild does. */
+
+/* ── Vote-arc matrix: the debate at a glance ─────────────────────────── */
+.matrix {
+  margin: 8px 0 28px;
+  padding: 16px 18px 14px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+.matrix-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.matrix-eyebrow {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lamp);
+}
+.matrix-legend {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.35);
+}
+.matrix-grid {
+  display: grid;
+  row-gap: 8px;
+  column-gap: 6px;
+  align-items: center;
+}
+.matrix-corner { }
+.matrix-col-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+.matrix-col-head .round-mark {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  color: rgba(255, 255, 255, 0.35);
+}
+.matrix-col-head .round-numeral {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--paper);
+}
+.matrix-final {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+.matrix-row-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 6px;
+}
+.matrix-disc {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--tc-bg);
+  border: 1px solid var(--tc-deep);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--tc);
+  flex-shrink: 0;
+}
+.matrix-row-name {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.matrix-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  height: 22px;
+  position: relative;
+}
+.matrix-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--tc);
+  box-shadow: 0 0 0 2px var(--tc-bg);
+  animation: dot-arrive 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes dot-arrive {
+  from { transform: scale(0);   opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+.matrix-flip {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  color: var(--lamp);
+  margin-left: 2px;
+}
+.matrix-cell.is-abstain { opacity: 0.35; }
+.matrix-dash {
+  font-family: "IBM Plex Mono", monospace;
+  color: rgba(255, 255, 255, 0.25);
+}
+.matrix-final-cell {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: var(--paper);
+  padding-left: 8px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── Verdict count-up-friendly numeric styling ────────────────────────── */
+.verdict-count { font-variant-numeric: tabular-nums; }
+
+/* ── Verdict wax-seal stamp ──────────────────────────────────────────── */
+.verdict { position: relative; }
+.verdict-stamp {
+  position: absolute;
+  top: 20px;
+  right: 22px;
+  transform: rotate(-8deg);
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(164, 35, 26, 0.88);
+  border: 3px double rgba(164, 35, 26, 0.68);
+  padding: 6px 14px;
+  border-radius: 4px;
+  pointer-events: none;
+  opacity: 0;
+  animation: stamp-thud 520ms cubic-bezier(0.5, 1.7, 0.3, 1) 260ms forwards;
+  mix-blend-mode: multiply;
+  text-shadow: 0 0 1px rgba(164, 35, 26, 0.4);
+}
+.verdict-stamp-tied {
+  color: rgba(107, 114, 128, 0.85);
+  border-color: rgba(107, 114, 128, 0.6);
+}
+@keyframes stamp-thud {
+  0%   { opacity: 0; transform: rotate(-8deg) scale(1.8); }
+  60%  { opacity: 0.95; transform: rotate(-8deg) scale(0.95); }
+  100% { opacity: 0.88; transform: rotate(-8deg) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .verdict-stamp {
+    animation: none;
+    opacity: 0.88;
+    transform: rotate(-8deg);
+  }
+}

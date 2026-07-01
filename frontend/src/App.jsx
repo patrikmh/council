@@ -35,7 +35,7 @@ const PROVIDER_TONES = {
 };
 const TONE_CYCLE = ["aqua", "clay", "violet", "rose", "mint", "sky", "coral", "gold"];
 
-function toneForProvider(provider) {
+export function toneForProvider(provider) {
   if (PROVIDER_TONES[provider]) return PROVIDER_TONES[provider];
   let h = 0;
   for (const ch of provider) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
@@ -43,7 +43,7 @@ function toneForProvider(provider) {
 }
 
 // Two-letter initials from the display name. "Claude Sonnet 4.6" → "CS".
-function initialsOf(name) {
+export function initialsOf(name) {
   const parts = name.replace(/[.\-_]/g, " ").split(/\s+/).filter(Boolean);
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[1][0]).toUpperCase();
