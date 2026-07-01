@@ -16,32 +16,82 @@ function cleanSummary(text) {
     .trim();
 }
 
-export function PanelPicker({ panelists, selected, toggleModel, disabled }) {
+// Map each provider to a stable tone from the palette. Hash-based fallback
+// keeps unknown providers deterministically colored across renders.
+const PROVIDER_TONES = {
+  anthropic: "clay",
+  openai: "mint",
+  google: "sky",
+  "x-ai": "coral",
+  "z-ai": "violet",
+  moonshotai: "aqua",
+  deepseek: "rose",
+  qwen: "gold",
+  minimax: "coral",
+  stepfun: "clay",
+  meta: "sky",
+  "meta-llama": "sky",
+  mistralai: "rose",
+};
+const TONE_CYCLE = ["aqua", "clay", "violet", "rose", "mint", "sky", "coral", "gold"];
+
+function toneForProvider(provider) {
+  if (PROVIDER_TONES[provider]) return PROVIDER_TONES[provider];
+  let h = 0;
+  for (const ch of provider) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return TONE_CYCLE[h % TONE_CYCLE.length];
+}
+
+// Two-letter initials from the display name. "Claude Sonnet 4.6" → "CS".
+function initialsOf(name) {
+  const parts = name.replace(/[.\-_]/g, " ").split(/\s+/).filter(Boolean);
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+export function PanelPicker({ panelists, selected, toggleModel, disabled, thinkingSet }) {
   if (panelists.length === 0) return null;
   const deadCount = panelists.filter((p) => p.available === false).length;
   return (
-    <div className="model-picker">
-      <span className="model-picker-label">Panel</span>
-      {panelists.map((p) => {
-        const dead = p.available === false;
-        const on = selected.has(p.name);
-        return (
-          <button
-            key={p.name}
-            className={`model-toggle ${on ? "is-on" : ""} ${dead ? "is-dead" : ""}`}
-            disabled={disabled || dead}
-            onClick={() => !dead && toggleModel(p.name)}
-            title={dead ? `${p.slug} is not on OpenRouter right now` : ""}
-          >
-            <span className="model-toggle-provider">{p.provider}</span>
-            {p.name}
-            {dead && <span className="model-toggle-dead">·404</span>}
-          </button>
-        );
-      })}
+    <div className="seating">
+      <span className="seating-label">The table</span>
+      <div className="seating-row">
+        {panelists.map((p) => {
+          const dead = p.available === false;
+          const on = selected.has(p.name);
+          const thinking = thinkingSet?.has(p.name);
+          const tone = toneForProvider(p.provider);
+          return (
+            <button
+              key={p.name}
+              className={
+                `seat tone-${tone}` +
+                (on ? " is-on" : "") +
+                (dead ? " is-dead" : "") +
+                (thinking ? " is-thinking" : "")
+              }
+              disabled={disabled || dead}
+              onClick={() => !dead && toggleModel(p.name)}
+              title={
+                dead
+                  ? `${p.slug} is not on OpenRouter right now`
+                  : `${p.provider} · ${p.slug}`
+              }
+            >
+              <span className="seat-disc" aria-hidden="true">
+                <span className="seat-disc-inner">{initialsOf(p.name)}</span>
+                {thinking && <span className="seat-halo" />}
+              </span>
+              <span className="seat-name">{p.name}</span>
+              <span className="seat-provider">{p.provider}</span>
+              {dead && <span className="seat-flag">404</span>}
+            </button>
+          );
+        })}
+      </div>
       {deadCount > 0 && (
-        <span className="model-picker-hint">
-          {deadCount} slug{deadCount === 1 ? "" : "s"} not on OpenRouter — greyed out
+        <span className="seating-hint">
+          {deadCount} seat{deadCount === 1 ? "" : "s"} not on OpenRouter
         </span>
       )}
     </div>
@@ -232,6 +282,7 @@ function PollView({ panelists, selected, toggleModel }) {
         selected={selected}
         toggleModel={toggleModel}
         disabled={state.running}
+        thinkingSet={state.running ? selected : null}
       />
       <main className="transcript">
         {state.items.length === 0 && !state.running && (

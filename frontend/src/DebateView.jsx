@@ -321,10 +321,18 @@ function Verdict({ snapshot }) {
   );
 }
 
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
+function romanOf(n) {
+  return ROMAN[n] ?? String(n + 1);
+}
+
 function Round({ round, toolCalls, snapshot }) {
   return (
     <div className="debate-round">
-      <div className="debate-round-title">Round {round.index + 1}</div>
+      <div className="debate-round-title">
+        <span className="round-mark">Round</span>
+        <span className="round-numeral">{romanOf(round.index)}</span>
+      </div>
       <div className="debate-round-grid">
         {round.ballots.map((b) => (
           <AgentCard
@@ -373,6 +381,19 @@ export default function DebateView({ panelists, selected, toggleModel }) {
         selected={selected}
         toggleModel={toggleModel}
         disabled={state.running}
+        thinkingSet={
+          state.running
+            ? new Set(
+                [...selected].filter((name) => {
+                  const lastRound = state.snapshot?.rounds?.length
+                    ? state.snapshot.rounds[state.snapshot.rounds.length - 1]
+                    : null;
+                  const voted = lastRound?.ballots?.some((b) => b.name === name);
+                  return !voted;
+                }),
+              )
+            : null
+        }
       />
       <main className="transcript debate-transcript">
         {state.transcript.length === 0 && !state.snapshot && !state.running && (

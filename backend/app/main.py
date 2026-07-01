@@ -110,17 +110,58 @@ async def _error_stream(body: RunAgentInput, message: str):
     yield agui.sse(agui.run_error(message))
 
 
+import re as _re
+
+
 def _normalize_vote(raw: str, options: list[str]) -> str:
-    """Map a model's freeform vote back to one of the option labels."""
-    stripped = raw.strip()
+    """Map a model's freeform vote back to one of the option labels.
+
+    Handles common shapes models emit:
+      "Denmark"              → "Denmark"          exact
+      "C"                    → 3rd option         letter
+      "Option C"             → 3rd option         labelled letter
+      "C: Denmark"           → "Denmark"          letter prefix + label
+      "C. Denmark"           → "Denmark"
+      "Option C: Denmark"    → "Denmark"
+      "**Denmark**"          → "Denmark"          markdown fluff
+      "the answer is Denmark"→ "Denmark"          substring fallback
+    """
+    stripped = raw.strip().strip("*_`\"' ")
+
+    # 1. Exact case-insensitive match.
+    lower = stripped.lower()
     for opt in options:
-        if stripped.lower() == opt.lower():
+        if lower == opt.lower():
             return opt
+
+    # 2. "Letter[: . - ) ] Label" — pull the label side out and match it.
+    m = _re.match(
+        r"^(?:option\s+)?([a-z])\s*[\.\:\)\-\]]\s*(.+)$",
+        stripped,
+        _re.IGNORECASE,
+    )
+    if m:
+        rest = m.group(2).strip().strip("*_`\"' ")
+        for opt in options:
+            if rest.lower() == opt.lower():
+                return opt
+        idx = ord(m.group(1).upper()) - 65
+        if 0 <= idx < len(options):
+            return options[idx]
+
+    # 3. Bare letter or "Option X".
+    upper = stripped.upper()
     for idx, opt in enumerate(options):
         letter = chr(65 + idx)
-        u = stripped.upper()
-        if u == letter or u.startswith(f"OPTION {letter}"):
+        if upper == letter or upper.startswith(f"OPTION {letter}"):
             return opt
+
+    # 4. Substring fallback: if exactly one option label appears inside the
+    #    raw vote, use it. Prevents "the answer is Denmark" from being lost.
+    matches = [opt for opt in options if opt.lower() in lower]
+    if len(matches) == 1:
+        return matches[0]
+
     return raw
 
 

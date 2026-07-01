@@ -1123,3 +1123,255 @@ body {
   background: rgba(125, 211, 252, 0.22);
   border-color: var(--sky);
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   DESIGN TRICKS — the "not just another AI SaaS" pass
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Ambient background: cursor spotlight + paper grain ─────────────────
+   The spotlight is a fixed radial gradient anchored on (--mx, --my),
+   which main.jsx updates on pointermove. Grain is a tiny inline SVG
+   turbulence tile at ~3% opacity so the chamber never feels perfectly
+   flat. Both live under everything (z-index -1) and pointer-events off. */
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+body::before {
+  background:
+    radial-gradient(
+      600px 400px at var(--mx, 50%) var(--my, 30%),
+      rgba(245, 158, 11, 0.10) 0%,
+      rgba(94, 234, 212, 0.05) 30%,
+      transparent 60%
+    );
+  transition: background 240ms ease-out;
+}
+body::after {
+  background-image: url("data:image/svg+xml;utf8,\
+<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'>\
+<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/>\
+<feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.55 0'/></filter>\
+<rect width='100%' height='100%' filter='url(%23n)' opacity='0.05'/></svg>");
+  opacity: 0.5;
+  mix-blend-mode: screen;
+}
+
+/* Respect reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  body::before { transition: none; }
+  .seat-halo, .thinking-pulse { animation: none !important; }
+}
+
+/* ── Seating chart: replaces the teal pill wall ──────────────────────── */
+.seating {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 18px 4px 12px;
+  position: relative;
+}
+.seating-label {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.42);
+  padding-top: 22px;
+  flex-shrink: 0;
+}
+.seating-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  flex: 1;
+}
+.seating-hint {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: rgba(239, 68, 68, 0.65);
+  align-self: flex-end;
+  padding-bottom: 6px;
+}
+
+.seat {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: transparent;
+  border: none;
+  padding: 6px 4px 4px;
+  cursor: pointer;
+  font: inherit;
+  color: rgba(255, 255, 255, 0.4);
+  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
+              color 0.15s ease;
+  min-width: 78px;
+}
+.seat:hover:not(:disabled) { transform: translateY(-2px); }
+.seat:disabled { cursor: default; }
+
+.seat-disc {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1.5px solid rgba(255, 255, 255, 0.08);
+  transition: background 0.25s ease, border-color 0.25s ease,
+              transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.seat-disc-inner {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.5);
+  transition: color 0.15s ease;
+}
+.seat.is-on .seat-disc {
+  background: var(--tc-bg);
+  border-color: var(--tc-deep);
+  box-shadow:
+    inset 0 0 0 1px var(--tc-bg),
+    0 0 0 4px rgba(0, 0, 0, 0);
+}
+.seat.is-on .seat-disc-inner { color: var(--tc); }
+.seat.is-on:hover:not(:disabled) .seat-disc {
+  box-shadow:
+    inset 0 0 0 1px var(--tc-bg),
+    0 0 0 4px rgba(0, 0, 0, 0.15);
+}
+.seat.is-on { color: var(--tc); }
+
+.seat-name {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: inherit;
+  text-align: center;
+  max-width: 96px;
+  line-height: 1.2;
+}
+.seat.is-on .seat-name { color: rgba(255, 255, 255, 0.9); }
+.seat-provider {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  color: rgba(255, 255, 255, 0.28);
+}
+.seat.is-on .seat-provider { color: var(--tc); opacity: 0.7; }
+
+/* Thinking pulse — a slow halo ring while their agent.run() is pending. */
+.seat.is-thinking .seat-halo {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid var(--tc);
+  opacity: 0.6;
+  animation: seat-pulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+@keyframes seat-pulse {
+  0%   { transform: scale(1);   opacity: 0.7; }
+  70%  { transform: scale(1.35); opacity: 0; }
+  100% { transform: scale(1.35); opacity: 0; }
+}
+
+.seat.is-dead { opacity: 0.35; cursor: not-allowed; }
+.seat.is-dead .seat-name { text-decoration: line-through;
+                           text-decoration-color: rgba(239, 68, 68, 0.6); }
+.seat-flag {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  color: rgba(239, 68, 68, 0.85);
+  letter-spacing: 0.06em;
+}
+
+/* ── Tab underline with a spring ─────────────────────────────────────── */
+.tab {
+  position: relative;
+  overflow: hidden;
+}
+.tab::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 2px;
+  height: 2px;
+  background: var(--aqua-deep);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.tab.is-on::after { transform: scaleX(1); }
+
+/* ── Composer as a lectern ──────────────────────────────────────────── */
+.composer {
+  position: relative;
+}
+.composer::before {
+  content: "01.";
+  position: absolute;
+  left: -34px;
+  top: 14px;
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-size: 22px;
+  color: rgba(245, 158, 11, 0.55);
+  letter-spacing: -0.01em;
+}
+@media (max-width: 820px) {
+  .composer::before { display: none; }
+}
+
+/* ── Round title: Roman-numeral treatment ────────────────────────────── */
+.debate-round-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+  margin-bottom: 12px;
+}
+.round-mark {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.42);
+}
+.round-numeral {
+  font-family: "Fraunces", serif;
+  font-weight: 500;
+  font-style: italic;
+  font-size: 24px;
+  color: var(--paper);
+  letter-spacing: 0.02em;
+  line-height: 1;
+}
+
+/* ── Ballot card arrival: fade + subtle rise ─────────────────────────── */
+.debate-card {
+  animation: card-arrive 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes card-arrive {
+  from { opacity: 0; transform: translateY(6px) scale(0.985); }
+  to   { opacity: 1; transform: translateY(0)   scale(1); }
+}
+
+/* ── Old .model-picker classes: leave in place for backward compat but
+   they're no longer emitted by the JSX. Nothing to remove — dead CSS
+   costs less than a rebuild does. */

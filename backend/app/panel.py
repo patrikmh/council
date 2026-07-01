@@ -22,7 +22,7 @@ from .tools import make_tools, OnToolCall
 
 log = logging.getLogger("rabble")
 
-PANELIST_TIMEOUT = float(os.getenv("PANELIST_TIMEOUT_SEC", "60"))
+PANELIST_TIMEOUT = float(os.getenv("PANELIST_TIMEOUT_SEC", "90"))
 
 
 def today_iso() -> str:
