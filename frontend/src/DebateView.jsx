@@ -40,6 +40,7 @@ function reducer(state, ev) {
             };
           }
           if (e.name === "panelist_error") {
+            const err = (e.value.error || "").slice(0, 240);
             return {
               ...state,
               transcript: [
@@ -49,7 +50,7 @@ function reducer(state, ev) {
                   id: crypto.randomUUID(),
                   text: `${e.value.name} abstained (error) in round ${
                     (e.value.round ?? 0) + 1
-                  }.`,
+                  }${err ? `: ${err}` : "."}`,
                 },
               ],
             };
