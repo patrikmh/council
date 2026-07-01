@@ -1144,12 +1144,11 @@ body::after {
 body::before {
   background:
     radial-gradient(
-      600px 400px at var(--mx, 50%) var(--my, 30%),
-      rgba(245, 158, 11, 0.10) 0%,
-      rgba(94, 234, 212, 0.05) 30%,
-      transparent 60%
+      340px 220px at var(--mx, 50%) var(--my, 30%),
+      rgba(245, 158, 11, 0.035) 0%,
+      transparent 65%
     );
-  transition: background 240ms ease-out;
+  transition: background 320ms ease-out;
 }
 body::after {
   background-image: url("data:image/svg+xml;utf8,\
