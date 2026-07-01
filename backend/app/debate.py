@@ -31,9 +31,16 @@ DEBATE_PROMPT = (
     "voted once. You will now see how the other panelists voted and what "
     "they said. You may HOLD your vote or FLIP to a different option — "
     "whichever is honest. In your reasoning, address specific panelists "
-    "by name when you rebut or agree with them. If a factual claim is in "
-    "dispute, you may call web_search and browse to check it. Keep the "
-    "reasoning to two or three sentences."
+    "by name when you rebut or agree with them.\n\n"
+    "You have two research tools: web_search(query) returns real search "
+    "results, and browse(url) fetches the readable text of a page. USE "
+    "THEM aggressively this round — if another panelist made a factual "
+    "claim (a ranking, a statistic, a date, a quote), verify it before "
+    "agreeing or rebutting. A good move is: web_search to find a source, "
+    "browse the strongest one, then cite it by name in your reasoning "
+    "('Norway is #1 on the 2025 UN HDI, per hdr.undp.org'). Don't argue "
+    "from vibes when you can argue from a source. Keep the reasoning to "
+    "two or three sentences after you've done the research."
 )
 
 

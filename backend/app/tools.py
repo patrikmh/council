@@ -7,6 +7,7 @@ render a badge in the UI.
 """
 
 import logging
+import os
 import time
 from typing import Awaitable, Callable
 
@@ -16,7 +17,10 @@ log = logging.getLogger("rabble")
 
 OnToolCall = Callable[[dict], Awaitable[None] | None]
 
-_DEFAULT_BUDGET = 3
+# How many tool calls each panelist may make per round. Bumped from 3 so a
+# search → browse-source-A → browse-source-B → decide flow fits under the
+# cap without the model being told mid-thought to stop researching.
+_DEFAULT_BUDGET = int(os.getenv("TOOL_BUDGET_PER_AGENT", "6"))
 
 
 def make_tools(

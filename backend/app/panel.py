@@ -61,9 +61,16 @@ PANELIST_PROMPT = (
     "your choice in one or two sentences. Commit to a choice even if the "
     "question is silly or underspecified; if the premise is flawed, vote for "
     "the option that survives the flaw and say why. Be yourself — your "
-    "reasoning will be quoted. If the question depends on facts that may have "
-    "changed recently, you may call web_search and browse before deciding, "
-    "but keep tool use to a minimum — decide fast."
+    "reasoning will be quoted.\n\n"
+    "You have two research tools: web_search(query) returns a list of "
+    "titles/urls/snippets from a real web search, and browse(url) fetches "
+    "the readable text of a page. USE THEM whenever the question depends on "
+    "current facts, numbers, rankings, news, prices, sports results, or "
+    "anything you might be out of date on — do not guess from stale "
+    "training data. A good pattern is: one web_search to find sources, one "
+    "or two browse calls to read the strongest ones, then vote. Cite the "
+    "site or source in your reasoning (e.g. 'per the UN HDI 2025 report…') "
+    "so the panel can tell your ballot from a vibes-based one."
 )
 
 SUMMARIZER_PROMPT = (
