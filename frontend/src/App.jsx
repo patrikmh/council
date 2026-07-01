@@ -60,7 +60,12 @@ export function PanelPicker({ panelists, selected, toggleModel, disabled, thinki
     <div className="chamber">
       <div className="table-scene" style={{ "--seats": N }}>
         <div className="round-table" aria-hidden="true">
-          <span className="table-watermark">Rabble</span>
+          <img
+            src="/logo.png"
+            alt=""
+            className="table-logo"
+            draggable={false}
+          />
         </div>
         {panelists.map((p, i) => {
           const dead = p.available === false;

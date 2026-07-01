@@ -1746,3 +1746,204 @@ body::after {
   }
   .chair:hover:not(:disabled) { transform: translateY(-2px); }
 }
+
+/* ── Table logo in the middle ────────────────────────────────────────── */
+.table-logo {
+  width: 60%;
+  max-width: 96px;
+  height: auto;
+  opacity: 0.55;
+  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.15));
+  animation: table-breathe 6s ease-in-out infinite;
+  user-select: none;
+  pointer-events: none;
+}
+@keyframes table-breathe {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50%      { opacity: 0.7; transform: scale(1.03); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .table-logo { animation: none; opacity: 0.55; }
+}
+
+/* ── Matrix: SVG connecting lines + hover states ─────────────────────── */
+.matrix-grid { position: relative; }
+.matrix-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 1;
+}
+.matrix-line {
+  animation: line-draw 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transition: stroke-width 220ms ease, opacity 220ms ease;
+}
+@keyframes line-draw {
+  from { stroke-dashoffset: 200; }
+  to   { stroke-dashoffset: 0; }
+}
+
+.matrix-row-head,
+.matrix-cell,
+.matrix-final-cell {
+  position: relative;
+  z-index: 2;
+  transition: opacity 200ms ease, transform 200ms ease, color 200ms ease;
+}
+.matrix-row-head {
+  cursor: pointer;
+  padding: 4px 6px 4px 0;
+  border-radius: 4px;
+  transition: background 200ms ease;
+}
+.matrix-row-head.is-hot {
+  background: rgba(255, 255, 255, 0.04);
+}
+.matrix-row-head.is-hot .matrix-disc {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--tc) 25%, transparent);
+}
+.matrix-row-head.is-hot .matrix-row-name {
+  color: rgba(255, 255, 255, 0.98);
+}
+
+.matrix-cell.is-dim { opacity: 0.25; }
+.matrix-cell.is-hot .matrix-dot,
+.matrix-cell.is-colhot .matrix-dot {
+  transform: scale(1.35);
+  box-shadow: 0 0 0 3px var(--tc-bg),
+              0 0 12px color-mix(in srgb, var(--tc) 60%, transparent);
+}
+.matrix-dot { transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+                          box-shadow 220ms ease; }
+
+.matrix-col-head {
+  cursor: pointer;
+  transition: color 180ms ease, border-color 180ms ease;
+}
+.matrix-col-head.is-hot .round-numeral { color: var(--lamp); }
+.matrix-col-head.is-hot { border-bottom-color: rgba(245, 158, 11, 0.4); }
+
+.matrix-final-cell.is-hot {
+  color: var(--lamp);
+  transform: translateX(2px);
+}
+
+.matrix-flip {
+  animation: flip-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation-delay: 340ms;
+  display: inline-block;
+}
+@keyframes flip-pop {
+  0%   { opacity: 0; transform: rotate(-90deg) scale(0.3); }
+  60%  { opacity: 1; transform: rotate(20deg)  scale(1.2); }
+  100% { opacity: 1; transform: rotate(0)     scale(1); }
+}
+
+/* Staggered dot arrival (inline-style animation-delay from JSX) */
+.matrix-cell { animation: cell-arrive 300ms ease-out both; }
+@keyframes cell-arrive {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Collapsible round with narrated header ──────────────────────────── */
+.debate-round-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 4px 8px 6px;
+  margin-bottom: 12px;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  width: 100%;
+  text-align: left;
+  border-radius: 0;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  transition: background 180ms ease, border-color 180ms ease;
+}
+.debate-round-title:hover {
+  background: rgba(255, 255, 255, 0.02);
+  border-bottom-color: rgba(245, 158, 11, 0.35);
+}
+.debate-round.is-collapsed .debate-round-title {
+  margin-bottom: 8px;
+}
+.round-narration {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.65);
+  letter-spacing: 0.005em;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.round-chevron {
+  font-family: "IBM Plex Mono", monospace;
+  color: rgba(255, 255, 255, 0.5);
+  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              color 180ms ease;
+  font-size: 12px;
+}
+.round-chevron.is-open {
+  transform: rotate(90deg);
+  color: var(--lamp);
+}
+.debate-round-title:hover .round-chevron { color: var(--lamp); }
+
+/* Mini row shown when the round is collapsed */
+.round-mini {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  padding: 0 4px 12px;
+  animation: mini-arrive 260ms ease-out both;
+}
+@keyframes mini-arrive {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.round-mini-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--tc-bg);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
+              background 180ms ease;
+}
+.round-mini-chip:hover {
+  transform: translateY(-1px) scale(1.05);
+  background: color-mix(in srgb, var(--tc-bg) 60%, rgba(255, 255, 255, 0.03));
+}
+.round-mini-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--tc);
+  box-shadow: 0 0 0 2px var(--tc-bg);
+}
+.round-mini-flip { color: var(--lamp); }
+
+/* Round grid animates in on expand */
+.debate-round-grid {
+  animation: grid-expand 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes grid-expand {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

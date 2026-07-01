@@ -2,7 +2,7 @@
 // rounds. Same panel picker as poll mode, but the transcript is a
 // round-by-round grid of agent cards with tool-call badges.
 
-import React, { useEffect, useReducer, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useReducer, useRef, useState } from "react";
 import { runDebate } from "./aguiClient.js";
 import Spinner from "./Spinner.jsx";
 import { PanelPicker, toneForProvider, initialsOf } from "./App.jsx";
@@ -354,10 +354,61 @@ function Verdict({ snapshot }) {
 }
 
 function VoteMatrix({ snapshot }) {
-  if (!snapshot?.rounds?.length) return null;
-  const rounds = snapshot.rounds;
-  // Union of all panelists that ever voted across any round
-  const seen = new Map(); // name -> {name, provider}
+  const gridRef = useRef(null);
+  const dotRefs = useRef({}); // key: `${name}:${ri}` -> HTMLElement
+  const [lines, setLines] = useState([]); // {rowKey, x1, y1, x2, y2, color}
+  const [hoveredRow, setHoveredRow] = useState(null);
+  const [hoveredCol, setHoveredCol] = useState(null);
+
+  const rounds = snapshot?.rounds;
+
+  // Recompute connecting lines whenever the ballots or viewport change.
+  useLayoutEffect(() => {
+    if (!gridRef.current || !rounds?.length) return;
+    function recompute() {
+      const grid = gridRef.current;
+      if (!grid) return;
+      const gridBox = grid.getBoundingClientRect();
+      const next = [];
+      for (const rowKey of Object.keys(dotRefs.current)) {
+        // rowKey shape: "Name:ri"
+      }
+      // Iterate row-by-row: connect each dot to the next dot in that row.
+      const rows = {};
+      for (const key of Object.keys(dotRefs.current)) {
+        const [name, ri] = key.split(":");
+        (rows[name] ||= []).push({ ri: Number(ri), el: dotRefs.current[key] });
+      }
+      for (const [name, dots] of Object.entries(rows)) {
+        dots.sort((a, b) => a.ri - b.ri);
+        for (let i = 0; i < dots.length - 1; i++) {
+          const a = dots[i].el?.getBoundingClientRect();
+          const b = dots[i + 1].el?.getBoundingClientRect();
+          if (!a || !b) continue;
+          const x1 = a.left + a.width / 2 - gridBox.left;
+          const y1 = a.top + a.height / 2 - gridBox.top;
+          const x2 = b.left + b.width / 2 - gridBox.left;
+          const y2 = b.top + b.height / 2 - gridBox.top;
+          const color = dots[i + 1].el?.dataset.tone
+            ? `var(--${dots[i + 1].el.dataset.tone})`
+            : "rgba(255,255,255,0.2)";
+          next.push({ rowKey: name, x1, y1, x2, y2, color });
+        }
+      }
+      setLines(next);
+    }
+    recompute();
+    const ro = new ResizeObserver(recompute);
+    ro.observe(gridRef.current);
+    window.addEventListener("resize", recompute);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", recompute);
+    };
+  }, [rounds?.map((r) => r.ballots.length).join(","), rounds?.length]);
+
+  if (!rounds?.length) return null;
+  const seen = new Map();
   for (const r of rounds) {
     for (const b of r.ballots) {
       if (!seen.has(b.name)) seen.set(b.name, { name: b.name, provider: b.provider });
@@ -366,34 +417,80 @@ function VoteMatrix({ snapshot }) {
   const panelists = [...seen.values()];
   if (!panelists.length) return null;
 
-  // Index per (name, round) → ballot | null
   function ballotFor(name, ri) {
     return rounds[ri]?.ballots.find((b) => b.name === name) || null;
   }
 
   return (
-    <section className="matrix">
+    <section
+      className="matrix"
+      onMouseLeave={() => {
+        setHoveredRow(null);
+        setHoveredCol(null);
+      }}
+    >
       <div className="matrix-head">
         <div className="matrix-eyebrow">The arc</div>
-        <div className="matrix-legend">each dot is a vote · arrow marks a flip</div>
+        <div className="matrix-legend">hover a row to trace a panelist · ↷ = flip</div>
       </div>
-      <div className="matrix-grid" style={{ gridTemplateColumns: `minmax(140px, 1.4fr) repeat(${rounds.length}, 1fr) minmax(70px, auto)` }}>
+      <div
+        ref={gridRef}
+        className="matrix-grid"
+        style={{
+          gridTemplateColumns: `minmax(140px, 1.4fr) repeat(${rounds.length}, 1fr) minmax(70px, auto)`,
+        }}
+      >
+        {/* SVG overlay for connecting lines. Positioned absolutely,
+            recomputed on layout changes. */}
+        <svg className="matrix-lines" aria-hidden="true">
+          {lines.map((ln, i) => {
+            const isHot = hoveredRow === ln.rowKey;
+            return (
+              <line
+                key={i}
+                x1={ln.x1}
+                y1={ln.y1}
+                x2={ln.x2}
+                y2={ln.y2}
+                stroke={ln.color}
+                strokeWidth={isHot ? 2.5 : 1.5}
+                strokeLinecap="round"
+                opacity={hoveredRow && !isHot ? 0.18 : 0.6}
+                className="matrix-line"
+                style={{
+                  strokeDasharray: 200,
+                  strokeDashoffset: 0,
+                  animationDelay: `${i * 90}ms`,
+                }}
+              />
+            );
+          })}
+        </svg>
+
         <div className="matrix-corner" />
-        {rounds.map((r) => (
-          <div key={r.index} className="matrix-col-head">
+        {rounds.map((r, ri) => (
+          <div
+            key={r.index}
+            className={`matrix-col-head ${hoveredCol === ri ? "is-hot" : ""}`}
+            onMouseEnter={() => setHoveredCol(ri)}
+          >
             <span className="round-mark">R</span>
             <span className="round-numeral">{romanOf(r.index)}</span>
           </div>
         ))}
         <div className="matrix-col-head matrix-final">Final</div>
 
-        {panelists.map((p) => {
+        {panelists.map((p, pi) => {
           const cells = rounds.map((r, ri) => ballotFor(p.name, ri));
           const final = [...cells].reverse().find((c) => c) || null;
           const tone = toneForProvider(p.provider);
+          const isHot = hoveredRow === p.name;
           return (
             <React.Fragment key={p.name}>
-              <div className={`matrix-row-head tone-${tone}`}>
+              <div
+                className={`matrix-row-head tone-${tone} ${isHot ? "is-hot" : ""}`}
+                onMouseEnter={() => setHoveredRow(p.name)}
+              >
                 <span className="matrix-disc" aria-hidden="true">
                   <span>{initialsOf(p.name)}</span>
                 </span>
@@ -403,12 +500,44 @@ function VoteMatrix({ snapshot }) {
                 const optIdx = b ? snapshot.options.indexOf(b.vote) : -1;
                 const cellTone = optIdx >= 0 ? toneFor(optIdx) : null;
                 const flipped = !!b?.flipped_from;
+                const dim = hoveredRow && hoveredRow !== p.name;
                 return (
-                  <div key={ri} className={`matrix-cell ${cellTone ? "tone-" + cellTone : "is-abstain"}`}>
+                  <div
+                    key={ri}
+                    className={
+                      `matrix-cell ${cellTone ? "tone-" + cellTone : "is-abstain"}` +
+                      (isHot ? " is-hot" : "") +
+                      (dim ? " is-dim" : "") +
+                      (hoveredCol === ri ? " is-colhot" : "")
+                    }
+                    onMouseEnter={() => setHoveredRow(p.name)}
+                    title={
+                      b
+                        ? `${p.name} · Round ${romanOf(ri)}: ${b.vote}` +
+                          (flipped ? ` (flipped from ${b.flipped_from})` : "")
+                        : `${p.name} · Round ${romanOf(ri)}: abstained`
+                    }
+                    style={{ animationDelay: `${(pi * 60) + (ri * 40)}ms` }}
+                  >
                     {b ? (
                       <>
-                        <span className="matrix-dot" title={b.vote} />
-                        {flipped && <span className="matrix-flip" title={`flipped from ${b.flipped_from}`}>↷</span>}
+                        <span
+                          className="matrix-dot"
+                          ref={(el) => {
+                            const key = `${p.name}:${ri}`;
+                            if (el) {
+                              el.dataset.tone = cellTone || "";
+                              dotRefs.current[key] = el;
+                            } else {
+                              delete dotRefs.current[key];
+                            }
+                          }}
+                        />
+                        {flipped && (
+                          <span className="matrix-flip" title={`flipped from ${b.flipped_from}`}>
+                            ↷
+                          </span>
+                        )}
                       </>
                     ) : (
                       <span className="matrix-dash">—</span>
@@ -416,7 +545,7 @@ function VoteMatrix({ snapshot }) {
                   </div>
                 );
               })}
-              <div className="matrix-final-cell">
+              <div className={`matrix-final-cell ${isHot ? "is-hot" : ""}`}>
                 {final ? final.vote : <span className="matrix-dash">—</span>}
               </div>
             </React.Fragment>
@@ -432,23 +561,86 @@ function romanOf(n) {
   return ROMAN[n] ?? String(n + 1);
 }
 
-function Round({ round, toolCalls, snapshot }) {
+function narrateRound(round, options) {
+  const ballots = round.ballots;
+  if (!ballots.length) return "No ballots landed in this round.";
+  const byOpt = new Map();
+  for (const b of ballots) {
+    if (!byOpt.has(b.vote)) byOpt.set(b.vote, []);
+    byOpt.get(b.vote).push(b.name);
+  }
+  // Sort options by votes desc, then by original order
+  const buckets = [...byOpt.entries()].sort((a, b) => {
+    if (b[1].length !== a[1].length) return b[1].length - a[1].length;
+    return options.indexOf(a[0]) - options.indexOf(b[0]);
+  });
+  const flips = ballots.filter((b) => b.flipped_from);
+  const summary = buckets
+    .map(([opt, names]) => `${opt} ${names.length}`)
+    .join(" · ");
+  const parts = [summary];
+  if (flips.length) {
+    const flipLine = flips
+      .map(
+        (b) =>
+          `${b.name.split(" ").slice(0, 2).join(" ")} → ${b.vote}`,
+      )
+      .join(", ");
+    parts.push(`Flips: ${flipLine}`);
+  }
+  return parts.join("   ·   ");
+}
+
+function Round({ round, toolCalls, snapshot, isLatest }) {
+  const [open, setOpen] = useState(isLatest);
+  useEffect(() => {
+    // When a new "latest" round arrives, auto-expand it. Older rounds
+    // keep their user-toggled state.
+    if (isLatest) setOpen(true);
+  }, [isLatest]);
+  const narrated = narrateRound(round, snapshot?.options || []);
   return (
-    <div className="debate-round">
-      <div className="debate-round-title">
+    <div className={`debate-round ${open ? "is-open" : "is-collapsed"}`}>
+      <button
+        type="button"
+        className="debate-round-title"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
         <span className="round-mark">Round</span>
         <span className="round-numeral">{romanOf(round.index)}</span>
-      </div>
-      <div className="debate-round-grid">
-        {round.ballots.map((b) => (
-          <AgentCard
-            key={`${round.index}-${b.name}`}
-            ballot={b}
-            snapshot={snapshot}
-            toolCalls={toolCalls[`${round.index}:${b.name}`] || []}
-          />
-        ))}
-      </div>
+        <span className="round-narration">{narrated}</span>
+        <span className={`round-chevron ${open ? "is-open" : ""}`} aria-hidden="true">
+          ▸
+        </span>
+      </button>
+      {!open && (
+        <div className="round-mini">
+          {round.ballots.map((b) => {
+            const idx = snapshot?.options?.indexOf(b.vote) ?? -1;
+            const tone = idx >= 0 ? toneFor(idx) : "aqua";
+            return (
+              <span key={b.name} className={`round-mini-chip tone-${tone}`} title={`${b.name} voted ${b.vote}`}>
+                <span className="round-mini-dot" />
+                <span className="round-mini-name">{b.name.split(" ").slice(0, 2).join(" ")}</span>
+                {b.flipped_from && <span className="round-mini-flip">↷</span>}
+              </span>
+            );
+          })}
+        </div>
+      )}
+      {open && (
+        <div className="debate-round-grid">
+          {round.ballots.map((b) => (
+            <AgentCard
+              key={`${round.index}-${b.name}`}
+              ballot={b}
+              snapshot={snapshot}
+              toolCalls={toolCalls[`${round.index}:${b.name}`] || []}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -528,12 +720,13 @@ export default function DebateView({ panelists, selected, toggleModel }) {
           <>
             <TallyBar snapshot={state.snapshot} />
             <VoteMatrix snapshot={state.snapshot} />
-            {state.snapshot.rounds?.map((r) => (
+            {state.snapshot.rounds?.map((r, i) => (
               <Round
                 key={r.index}
                 round={r}
                 snapshot={state.snapshot}
                 toolCalls={state.toolCalls}
+                isLatest={i === state.snapshot.rounds.length - 1}
               />
             ))}
             {state.summary && (
