@@ -161,22 +161,33 @@ function applyA2UI(state, msg) {
 }
 
 function ToolNote({ item }) {
+  const cachedMark = item.cached ? " · cached" : "";
   if (item.tool === "web_search")
     return (
       <div className="tool-note">
         <span className="tool-note-agent">{item.agent}</span>
-        <span className="tool-badge">🔎 searched “{(item.query || "").slice(0, 60)}”</span>
+        <span className={`tool-badge ${item.cached ? "is-cached" : ""}`}>
+          🔎 searched “{(item.query || "").slice(0, 60)}”{cachedMark}
+        </span>
       </div>
     );
   if (item.tool === "browse") {
     let host = item.url || "";
     try {
-      host = new URL(item.url).host;
+      host = new URL(item.url).host.replace(/^www\./, "");
     } catch {}
     return (
       <div className="tool-note">
         <span className="tool-note-agent">{item.agent}</span>
-        <span className="tool-badge">🌐 browsed {host}</span>
+        <a
+          className={`tool-badge tool-badge-link ${item.cached ? "is-cached" : ""}`}
+          href={item.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          title={item.url}
+        >
+          🌐 {host}{cachedMark}
+        </a>
       </div>
     );
   }

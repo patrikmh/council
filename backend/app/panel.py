@@ -110,9 +110,11 @@ PANELIST_PROMPT = (
     "current facts, numbers, rankings, news, prices, sports results, or "
     "anything you might be out of date on — do not guess from stale "
     "training data. A good pattern is: one web_search to find sources, one "
-    "or two browse calls to read the strongest ones, then vote. Cite the "
-    "site or source in your reasoning (e.g. 'per the UN HDI 2025 report…') "
-    "so the panel can tell your ballot from a vibes-based one."
+    "or two browse calls to read the strongest ones, then vote.\n\n"
+    "When you use a source, INLINE the raw URL in your reasoning (e.g. "
+    "'per hdr.undp.org/en/2025-report at https://hdr.undp.org/2025 …'). "
+    "The UI turns any http(s) URL in your reasoning into a clickable link, "
+    "so real URLs = real citations. Do not invent URLs."
 )
 
 SUMMARIZER_PROMPT = (

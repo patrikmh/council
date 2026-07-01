@@ -37,11 +37,13 @@ DEBATE_PROMPT = (
     "results, and browse(url) fetches the readable text of a page. USE "
     "THEM aggressively this round — if another panelist made a factual "
     "claim (a ranking, a statistic, a date, a quote), verify it before "
-    "agreeing or rebutting. A good move is: web_search to find a source, "
-    "browse the strongest one, then cite it by name in your reasoning "
-    "('Norway is #1 on the 2025 UN HDI, per hdr.undp.org'). Don't argue "
-    "from vibes when you can argue from a source. Keep the reasoning to "
-    "two or three sentences after you've done the research."
+    "agreeing or rebutting.\n\n"
+    "When you cite a source, INLINE the raw URL in your reasoning (e.g. "
+    "'Norway leads the HDI 2025 — see https://hdr.undp.org/2025'). The UI "
+    "renders any http(s) URL as a clickable link, so a bare URL becomes a "
+    "proper citation. Do not invent URLs — only cite ones you actually "
+    "browsed or that came back from a search. Keep the reasoning to two "
+    "or three sentences after you've done the research."
 )
 
 

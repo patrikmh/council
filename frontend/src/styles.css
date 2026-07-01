@@ -1003,3 +1003,123 @@ body {
   border-color: rgba(107, 114, 128, 0.25);
   font-style: italic;
 }
+
+/* ── Reasoning text: inline URL → clickable host badge ─────────────────── */
+.reason-link {
+  color: var(--ink);
+  text-decoration: none;
+  background: rgba(0, 0, 0, 0.05);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
+  padding: 0 4px;
+  border-radius: 2px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.reason-link:hover {
+  background: rgba(20, 184, 166, 0.15);
+  border-bottom-color: var(--aqua-deep);
+}
+
+/* ── Sources block under each debate ballot ─────────────────────────────── */
+.sources {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+.sources-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.sources-label-sub {
+  margin-top: 10px;
+}
+.sources-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sources-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+}
+.sources-list li.is-cached { opacity: 0.55; }
+.sources-list a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 3px 8px;
+  background: rgba(0, 0, 0, 0.04);
+  border-left: 2px solid var(--aqua-deep);
+  border-radius: 0 4px 4px 0;
+  transition: background 0.15s, border-color 0.15s;
+  min-width: 0;
+}
+.sources-list a:hover {
+  background: rgba(20, 184, 166, 0.12);
+  border-left-color: var(--aqua);
+}
+.src-host {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  color: var(--ink);
+}
+.src-path {
+  font-family: "IBM Plex Mono", monospace;
+  color: var(--ink-soft);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.src-flag {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  color: var(--ink-soft);
+  font-style: italic;
+}
+.sources-queries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 6px;
+}
+.src-query {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.04);
+  color: var(--ink-soft);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.src-query.is-cached {
+  opacity: 0.55;
+  font-style: italic;
+}
+
+/* Poll-mode tool note: browsed hostname is now an <a> */
+.tool-badge-link {
+  cursor: pointer;
+  text-decoration: none;
+}
+.tool-badge-link:hover {
+  background: rgba(125, 211, 252, 0.22);
+  border-color: var(--sky);
+}

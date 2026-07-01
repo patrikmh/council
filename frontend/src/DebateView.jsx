@@ -111,26 +111,102 @@ function toneFor(optionIndex) {
   return TONES[optionIndex % TONES.length];
 }
 
-function ToolBadge({ call }) {
-  const mark = call.cached ? " · cached" : "";
-  if (call.tool === "web_search")
-    return (
-      <span className={`tool-badge ${call.cached ? "is-cached" : ""}`}>
-        🔎 searched “{(call.query || "").slice(0, 60)}”{mark}
-      </span>
-    );
-  if (call.tool === "browse") {
-    let host = call.url || "";
-    try {
-      host = new URL(call.url).host;
-    } catch {}
-    return (
-      <span className={`tool-badge ${call.cached ? "is-cached" : ""}`}>
-        🌐 browsed {host}{mark}
-      </span>
-    );
+function hostOf(url) {
+  try {
+    return new URL(url).host.replace(/^www\./, "");
+  } catch {
+    return url;
   }
-  return <span className="tool-badge">🛠 {call.tool}</span>;
+}
+
+function pathOf(url) {
+  try {
+    const u = new URL(url);
+    return (u.pathname + u.search).replace(/\/$/, "") || "/";
+  } catch {
+    return "";
+  }
+}
+
+// Turn any http(s) URL in a run of text into a clickable link. The link
+// label is the host so the reasoning stays readable at a glance; the full
+// URL is the href and a title tooltip.
+function linkifyReasoning(text) {
+  const parts = text.split(/(https?:\/\/[^\s)\]]+)/g);
+  return parts.map((part, i) =>
+    /^https?:/.test(part) ? (
+      <a
+        key={i}
+        href={part}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="reason-link"
+        title={part}
+      >
+        {hostOf(part)}
+      </a>
+    ) : (
+      <React.Fragment key={i}>{part}</React.Fragment>
+    ),
+  );
+}
+
+function Sources({ toolCalls }) {
+  if (!toolCalls?.length) return null;
+  const searches = toolCalls.filter((c) => c.tool === "web_search");
+  // De-dup browsed URLs so the same link isn't listed twice.
+  const browseByUrl = new Map();
+  for (const c of toolCalls) {
+    if (c.tool !== "browse" || !c.url) continue;
+    const existing = browseByUrl.get(c.url);
+    if (!existing || (existing.cached && !c.cached)) {
+      browseByUrl.set(c.url, c);
+    }
+  }
+  const browses = [...browseByUrl.values()];
+  if (!searches.length && !browses.length) return null;
+  return (
+    <div className="sources">
+      {browses.length > 0 && (
+        <>
+          <div className="sources-label">Sources</div>
+          <ul className="sources-list">
+            {browses.map((b, i) => (
+              <li key={i} className={b.cached ? "is-cached" : ""}>
+                <a
+                  href={b.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={b.url}
+                >
+                  <span className="src-host">{hostOf(b.url)}</span>
+                  <span className="src-path">{pathOf(b.url).slice(0, 48)}</span>
+                </a>
+                {b.cached && <span className="src-flag">cached</span>}
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      {searches.length > 0 && (
+        <>
+          <div className="sources-label sources-label-sub">Searches run</div>
+          <div className="sources-queries">
+            {searches.map((s, i) => (
+              <span
+                key={i}
+                className={`src-query ${s.cached ? "is-cached" : ""}`}
+                title={s.query || ""}
+              >
+                {(s.query || "").slice(0, 80)}
+                {s.cached && <span className="src-flag"> · cached</span>}
+              </span>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 function optionIndex(snapshot, vote) {
@@ -181,14 +257,10 @@ function AgentCard({ ballot, toolCalls, snapshot }) {
           </span>
         )}
       </div>
-      <div className="debate-card-reason">{ballot.reasoning}</div>
-      {toolCalls?.length > 0 && (
-        <div className="debate-card-tools">
-          {toolCalls.map((c, i) => (
-            <ToolBadge key={i} call={c} />
-          ))}
-        </div>
-      )}
+      <div className="debate-card-reason">
+        {linkifyReasoning(ballot.reasoning)}
+      </div>
+      <Sources toolCalls={toolCalls} />
     </div>
   );
 }
