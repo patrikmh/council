@@ -1549,3 +1549,200 @@ body::after {
     transform: rotate(-8deg);
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   THE TABLE — round table with chairs around it
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.chamber {
+  padding: 8px 4px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.chamber-hint {
+  margin-top: 4px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  color: rgba(239, 68, 68, 0.65);
+}
+
+.table-scene {
+  position: relative;
+  width: 100%;
+  height: clamp(320px, 44vw, 400px);
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+/* The oval table itself. Paper-toned, with a subtle inner shadow so it
+   reads as a solid surface rather than a flat blob. */
+.round-table {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 46%;
+  height: 42%;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      ellipse at 40% 30%,
+      rgba(250, 248, 244, 0.06) 0%,
+      rgba(250, 248, 244, 0.02) 40%,
+      rgba(15, 20, 25, 0.4) 100%
+    ),
+    linear-gradient(140deg, #1a2028 0%, #12181d 100%);
+  border: 1px solid rgba(245, 158, 11, 0.14);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -8px 24px rgba(0, 0, 0, 0.4),
+    0 6px 20px rgba(0, 0, 0, 0.35);
+  display: grid;
+  place-items: center;
+}
+.round-table::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 1px dashed rgba(245, 158, 11, 0.14);
+}
+.table-watermark {
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(14px, 2.4vw, 20px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(245, 158, 11, 0.24);
+  user-select: none;
+}
+
+/* Chair = the model. Absolutely positioned via inline (left, top) from JSX. */
+.chair {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: none;
+  padding: 4px 2px;
+  cursor: pointer;
+  font: inherit;
+  color: rgba(255, 255, 255, 0.42);
+  transition:
+    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.15s ease,
+    filter 0.2s ease;
+  width: 108px;
+  z-index: 2;
+}
+.chair:hover:not(:disabled) {
+  transform: translate(-50%, calc(-50% - 3px));
+  z-index: 3;
+}
+.chair:disabled { cursor: default; }
+
+.chair-disc {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+  background: rgba(20, 26, 32, 0.85);
+  border: 1.5px solid rgba(255, 255, 255, 0.1);
+  transition: background 0.25s ease, border-color 0.25s ease,
+              box-shadow 0.25s ease;
+}
+.chair-disc-inner {
+  font-family: "IBM Plex Mono", monospace;
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.15s ease;
+}
+.chair.is-on .chair-disc {
+  background: var(--tc-bg);
+  border-color: var(--tc-deep);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.25),
+              0 0 12px color-mix(in srgb, var(--tc) 40%, transparent);
+}
+.chair.is-on .chair-disc-inner { color: var(--tc); }
+.chair.is-on { color: var(--tc); }
+.chair:not(.is-on) { filter: saturate(0.55); }
+
+.chair-name {
+  font-family: "Inter", system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: inherit;
+  text-align: center;
+  max-width: 108px;
+  line-height: 1.2;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(15, 20, 25, 0.65);
+  backdrop-filter: blur(4px);
+}
+.chair.is-on .chair-name { color: rgba(255, 255, 255, 0.95); }
+.chair-provider {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: lowercase;
+  color: rgba(255, 255, 255, 0.32);
+}
+.chair.is-on .chair-provider { color: var(--tc); opacity: 0.75; }
+
+.chair.is-thinking .chair-halo {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 1.5px solid var(--tc);
+  opacity: 0.6;
+  animation: seat-pulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.chair.is-dead {
+  opacity: 0.32;
+  cursor: not-allowed;
+  filter: saturate(0.2) blur(0.3px);
+}
+.chair.is-dead .chair-name {
+  text-decoration: line-through;
+  text-decoration-color: rgba(239, 68, 68, 0.6);
+}
+.chair-flag {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  color: rgba(239, 68, 68, 0.85);
+  letter-spacing: 0.06em;
+}
+
+/* Narrow screens: fall back to a compact scrolling row so chairs don't
+   crash together on a phone. */
+@media (max-width: 640px) {
+  .table-scene {
+    height: auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px 14px;
+    padding: 6px 4px;
+  }
+  .round-table { display: none; }
+  .chair {
+    position: static;
+    transform: none;
+    width: auto;
+    min-width: 78px;
+  }
+  .chair:hover:not(:disabled) { transform: translateY(-2px); }
+}

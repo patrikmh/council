@@ -52,24 +52,39 @@ export function initialsOf(name) {
 export function PanelPicker({ panelists, selected, toggleModel, disabled, thinkingSet }) {
   if (panelists.length === 0) return null;
   const deadCount = panelists.filter((p) => p.available === false).length;
+  const N = panelists.length;
+
+  // Fall back to the compact linear list on narrow screens (media query
+  // handles the actual switch; JSX renders both, CSS shows one).
   return (
-    <div className="seating">
-      <span className="seating-label">The table</span>
-      <div className="seating-row">
-        {panelists.map((p) => {
+    <div className="chamber">
+      <div className="table-scene" style={{ "--seats": N }}>
+        <div className="round-table" aria-hidden="true">
+          <span className="table-watermark">Rabble</span>
+        </div>
+        {panelists.map((p, i) => {
           const dead = p.available === false;
           const on = selected.has(p.name);
           const thinking = thinkingSet?.has(p.name);
           const tone = toneForProvider(p.provider);
+          // Place chairs evenly around an ellipse, starting at 12 o'clock.
+          const angle = (i / N) * 2 * Math.PI - Math.PI / 2;
+          const x = Math.cos(angle) * 44; // % of container half-width
+          const y = Math.sin(angle) * 38; // % — squished for ellipse
+          const style = {
+            left: `calc(50% + ${x}%)`,
+            top: `calc(50% + ${y}%)`,
+          };
           return (
             <button
               key={p.name}
               className={
-                `seat tone-${tone}` +
+                `chair tone-${tone}` +
                 (on ? " is-on" : "") +
                 (dead ? " is-dead" : "") +
                 (thinking ? " is-thinking" : "")
               }
+              style={style}
               disabled={disabled || dead}
               onClick={() => !dead && toggleModel(p.name)}
               title={
@@ -78,21 +93,21 @@ export function PanelPicker({ panelists, selected, toggleModel, disabled, thinki
                   : `${p.provider} · ${p.slug}`
               }
             >
-              <span className="seat-disc" aria-hidden="true">
-                <span className="seat-disc-inner">{initialsOf(p.name)}</span>
-                {thinking && <span className="seat-halo" />}
+              <span className="chair-disc" aria-hidden="true">
+                <span className="chair-disc-inner">{initialsOf(p.name)}</span>
+                {thinking && <span className="chair-halo" />}
               </span>
-              <span className="seat-name">{p.name}</span>
-              <span className="seat-provider">{p.provider}</span>
-              {dead && <span className="seat-flag">404</span>}
+              <span className="chair-name">{p.name}</span>
+              <span className="chair-provider">{p.provider}</span>
+              {dead && <span className="chair-flag">404</span>}
             </button>
           );
         })}
       </div>
       {deadCount > 0 && (
-        <span className="seating-hint">
+        <div className="chamber-hint">
           {deadCount} seat{deadCount === 1 ? "" : "s"} not on OpenRouter
-        </span>
+        </div>
       )}
     </div>
   );
