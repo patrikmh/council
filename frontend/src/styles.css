@@ -624,10 +624,12 @@ body {
 
 /* ── Tabs (Poll / Debate / Stats) — primary nav with inline hints ──── */
 .tabs {
-  margin-left: auto;
+  /* No more auto-margin push — with the brand gone from the left, tabs
+     start from the shell edge and read as a proper section nav. */
   display: flex;
   gap: 0;
   align-items: stretch;
+  width: 100%;
 }
 .tab {
   background: transparent;
@@ -1822,21 +1824,21 @@ body::after {
 
 /* ── Table logo in the middle ────────────────────────────────────────── */
 .table-logo {
-  width: 60%;
-  max-width: 96px;
+  width: 46%;
+  max-width: 72px;
   height: auto;
-  opacity: 0.55;
-  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.15));
+  opacity: 0.95;
+  filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.35));
   animation: table-breathe 6s ease-in-out infinite;
   user-select: none;
   pointer-events: none;
 }
 @keyframes table-breathe {
-  0%, 100% { opacity: 0.5; transform: scale(1); }
-  50%      { opacity: 0.7; transform: scale(1.03); }
+  0%, 100% { opacity: 0.88; transform: scale(1); }
+  50%      { opacity: 1;    transform: scale(1.03); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .table-logo { animation: none; opacity: 0.55; }
+  .table-logo { animation: none; opacity: 0.9; }
 }
 
 /* ── Matrix: SVG connecting lines + hover states ─────────────────────── */
@@ -2085,10 +2087,24 @@ body::after {
   font-family: "Fraunces", serif;
   font-weight: 500;
   font-style: italic;
-  font-size: clamp(14px, 1.6vw, 20px);
-  letter-spacing: 0.02em;
+  font-size: clamp(16px, 1.8vw, 22px);
+  letter-spacing: 0.005em;
   color: var(--paper);
   user-select: none;
-  opacity: 0.86;
-  margin-top: -2px;
+  opacity: 0.92;
+  margin-top: 2px;
+  line-height: 1;
+}
+
+/* ── Composer caption (replaces the orphaned empty-state paragraph) ──── */
+.composer-caption {
+  max-width: 580px;
+  margin: -8px auto 24px;
+  padding: 0 20px;
+  font-family: "Fraunces", serif;
+  font-style: italic;
+  font-size: 13px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.42);
+  text-align: center;
 }

@@ -728,16 +728,13 @@ export default function DebateView({ panelists, selected, toggleModel }) {
           {state.running ? "In session" : "Open the floor"}
         </button>
       </div>
+      {state.transcript.length === 0 && !state.snapshot && !state.running && (
+        <p className="composer-caption">
+          Every panelist casts an opening ballot, then they see each other,
+          argue, and may flip. They can search the web to check claims.
+        </p>
+      )}
       <main className="transcript debate-transcript">
-        {state.transcript.length === 0 && !state.snapshot && !state.running && (
-          <div className="empty">
-            <p className="empty-hint">
-              Every panelist casts an opening ballot, then they see each
-              other, argue, and may flip. They can search the web to check
-              claims.
-            </p>
-          </div>
-        )}
         {state.transcript
           .filter((it) => it.type !== "user")
           .map((it) => (

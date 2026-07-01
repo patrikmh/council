@@ -342,16 +342,13 @@ function PollView({ panelists, selected, toggleModel }) {
         thinkingSet={state.running ? selected : null}
       />
       {composer}
+      {isEmpty && (
+        <p className="composer-caption">
+          The panel frames 2–6 options, each member votes, one writes the
+          minutes.
+        </p>
+      )}
       <main className="transcript">
-        {isEmpty && (
-          <div className="empty">
-            <p className="empty-hint">
-              Ask any question — the panel frames 2–6 options, each member
-              votes, and one writes the minutes. Panelists can browse the web
-              if a fact needs checking.
-            </p>
-          </div>
-        )}
         {state.items.map((it) => {
           if (it.type === "user")
             return (
