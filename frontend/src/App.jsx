@@ -378,10 +378,30 @@ function PollView({ panelists, selected, toggleModel }) {
   );
 }
 
+// Phone detection: a coarse pointer (touch) on a smallish screen, or any
+// truly narrow viewport. Drives the `is-mobile` design mode on the shell —
+// CSS keys every mobile-specific rule off that class.
+const MOBILE_QUERY =
+  "((pointer: coarse) and (max-width: 1024px)), (max-width: 700px)";
+
+function useIsMobile() {
+  const [mobile, setMobile] = useState(
+    () => window.matchMedia(MOBILE_QUERY).matches,
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(MOBILE_QUERY);
+    const onChange = (e) => setMobile(e.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  return mobile;
+}
+
 export default function App() {
   const [mode, setMode] = useState("poll");
   const [panelists, setPanelists] = useState([]);
   const [selected, setSelected] = useState(new Set());
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetch("/panel")
@@ -411,7 +431,7 @@ export default function App() {
   }
 
   return (
-    <div className="shell">
+    <div className={`shell ${isMobile ? "is-mobile" : ""}`}>
       <header className="masthead">
         <span className="masthead-mark" aria-hidden="true">
           Rabble<span className="masthead-mark-dot">.</span>
