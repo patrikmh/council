@@ -65,6 +65,10 @@
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
   --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.5);
   --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6);
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 * {
@@ -75,7 +79,14 @@
 
 body {
   font-family: "Inter", system-ui, -apple-system, sans-serif;
-  background: var(--chamber);
+  /* Layered chamber: a faint warm lamp-glow from the top and a vignette
+     toward the edges, so the room has depth instead of one flat slate. */
+  background:
+    radial-gradient(120% 60% at 50% -10%,
+      rgba(245, 158, 11, 0.05) 0%, transparent 55%),
+    radial-gradient(90% 90% at 50% 40%,
+      var(--chamber-mid) 0%, var(--chamber) 55%, var(--chamber-deep) 100%);
+  background-attachment: fixed;
   color: #e5e7eb;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -127,6 +138,23 @@ body {
   letter-spacing: -0.01em;
   color: #f9fafb;
 }
+
+/* Compact wordmark anchoring the tab strip — without it the brand
+   vanishes entirely on the Debate and Stats tabs. */
+.masthead-mark {
+  align-self: center;
+  font-family: "Fraunces", serif;
+  font-weight: 640;
+  font-style: italic;
+  font-size: 17px;
+  letter-spacing: 0.01em;
+  color: rgba(249, 250, 251, 0.88);
+  padding: 0 22px 6px 2px;
+  margin-right: 6px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  user-select: none;
+}
+.masthead-mark-dot { color: var(--lamp); }
 
 /* ── Transcript ── */
 .transcript {
@@ -466,12 +494,17 @@ body {
 .composer button {
   font: 600 14px/1 "Inter", sans-serif;
   color: var(--chamber-deep);
-  background: var(--lamp);
+  background: linear-gradient(180deg, #fbc23f 0%, var(--lamp) 55%, #dd8b09 100%);
   border: none;
   border-radius: 14px;
   padding: 0 22px;
   cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 1px 3px rgba(0, 0, 0, 0.4);
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease,
+              filter 0.15s ease,
               font-size 300ms ease, padding 300ms ease, border-radius 300ms ease;
   white-space: nowrap;
 }
@@ -480,11 +513,18 @@ body {
 .composer.is-slim .btn-clear { padding: 0 10px; }
 .composer button:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 16px var(--lamp-glow);
+  filter: brightness(1.06);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
+    0 6px 20px var(--lamp-glow);
 }
 .composer button:active:not(:disabled) {
   transform: translateY(0);
-  box-shadow: none;
+  filter: brightness(0.97);
+  box-shadow:
+    inset 0 2px 4px rgba(0, 0, 0, 0.25),
+    0 1px 2px rgba(0, 0, 0, 0.3);
 }
 .composer button:disabled {
   opacity: 0.4;
@@ -495,17 +535,21 @@ body {
   outline-offset: 3px;
 }
 
-.btn-clear {
+/* Match .composer button specificity — a bare .btn-clear always lost. */
+.composer .btn-clear {
   background: transparent;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.45);
   border: 1px solid var(--border);
   padding: 0 14px;
   font-size: 16px;
+  box-shadow: none;
 }
-.btn-clear:hover:not(:disabled) {
+.composer .btn-clear:hover:not(:disabled) {
   color: var(--lamp);
   border-color: var(--lamp);
+  background: rgba(245, 158, 11, 0.06);
   box-shadow: none;
+  filter: none;
 }
 
 /* ── Motion: Reduced ── */
@@ -705,42 +749,47 @@ body {
 .debate-transcript { max-width: 900px; }
 .tally-bar {
   display: flex;
+  gap: 3px;
   width: 100%;
-  height: 22px;
-  border-radius: 6px;
+  height: 26px;
+  padding: 3px;
+  border-radius: 9px;
   overflow: hidden;
   margin: 12px 0 24px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
 }
 .tally-seg {
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--ink);
+  color: var(--chamber-deep);
+  font-weight: 600;
   font-size: 11px;
   font-family: "IBM Plex Mono", monospace;
-  transition: width 0.5s ease;
+  border-radius: 6px;
+  transition: width 0.65s var(--ease-out);
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
+  /* Tone comes from the .tone-* utility classes via --tc */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tc) 88%, white) 0%,
+    var(--tc) 55%,
+    color-mix(in srgb, var(--tc) 82%, var(--tc-deep)) 100%
+  );
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
 }
-.tally-seg.tone-aqua   { background: var(--aqua); }
-.tally-seg.tone-clay   { background: var(--clay); }
-.tally-seg.tone-violet { background: var(--violet); }
-.tally-seg.tone-rose   { background: var(--rose); }
-.tally-seg.tone-mint   { background: var(--mint); }
-.tally-seg.tone-sky    { background: var(--sky); }
-.tally-seg.tone-coral  { background: var(--coral); }
-.tally-seg.tone-gold   { background: var(--gold); }
 
 .debate-round { margin-bottom: 24px; }
 .debate-round-title {
   font-family: "Fraunces", serif;
   font-size: 15px;
   color: var(--ink-soft);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
   margin-bottom: 10px;
 }
 .debate-round-grid {
@@ -806,21 +855,30 @@ body {
   font-size: 18px;
   color: var(--paper);
 }
-.stats-window { display: flex; gap: 4px; }
+.stats-window {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
 .stats-window-btn {
   background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  color: var(--ink-soft);
+  border: none;
+  color: rgba(255, 255, 255, 0.45);
   border-radius: 6px;
   padding: 3px 10px;
   font: inherit;
   font-size: 12px;
   cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
 }
+.stats-window-btn:hover:not(.is-on) { color: rgba(255, 255, 255, 0.75); }
 .stats-window-btn.is-on {
   background: var(--paper);
   color: var(--ink);
-  border-color: var(--paper);
+  font-weight: 600;
 }
 .stats-table {
   width: 100%;
@@ -831,9 +889,10 @@ body {
 }
 .stats-table th,
 .stats-table td {
-  padding: 8px 10px;
+  padding: 9px 10px;
   text-align: left;
   border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-variant-numeric: tabular-nums;
 }
 .stats-table th {
   color: var(--ink-soft);
@@ -842,6 +901,10 @@ body {
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+.stats-table tbody tr { transition: background 140ms ease; }
+.stats-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
+/* The provider tag sits inside the model cell — give it air. */
+.stats-table .model-toggle-provider { margin-right: 8px; }
 .score-cell {
   position: relative;
   height: 18px;
@@ -853,11 +916,22 @@ body {
 .score-bar {
   position: absolute;
   left: 0;
-  top: 4px;
-  height: 10px;
-  background: linear-gradient(90deg, var(--aqua) 0%, var(--sky) 100%);
-  border-radius: 3px;
-  opacity: 0.5;
+  top: 3px;
+  height: 12px;
+  background: linear-gradient(90deg, var(--aqua-deep) 0%, var(--sky-deep) 100%);
+  border-radius: 4px;
+  opacity: 0.75;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transform-origin: left center;
+  animation: score-grow 700ms var(--ease-out) both;
+  transition: width 400ms var(--ease-out);
+}
+@keyframes score-grow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-bar { animation: none; }
 }
 .score-cell span {
   position: relative;
@@ -905,12 +979,18 @@ body {
 .verdict {
   margin: 28px 0 16px;
   padding: 24px 26px 20px;
-  background: var(--paper);
+  background: linear-gradient(180deg, #fffdf9 0%, var(--paper) 60%);
   color: var(--ink);
   border-radius: 14px;
   border-left: 6px solid var(--aqua-deep);
   position: relative;
   overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  animation: verdict-rise 480ms var(--ease-out) both;
+}
+@keyframes verdict-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 .verdict.tone-aqua   { border-left-color: var(--aqua-deep); }
 .verdict.tone-clay   { border-left-color: var(--clay-deep); }
@@ -994,6 +1074,40 @@ body {
 .verdict-voter { display: inline-flex; align-items: center; gap: 4px; }
 .verdict-voter-name { color: var(--ink); font-weight: 500; }
 .verdict-voter-vote { color: var(--ink); }
+.judge-ruling {
+  margin-top: 16px;
+  padding: 14px 16px 12px;
+  border-top: 3px double rgba(0, 0, 0, 0.14);
+  margin-left: -16px;
+  margin-right: -16px;
+  animation: judge-in 420ms var(--ease-out) 240ms both;
+}
+@keyframes judge-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.judge-winner {
+  font-family: "Fraunces", serif;
+  font-weight: 640;
+  font-size: 22px;
+  line-height: 1.1;
+  margin-bottom: 4px;
+}
+.judge-rationale {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+.judge-ruling.is-dissent {
+  background: linear-gradient(90deg, rgba(217, 119, 6, 0.07), transparent 65%);
+  border-left: 3px solid var(--clay-deep);
+  border-radius: 0 6px 6px 0;
+}
+.judge-ruling.is-dissent .verdict-eyebrow { color: var(--clay-deep); }
+@media (prefers-reduced-motion: reduce) {
+  .verdict, .judge-ruling { animation: none; }
+}
 
 /* ── Rabble minutes card ────────────────────────────────────────────────
    A tight pull-quote block that sits between the ballots and the verdict.
@@ -1679,6 +1793,16 @@ body::after {
   inset: 8px;
   border-radius: 50%;
   border: 1px dashed rgba(245, 158, 11, 0.14);
+  /* No rotation: the ring is elliptical, so spinning it would tumble it
+     out of the table. A slow opacity breath keeps it alive instead. */
+  animation: table-ring-breathe 8s ease-in-out infinite;
+}
+@keyframes table-ring-breathe {
+  0%, 100% { opacity: 0.6; }
+  50%      { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .round-table::before { animation: none; }
 }
 .table-watermark {
   font-family: "Fraunces", serif;
@@ -1949,11 +2073,10 @@ body::after {
   margin-bottom: 8px;
 }
 .round-narration {
-  font-family: "Fraunces", serif;
-  font-style: italic;
-  font-size: 13px;
-  color: rgba(255, 255, 255, 0.65);
-  letter-spacing: 0.005em;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.55);
+  letter-spacing: 0.02em;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;

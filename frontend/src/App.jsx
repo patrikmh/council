@@ -413,6 +413,9 @@ export default function App() {
   return (
     <div className="shell">
       <header className="masthead">
+        <span className="masthead-mark" aria-hidden="true">
+          Rabble<span className="masthead-mark-dot">.</span>
+        </span>
         <nav className="tabs" aria-label="Mode">
           {[
             ["poll", "Poll", "one question, everyone votes"],

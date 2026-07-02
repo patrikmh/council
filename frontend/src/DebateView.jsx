@@ -224,6 +224,7 @@ function TallyBar({ snapshot }) {
     <div className="tally-bar">
       {snapshot.options.map((opt, i) => {
         const n = snapshot.tally[opt] || 0;
+        if (!n) return null;
         const pct = total ? (100 * n) / total : 0;
         return (
           <div
@@ -258,7 +259,7 @@ function AgentCard({ ballot, toolCalls, snapshot }) {
         )}
       </div>
       <div className="debate-card-reason">
-        {linkifyReasoning(ballot.reasoning)}
+        {linkifyReasoning(ballot.argument || ballot.reasoning)}
       </div>
       <Sources toolCalls={toolCalls} />
     </div>
@@ -349,6 +350,20 @@ function Verdict({ snapshot }) {
           </span>
         ))}
       </div>
+      {snapshot.judge && (
+        <div
+          className={`judge-ruling ${
+            !tie && snapshot.judge.verdict !== winners[0]?.opt ? "is-dissent" : ""
+          }`}
+        >
+          <div className="verdict-eyebrow">
+            Judge's ruling
+            {!tie && snapshot.judge.verdict !== winners[0]?.opt && " — dissent"}
+          </div>
+          <div className="judge-winner">{snapshot.judge.verdict}</div>
+          <p className="judge-rationale">{snapshot.judge.rationale}</p>
+        </div>
+      )}
     </section>
   );
 }
@@ -773,6 +788,11 @@ export default function DebateView({ panelists, selected, toggleModel }) {
                 toolCalls={state.toolCalls}
               />
             ))}
+            {state.snapshot.stopped_early && (
+              <div className="note">
+                Gavel came down early: {state.snapshot.stopped_early}
+              </div>
+            )}
             {state.summary && (
               <aside className="minutes">
                 <div className="minutes-eyebrow">Rabble minutes</div>
