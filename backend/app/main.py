@@ -33,11 +33,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from . import a2ui, agui, openrouter as orcatalog, store, tavily
 from .memory import RunMemory
-from .config import build_panel, framer_model
+from .config import build_panel, framer_model, judge_model
 from .debate import (
     DEBATE_ROUNDS,
     debate_round,
     initial_ballots,
+    judge_verdict,
     stream_debate_summary,
 )
 from .guard import GuardError, client_ip, limiter, validate_question
@@ -113,7 +114,7 @@ async def _error_stream(body: RunAgentInput, message: str):
 import re as _re
 
 
-def _normalize_vote(raw: str, options: list[str]) -> str:
+def _normalize_vote(raw: str, options: list[str]) -> str | None:
     """Map a model's freeform vote back to one of the option labels.
 
     Handles common shapes models emit:
@@ -125,6 +126,10 @@ def _normalize_vote(raw: str, options: list[str]) -> str:
       "Option C: Denmark"    → "Denmark"
       "**Denmark**"          → "Denmark"          markdown fluff
       "the answer is Denmark"→ "Denmark"          substring fallback
+      "Denm"                 → "Denmark"          truncation fallback
+
+    Returns None when the vote can't be mapped to any option — callers
+    must treat that ballot as invalid rather than counting it.
     """
     stripped = raw.strip().strip("*_`\"' ")
 
@@ -162,7 +167,14 @@ def _normalize_vote(raw: str, options: list[str]) -> str:
     if len(matches) == 1:
         return matches[0]
 
-    return raw
+    # 5. Truncation fallback: the vote is a prefix/fragment of exactly one
+    #    option ("Denm" → "Denmark").
+    if len(stripped) >= 3:
+        matches = [opt for opt in options if lower in opt.lower()]
+        if len(matches) == 1:
+            return matches[0]
+
+    return None
 
 
 def _winner(options: list[str], ballots: list[dict]) -> str | None:
@@ -299,6 +311,12 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
                         "name": panelist.name, "error": str(ballot)[:200]}))
                     continue
                 vote_label = _normalize_vote(ballot.vote, framing.options)
+                if vote_label is None:
+                    state["expected"] -= 1
+                    yield agui.sse(agui.custom("panelist_error", {
+                        "name": panelist.name,
+                        "error": f"unparseable vote: {ballot.vote[:80]!r}"}))
+                    continue
                 state["ballots"].append({
                     "name": panelist.name,
                     "provider": panelist.provider,
@@ -420,11 +438,19 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
                 "rounds": [],
                 "tally": {opt: 0 for opt in framing.options},
                 "summary": "",
+                "stopped_early": None,
+                "judge": None,
                 "done": False,
             }
             yield agui.sse(agui.state_snapshot(state))
 
             tool_events: asyncio.Queue = asyncio.Queue()
+
+            # Consecutive failures per panelist; two in a row drops them
+            # from later rounds so one dead provider can't stall every
+            # remaining round for the full timeout.
+            failures: dict[str, int] = {}
+            dropped: set[str] = set()
 
             async def on_tool_call(payload: dict) -> None:
                 await tool_events.put(payload)
@@ -452,11 +478,18 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
                     get_ballot = asyncio.create_task(pump.results_get())
                     panelist, ballot = item
                     if isinstance(ballot, Exception):
+                        failures[panelist.name] = failures.get(panelist.name, 0) + 1
                         yield agui.sse(agui.custom("panelist_error", {
                             "name": panelist.name, "round": index,
                             "error": str(ballot)[:200]}))
                         continue
+                    failures.pop(panelist.name, None)
                     vote_label = _normalize_vote(ballot.vote, framing.options)
+                    if vote_label is None:
+                        yield agui.sse(agui.custom("panelist_error", {
+                            "name": panelist.name, "round": index,
+                            "error": f"unparseable vote: {ballot.vote[:80]!r}"}))
+                        continue
                     prior = _prior_vote(state, panelist.name, index)
                     entry = {
                         "name": panelist.name,
@@ -464,6 +497,8 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
                         "round": index,
                         "vote": vote_label,
                         "reasoning": ballot.reasoning,
+                        # Round 0 uses the plain Ballot, which has no argument.
+                        "argument": getattr(ballot, "argument", None),
                         "flipped_from": prior if prior and prior != vote_label else None,
                     }
                     round_ballots.append(entry)
@@ -479,21 +514,47 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
                                                           memory=memory)):
                 yield ev
 
+            # A unanimous opening ballot leaves nothing to debate.
+            round0 = state["rounds"][0]["ballots"] if state["rounds"] else []
+            if len(round0) >= 2 and len({b["vote"] for b in round0}) == 1:
+                state["stopped_early"] = "unanimous on the opening ballot"
+                yield agui.sse(agui.state_snapshot(state))
+
             # Rounds 1..N — persuasion. Each round sees the immediately
             # prior round for peer rebuttal, but memory keeps each
             # panelist's *own* history across every round.
             for r in range(1, DEBATE_ROUNDS + 1):
+                if state["stopped_early"]:
+                    break
                 prior_round = state["rounds"][r - 1]["ballots"]
                 if not prior_round:
                     break
+                for p in panel:
+                    if failures.get(p.name, 0) >= 2 and p.name not in dropped:
+                        dropped.add(p.name)
+                        yield agui.sse(agui.custom("panelist_error", {
+                            "name": p.name, "round": r,
+                            "error": "dropped for the rest of the debate "
+                                     "after repeated failures"}))
+                active = [p for p in panel if p.name not in dropped]
+                if not active:
+                    break
                 all_prior = [b for rd in state["rounds"] for b in rd["ballots"]]
                 async for ev in _run_round(
-                    r, debate_round(panel, question, framing, prior_round,
+                    r, debate_round(active, question, framing, prior_round,
                                      on_tool_call, context,
                                      memory=memory, round_index=r,
                                      all_prior_ballots=all_prior)
                 ):
                     yield ev
+                # A round where nobody flipped means positions are settled
+                # — skip the remaining rounds.
+                this_round = state["rounds"][-1]["ballots"]
+                if (r < DEBATE_ROUNDS and this_round
+                        and not any(b["flipped_from"] for b in this_round)):
+                    state["stopped_early"] = (
+                        f"no flips in round {r + 1} — positions are settled")
+                    yield agui.sse(agui.state_snapshot(state))
 
             # Summary
             yield agui.sse(agui.step_started("summarize"))
@@ -505,11 +566,31 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
             yield agui.sse(agui.text_end(msg_id))
             yield agui.sse(agui.step_finished("summarize"))
 
+            # Judge's ruling — argument quality, not the tally. Best-effort:
+            # a dead judge model never kills the run.
+            yield agui.sse(agui.step_started("judge"))
+            try:
+                verdict = await judge_verdict(judge_model(panel), state)
+                state["judge"] = {
+                    "verdict": _normalize_vote(verdict.winner, framing.options)
+                               or verdict.winner,
+                    "rationale": verdict.rationale,
+                }
+            except Exception:
+                log.exception("judge_failed")
+            yield agui.sse(agui.state_snapshot(state))
+            yield agui.sse(agui.step_finished("judge"))
+
             state["done"] = True
             yield agui.sse(agui.state_snapshot(state))
 
-            final_round = state["rounds"][-1]["ballots"] if state["rounds"] else []
-            winner = _winner(framing.options, final_round)
+            # Winner from each panelist's latest vote (matches the tally the
+            # UI shows) — final-round-only would erase dropped panelists.
+            tally = _current_tally(state, framing.options)
+            winner = None
+            if any(tally.values()):
+                top = max(tally.values())
+                winner = next(opt for opt in framing.options if tally[opt] == top)
             try:
                 await store.record_run(
                     thread_id=body.thread_id,
@@ -559,7 +640,8 @@ def _current_tally(state: dict, options: list[str]) -> dict:
             latest[b["name"]] = b["vote"]
     counts = {opt: 0 for opt in options}
     for v in latest.values():
-        counts[v] = counts.get(v, 0) + 1
+        if v in counts:
+            counts[v] += 1
     return counts
 
 

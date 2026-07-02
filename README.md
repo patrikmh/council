@@ -48,7 +48,7 @@ ROUNDTABLE_PANEL=anthropic/claude-sonnet-4.6,openai/gpt-5.2,google/gemini-3.1-pr
 ```
 
 Adding a sixth model to the table is a one-line env change, no code. The
-framer/summarizer defaults to Haiku via OpenRouter (`FRAMER_MODEL` to
+framer/summarizer defaults to Sonnet 5 via OpenRouter (`FRAMER_MODEL` to
 override). Hover a chip in the UI to read that model's reasoning.
 
 ## Running it

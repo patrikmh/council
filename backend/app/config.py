@@ -77,7 +77,15 @@ def build_panel() -> list[Panelist]:
 
 
 def framer_model(panel: list[Panelist]):
-    """Framer/summarizer: cheap and fast. Defaults to Haiku via OpenRouter,
+    """Framer/summarizer: defaults to Sonnet 5 via OpenRouter,
     override with FRAMER_MODEL (any OpenRouter slug)."""
-    slug = os.getenv("FRAMER_MODEL", "anthropic/claude-haiku-4.5")
+    slug = os.getenv("FRAMER_MODEL", "anthropic/claude-sonnet-5")
+    return _openrouter_model(slug)
+
+
+def judge_model(panel: list[Panelist]):
+    """Debate judge: weighs argument quality after the final round.
+    Defaults to the framer's model, override with JUDGE_MODEL."""
+    slug = os.getenv("JUDGE_MODEL") or os.getenv(
+        "FRAMER_MODEL", "anthropic/claude-haiku-4.5")
     return _openrouter_model(slug)

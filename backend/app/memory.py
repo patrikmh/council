@@ -65,6 +65,39 @@ class RunMemory:
             entry["url"] = url
         self.tool_calls[agent].append(entry)
 
+    def evidence_board(self, max_items: int = 12) -> str:
+        """Compact cross-panel list of every query searched and URL browsed
+        so far, so panelists can cite each other's findings instead of
+        re-searching. Empty string when nothing has been gathered."""
+        entries = [(agent, c) for agent, calls in self.tool_calls.items()
+                   for c in calls]
+        seen: set[str] = set()
+        lines: list[str] = []
+        for agent, c in entries:
+            if len(lines) >= max_items:
+                break
+            if c["kind"] == "search":
+                query = c.get("query", "")
+                key = "s:" + _normalize_query(query)
+                label = f'[{agent}] searched: "{query[:100]}"'
+            else:
+                url = (c.get("url") or "").strip()
+                key = "b:" + url
+                title = ""
+                cached = self.browse_cache.get(url, "")
+                if cached.startswith("Title: "):
+                    title = cached.split("\n", 1)[0][len("Title: "):][:80] + " — "
+                label = f"[{agent}] browsed: {title}{url[:100]}"
+            if key in seen:
+                continue
+            seen.add(key)
+            lines.append("  - " + label)
+        if not lines:
+            return ""
+        return ("Evidence gathered by the panel so far (any panelist may "
+                "cite these; browsing a listed URL again is cached and "
+                "free):\n" + "\n".join(lines))
+
     def agent_history(
         self,
         agent: str,
