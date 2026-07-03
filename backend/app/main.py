@@ -322,6 +322,7 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
                     "provider": panelist.provider,
                     "vote": vote_label,
                     "reasoning": ballot.reasoning,
+                    "confidence": ballot.confidence,
                 })
                 yield agui.sse(agui.state_snapshot(state))
                 yield agui.sse(agui.custom(
@@ -359,6 +360,7 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
                             "vote": b["vote"],
                             "flipped_from": None,
                             "reasoning": b["reasoning"],
+                            "confidence": b.get("confidence"),
                         }
                         for b in state["ballots"]
                     ],
@@ -435,6 +437,7 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
             state: dict = {
                 "question": question,
                 "options": framing.options,
+                "criteria": framing.criteria,
                 "rounds": [],
                 "tally": {opt: 0 for opt in framing.options},
                 "summary": "",
@@ -443,6 +446,12 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
                 "done": False,
             }
             yield agui.sse(agui.state_snapshot(state))
+
+            # Stable per-run pseudonyms: debate rounds are anonymized so
+            # peers argue against positions, not brands. Real names are
+            # restored before anything reaches state or the UI.
+            aliases = {name: f"Panelist {i + 1}"
+                       for i, name in enumerate(sorted(p.name for p in panel))}
 
             tool_events: asyncio.Queue = asyncio.Queue()
 
@@ -455,7 +464,7 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
             async def on_tool_call(payload: dict) -> None:
                 await tool_events.put(payload)
 
-            async def _run_round(index: int, iterator):
+            async def _run_round(index: int, iterator, dissenter: str | None = None):
                 round_ballots: list[dict] = []
                 state["rounds"].append({"index": index, "ballots": round_ballots})
                 pump = _pump(iterator)
@@ -497,8 +506,12 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
                         "round": index,
                         "vote": vote_label,
                         "reasoning": ballot.reasoning,
-                        # Round 0 uses the plain Ballot, which has no argument.
+                        # Round 0 uses the plain Ballot, which has no
+                        # argument or steelman.
                         "argument": getattr(ballot, "argument", None),
+                        "steelman": getattr(ballot, "steelman", None),
+                        "confidence": ballot.confidence,
+                        "role": "dissenter" if panelist.name == dissenter else None,
                         "flipped_from": prior if prior and prior != vote_label else None,
                     }
                     round_ballots.append(entry)
@@ -540,11 +553,16 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
                 if not active:
                     break
                 all_prior = [b for rd in state["rounds"] for b in rd["ballots"]]
+                # Rotating assigned devil's advocate: one panelist per round
+                # must argue against the current leading option.
+                dissenter = active[(r - 1) % len(active)].name
                 async for ev in _run_round(
                     r, debate_round(active, question, framing, prior_round,
                                      on_tool_call, context,
                                      memory=memory, round_index=r,
-                                     all_prior_ballots=all_prior)
+                                     all_prior_ballots=all_prior,
+                                     aliases=aliases, dissenter=dissenter),
+                    dissenter=dissenter,
                 ):
                     yield ev
                 # A round where nobody flipped means positions are settled
@@ -570,7 +588,8 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
             # a dead judge model never kills the run.
             yield agui.sse(agui.step_started("judge"))
             try:
-                verdict = await judge_verdict(judge_model(panel), state)
+                verdict = await judge_verdict(judge_model(panel), state,
+                                              criteria=framing.criteria)
                 state["judge"] = {
                     "verdict": _normalize_vote(verdict.winner, framing.options)
                                or verdict.winner,
@@ -591,12 +610,19 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
             if any(tally.values()):
                 top = max(tally.values())
                 winner = next(opt for opt in framing.options if tally[opt] == top)
+            # Round-0 majority vs final winner vs judge verdict — the raw
+            # material for the "does debate change outcomes" stat.
+            round0_ballots = state["rounds"][0]["ballots"] if state["rounds"] else []
+            round0_winner = _winner(framing.options, round0_ballots)
+            judge_winner = state["judge"]["verdict"] if state["judge"] else None
             try:
                 await store.record_run(
                     thread_id=body.thread_id,
                     mode="debate",
                     question=question,
                     winner=winner,
+                    round0_winner=round0_winner,
+                    judge_winner=judge_winner,
                     ballots=[
                         {
                             "name": b["name"],
@@ -605,6 +631,8 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
                             "vote": b["vote"],
                             "flipped_from": b.get("flipped_from"),
                             "reasoning": b["reasoning"],
+                            "confidence": b.get("confidence"),
+                            "role": b.get("role"),
                         }
                         for r in state["rounds"] for b in r["ballots"]
                     ],
@@ -652,6 +680,15 @@ async def stats_leaderboard(days: int = 30):
     if days <= 0 or days > 3650:
         raise HTTPException(400, "days out of range")
     return await store.leaderboard(days=days)
+
+
+@app.get("/stats/debate-delta")
+async def stats_debate_delta(days: int = 30):
+    """How often debate changed the outcome vs the round-0 majority, and
+    how often the judge's quality verdict disagreed with the final tally."""
+    if days <= 0 or days > 3650:
+        raise HTTPException(400, "days out of range")
+    return await store.debate_delta(days=days)
 
 
 @app.get("/stats/questions")

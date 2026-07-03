@@ -65,10 +65,15 @@ class RunMemory:
             entry["url"] = url
         self.tool_calls[agent].append(entry)
 
-    def evidence_board(self, max_items: int = 12) -> str:
+    def evidence_board(
+        self, max_items: int = 12, aliases: dict[str, str] | None = None
+    ) -> str:
         """Compact cross-panel list of every query searched and URL browsed
         so far, so panelists can cite each other's findings instead of
-        re-searching. Empty string when nothing has been gathered."""
+        re-searching. Empty string when nothing has been gathered.
+        ``aliases`` swaps real agent names for pseudonyms in attributions
+        (debate rounds are anonymized)."""
+        aliases = aliases or {}
         entries = [(agent, c) for agent, calls in self.tool_calls.items()
                    for c in calls]
         seen: set[str] = set()
@@ -76,10 +81,11 @@ class RunMemory:
         for agent, c in entries:
             if len(lines) >= max_items:
                 break
+            shown = aliases.get(agent, agent)
             if c["kind"] == "search":
                 query = c.get("query", "")
                 key = "s:" + _normalize_query(query)
-                label = f'[{agent}] searched: "{query[:100]}"'
+                label = f'[{shown}] searched: "{query[:100]}"'
             else:
                 url = (c.get("url") or "").strip()
                 key = "b:" + url
@@ -87,7 +93,7 @@ class RunMemory:
                 cached = self.browse_cache.get(url, "")
                 if cached.startswith("Title: "):
                     title = cached.split("\n", 1)[0][len("Title: "):][:80] + " — "
-                label = f"[{agent}] browsed: {title}{url[:100]}"
+                label = f"[{shown}] browsed: {title}{url[:100]}"
             if key in seen:
                 continue
             seen.add(key)
@@ -102,18 +108,25 @@ class RunMemory:
         self,
         agent: str,
         prior_ballots: list[dict],
+        aliases: dict[str, str] | None = None,
     ) -> str:
         """Build a compact 'your prior activity in this debate' block for
         *agent*, listing their own past votes and tool calls only. Empty
-        string when they've done nothing yet (round 0)."""
+        string when they've done nothing yet (round 0). ``aliases`` swaps
+        real panelist names for pseudonyms inside the quoted reasoning —
+        stored reasoning carries real names, but debate rounds are
+        anonymized."""
         my_ballots = [b for b in prior_ballots if b.get("name") == agent]
         my_calls = self.tool_calls.get(agent, [])
         if not my_ballots and not my_calls:
             return ""
         lines = ["Your prior activity in this debate (yours only, don't repeat yourself):"]
         for b in my_ballots:
+            reasoning = b.get("reasoning", "")
+            for name in sorted(aliases or {}, key=len, reverse=True):
+                reasoning = reasoning.replace(name, aliases[name])
             lines.append(f"  - Round {b['round'] + 1}: you voted {b['vote']}"
-                         f" — {b.get('reasoning', '')[:140]}")
+                         f" — {reasoning[:140]}")
         if my_calls:
             lines.append("  Tools you already ran:")
             for c in my_calls:

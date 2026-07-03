@@ -61,6 +61,15 @@ class Framing(BaseModel):
         min_length=2,
         max_length=6,
     )
+    criteria: list[str] = Field(
+        description=(
+            "2-4 short judging criteria tailored to the question (e.g. "
+            "'evidence quality', 'recency of data', 'practical feasibility'). "
+            "Arguments in the debate will be graded against these."
+        ),
+        min_length=2,
+        max_length=4,
+    )
 
 
 class Ballot(BaseModel):
@@ -71,6 +80,10 @@ class Ballot(BaseModel):
         )
     )
     reasoning: str = Field(description="One or two sentences defending the vote")
+    confidence: int = Field(
+        ge=0, le=100,
+        description="Your confidence that your chosen option is correct, 0-100.",
+    )
 
 
 FRAMER_PROMPT = (
@@ -94,7 +107,12 @@ FRAMER_PROMPT = (
     "'What country is best?' deserves the real contenders, not just two.\n"
     "\n"
     "If the question already names candidates, KEEP THEM ALL. Do not answer "
-    "the question yourself."
+    "the question yourself.\n"
+    "\n"
+    "Also set 2-4 short judging criteria tailored to the question — the "
+    "yardsticks a fair judge would grade arguments against (e.g. 'evidence "
+    "quality', 'recency of data', 'practical feasibility'). Fixing the "
+    "criteria before the debate starts keeps the ruling honest."
 )
 
 PANELIST_PROMPT = (
