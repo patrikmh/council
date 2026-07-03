@@ -26,3 +26,18 @@ Thumbs.db
 .vscode/
 *.swp
 *.swo
+
+# Local tooling & runtime artifacts
+.pi/
+.playwright-cli/
+backend/.playwright-cli/
+frontend/.playwright-cli/
+
+# Local databases
+*.db
+*.sqlite
+*.sqlite3
+
+# Raw source assets (the app serves copies from frontend/public)
+Make_a_video_in_this_style_tha.mp4
+Creative steampunk fusion design/

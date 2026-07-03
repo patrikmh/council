@@ -8,6 +8,8 @@ import A2UISurface from "./A2UIRenderer.jsx";
 import DebateView from "./DebateView.jsx";
 import StatsView from "./StatsView.jsx";
 import Spinner from "./Spinner.jsx";
+import StoryBand from "./StoryBand.jsx";
+import CodexBanner from "./CodexBanner.jsx";
 
 function cleanSummary(text) {
   return text
@@ -298,7 +300,7 @@ function PollView({ panelists, selected, toggleModel }) {
 
   const isEmpty = state.items.length === 0 && !state.running;
   const composer = (
-    <div className={`composer ${isEmpty ? "is-hero" : "is-slim"}`}>
+    <div className="composer is-slim">
       <textarea
         value={draft}
         rows={1}
@@ -342,12 +344,6 @@ function PollView({ panelists, selected, toggleModel }) {
         thinkingSet={state.running ? selected : null}
       />
       {composer}
-      {isEmpty && (
-        <p className="composer-caption">
-          The panel frames 2–6 options, each member votes, one writes the
-          minutes.
-        </p>
-      )}
       <main className="transcript">
         {state.items.map((it) => {
           if (it.type === "user")
@@ -397,8 +393,26 @@ function useIsMobile() {
   return mobile;
 }
 
+// Landing — the codex front door. Pure hero: the illuminated banner and
+// the Bayeux story band. No round table (that lives in the Poll tab). A
+// single gilded call-to-action opens the Poll tab where the council is
+// seated and motions are put.
+function Landing({ onBegin }) {
+  return (
+    <div className="landing">
+      <CodexBanner />
+      <StoryBand />
+      <div className="landing-cta">
+        <button className="btn-gilded" onClick={onBegin}>
+          Take a seat at the table
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
-  const [mode, setMode] = useState("poll");
+  const [mode, setMode] = useState("landing");
   const [panelists, setPanelists] = useState([]);
   const [selected, setSelected] = useState(new Set());
   const isMobile = useIsMobile();
@@ -433,9 +447,13 @@ export default function App() {
   return (
     <div className={`shell ${isMobile ? "is-mobile" : ""}`}>
       <header className="masthead">
-        <span className="masthead-mark" aria-hidden="true">
+        <button
+          className="masthead-mark"
+          onClick={() => setMode("landing")}
+          title="Return to the landing page"
+        >
           Rabble<span className="masthead-mark-dot">.</span>
-        </span>
+        </button>
         <nav className="tabs" aria-label="Mode">
           {[
             ["poll", "Poll", "one question, everyone votes"],
@@ -455,6 +473,9 @@ export default function App() {
         </nav>
       </header>
 
+      {mode === "landing" && (
+        <Landing onBegin={() => setMode("poll")} />
+      )}
       {mode === "poll" && (
         <PollView
           panelists={panelists}

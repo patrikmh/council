@@ -1,77 +1,84 @@
-/* Rabble — Crisp committee-room aesthetic.
-   Dark slate chamber, warm paper ballot cards, clean typography.
-   Fraunces for display, IBM Plex Mono for data, Inter for body.
-   Key visual: animated division bars, glowing winner state. */
+/* Rabble — Illuminated Codex aesthetic (design "1A · Illuminated Codex",
+   with the narrative story-band element from "1C · Bayeux Chronicle").
+   Parchment chamber, gilded borders, medieval pigments, gothic display,
+   wax seals & illuminated capitals. Cardo for body, UnifrakturCook for
+   display, EB Garamond for long-form, IBM Plex Mono for data/labels. */
 
 :root {
-  /* Chamber (dark background) */
-  --chamber: #0f1419;
-  --chamber-mid: #151b22;
-  --chamber-deep: #0a0e12;
-
-  /* Paper (ballot card) */
-  --paper: #faf8f4;
-  --paper-hover: #f5f2eb;
+  /* Parchment / chamber background */
+  --paper: #efe3c6;
+  --paper-2: #e5d3ab;
+  --paper-hi: #f3e8cd;
+  --paper-lo: #e3d0a6;
+  --paper-warm: #ecdcbc;
+  --chamber: #1a130b;
+  --chamber-mid: #241a10;
+  --chamber-deep: #0d0a06;
 
   /* Ink */
-  --ink: #1a1d21;
-  --ink-soft: #5b6472;
-  /* Text-on-paper accent variants — never use these on the dark chamber */
-  --lamp-ink: #92610a;
-  --clay-ink: #b45309;
+  --ink: #2b2013;
+  --ink-soft: #6d5836;
+  --ink-faint: #9a8455;
 
-  /* Accent palette (one per voting option) */
-  --aqua: #5eead4;
-  --aqua-deep: #14b8a6;
-  --aqua-bg: rgba(94, 234, 212, 0.12);
+  /* Medieval pigments */
+  --blue: #1c3f8f;
+  --blue-deep: #142c62;
+  --blue-bg: rgba(28, 63, 143, 0.1);
+  --red: #b0311c;
+  --red-deep: #8a2414;
+  --red-bg: rgba(176, 49, 28, 0.1);
 
-  --clay: #fbbf7a;
-  --clay-deep: #d97706;
-  --clay-bg: rgba(251, 191, 122, 0.12);
+  /* Gilding */
+  --gold: #b0842c;
+  --gold-lt: #e6c56d;
+  --gold-pale: #f3e0a3;
+  --gold-bg: rgba(176, 132, 44, 0.12);
+  --gold-line: rgba(176, 132, 44, 0.4);
 
-  --violet: #c4b5fd;
-  --violet-deep: #8b5cf6;
-  --violet-bg: rgba(196, 181, 253, 0.12);
+  /* Accent palette (one per voting option) — illuminated-pigment tones.
+     Each tone sets --tc (wash), --tc-deep (border/ink), --tc-bg (tint). */
+  --aqua: #3c6b5f;       --aqua-deep: #2a4d44;   --aqua-bg: rgba(60, 107, 95, 0.14);
+  --clay: #a9522c;       --clay-deep: #7e3a1d;   --clay-bg: rgba(169, 82, 44, 0.14);
+  --violet: #5b4a8c;     --violet-deep: #3f3366; --violet-bg: rgba(91, 74, 140, 0.14);
+  --rose: #9e3722;       --rose-deep: #722514;   --rose-bg: rgba(158, 55, 34, 0.14);
+  --mint: #5d7a3a;       --mint-deep: #415728;   --mint-bg: rgba(93, 122, 58, 0.14);
+  --sky: #3a4f6e;        --sky-deep: #28374d;    --sky-bg: rgba(58, 79, 110, 0.14);
+  --coral: #c75b3a;      --coral-deep: #94412a;  --coral-bg: rgba(199, 91, 58, 0.14);
+  --gold-opt: #b0842c;   --gold-opt-deep: #7a5a1c; --gold-opt-bg: rgba(176, 132, 44, 0.16);
 
-  --rose: #fda4af;
-  --rose-deep: #f43f5e;
-  --rose-bg: rgba(253, 164, 175, 0.12);
+  /* Lamp (gilt highlight / winner) */
+  --lamp: var(--gold);
+  --lamp-lt: var(--gold-lt);
+  --lamp-glow: rgba(230, 197, 109, 0.35);
+  --lamp-ink: #7a5a1c;
 
-  --mint: #86efac;
-  --mint-deep: #22c55e;
-  --mint-bg: rgba(134, 239, 172, 0.12);
-
-  --sky: #7dd3fc;
-  --sky-deep: #0ea5e9;
-  --sky-bg: rgba(125, 211, 252, 0.12);
-
-  --coral: #fca5a5;
-  --coral-deep: #ef4444;
-  --coral-bg: rgba(252, 165, 165, 0.12);
-
-  --gold: #fde68a;
-  --gold-deep: #eab308;
-  --gold-bg: rgba(253, 230, 138, 0.12);
-
-  /* Lamp (gold for winner) */
-  --lamp: #f59e0b;
-  --lamp-glow: rgba(245, 158, 11, 0.25);
-
-  /* Surfaces */
-  --surface: rgba(255, 255, 255, 0.05);
-  --surface-hover: rgba(255, 255, 255, 0.08);
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.15);
+  /* Surfaces on parchment */
+  --surface: rgba(43, 32, 19, 0.04);
+  --surface-hover: rgba(43, 32, 19, 0.07);
+  --border: rgba(43, 32, 19, 0.14);
+  --border-strong: rgba(43, 32, 19, 0.26);
 
   /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
-  --shadow-lg: 0 12px 48px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 20px 60px rgba(0, 0, 0, 0.6);
+  --shadow-sm: 0 1px 2px rgba(20, 12, 4, 0.18);
+  --shadow-md: 0 4px 16px rgba(20, 12, 4, 0.22);
+  --shadow-lg: 0 12px 40px rgba(20, 12, 4, 0.28);
+  --shadow-xl: 0 20px 56px rgba(20, 12, 4, 0.34);
 
   /* Motion */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* Type */
+  --font-display: "UnifrakturCook", "Cardo", Georgia, serif;
+  --font-serif: "Cardo", "EB Garamond", Georgia, serif;
+  --font-long: "EB Garamond", "Cardo", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+
+  /* Layout rhythm — the shared column width + section spacing that all
+     major blocks (codex banner, round table, composer, story band) align
+     to, so the page reads as a single manuscript column. */
+  --column: 720px;
+  --section-gap: 28px;
 }
 
 * {
@@ -81,40 +88,91 @@
 }
 
 body {
-  font-family: "Inter", system-ui, -apple-system, sans-serif;
-  /* Layered chamber: a faint warm lamp-glow from the top and a vignette
-     toward the edges, so the room has depth instead of one flat slate. */
+  font-family: var(--font-serif);
+  /* Layered chamber: warm vignette from above into the dark scriptorium,
+     with a faint parchment grain tile. */
   background:
-    radial-gradient(120% 60% at 50% -10%,
-      rgba(245, 158, 11, 0.05) 0%, transparent 55%),
-    radial-gradient(90% 90% at 50% 40%,
-      var(--chamber-mid) 0%, var(--chamber) 55%, var(--chamber-deep) 100%);
-  background-attachment: fixed;
-  color: #e5e7eb;
+    radial-gradient(120% 80% at 50% 0%, #241a10 0%, #140f09 60%, #0d0a06 100%) fixed,
+    var(--chamber-deep);
+  color: var(--paper);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;
+}
+
+/* ── Ambient cursor glow (driven by --mx/--my from main.jsx) ── */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background: radial-gradient(
+    280px circle at var(--mx, 50%) var(--my, 40%),
+    rgba(230, 197, 109, 0.07) 0%,
+    transparent 70%
+  );
+  transition: background 0.2s linear;
 }
 
 /* ── Shell ── */
+/* The whole app sits on a single manuscript page: triple gilded frame
+   (gold → parchment → blue) with red corner diamonds. */
 .shell {
-  max-width: 720px;
+  position: relative;
+  max-width: 760px;
   min-height: 100dvh;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  padding: 0 20px;
+  padding: 26px 22px 40px;
+  z-index: 1;
+}
+/* The page itself — applied as the parchment behind the content. */
+.shell::before {
+  content: "";
+  position: absolute;
+  inset: 14px 8px;
+  z-index: -1;
+  background:
+    repeating-linear-gradient(92deg, rgba(120, 90, 40, 0.04) 0 2px, transparent 2px 6px),
+    radial-gradient(140% 120% at 12% 0%, var(--paper-hi) 0%, var(--paper-warm) 55%, var(--paper-lo) 100%);
+  border: 3px solid var(--gold);
+  box-shadow:
+    inset 0 0 0 2px var(--paper),
+    inset 0 0 0 4px var(--blue),
+    inset 0 0 0 6px var(--paper),
+    0 40px 90px rgba(0, 0, 0, 0.55);
+  border-radius: 2px;
+}
+/* Red corner diamonds on the manuscript frame. */
+.shell::after {
+  content: "";
+  position: absolute;
+  inset: 14px 8px;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at top left, var(--red) 0 5px, transparent 6px),
+    radial-gradient(circle at top right, var(--red) 0 5px, transparent 6px),
+    radial-gradient(circle at bottom left, var(--red) 0 5px, transparent 6px),
+    radial-gradient(circle at bottom right, var(--red) 0 5px, transparent 6px);
+  background-repeat: no-repeat;
+  background-position:
+    20px 20px,
+    calc(100% - 20px) 20px,
+    20px calc(100% - 20px),
+    calc(100% - 20px) calc(100% - 20px);
+  filter: drop-shadow(0 0 0 2px var(--gold));
 }
 
 /* ── Masthead ── */
-/* Single-line masthead: brand on the left, tabs act as both mode
-   switcher AND the tagline (each tab carries its own one-line hint).
-   Tagline element removed — it was redundant filler beside the tabs. */
 .masthead {
   display: flex;
   align-items: stretch;
-  gap: 20px;
-  padding: 18px 2px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  gap: 18px;
+  padding: 6px 6px 0;
+  border-bottom: 1px solid rgba(28, 63, 143, 0.28);
 }
 .masthead-brand {
   display: inline-flex;
@@ -126,93 +184,117 @@ body {
   border-bottom: 2px solid transparent;
   transition: border-color 0.2s ease;
 }
-.masthead-brand:hover { border-bottom-color: var(--lamp); }
+.masthead-brand:hover { border-bottom-color: var(--gold); }
 .masthead-logo {
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
   object-fit: contain;
   flex-shrink: 0;
+  filter: sepia(0.3) saturate(0.8);
 }
 .masthead-name {
-  font-family: "Fraunces", serif;
-  font-weight: 640;
+  font-family: var(--font-serif);
+  font-weight: 700;
   font-size: 20px;
-  letter-spacing: -0.01em;
-  color: #f9fafb;
+  letter-spacing: 0.01em;
+  color: var(--blue-deep);
 }
 
-/* Compact wordmark anchoring the tab strip — without it the brand
-   vanishes entirely on the Debate and Stats tabs. */
+/* Gothic wordmark anchoring the tab strip. */
 .masthead-mark {
   align-self: center;
-  font-family: "Fraunces", serif;
-  font-weight: 640;
-  font-style: italic;
-  font-size: 17px;
-  letter-spacing: 0.01em;
-  color: rgba(249, 250, 251, 0.88);
-  padding: 0 22px 6px 2px;
-  margin-right: 6px;
-  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+  color: var(--blue-deep);
+  padding: 0 20px 10px 4px;
+  margin-right: 4px;
+  border: none;
+  border-right: 1px solid rgba(28, 63, 143, 0.28);
+  background: transparent;
+  cursor: pointer;
+  font-feature-settings: inherit;
   user-select: none;
+  transition: color 180ms ease, opacity 180ms ease;
 }
-.masthead-mark-dot { color: var(--lamp); }
+.masthead-mark:hover {
+  color: var(--red);
+}
+.masthead-mark:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+.masthead-mark-dot { color: var(--red); }
+.masthead-rule { display: none; }
 
 /* ── Transcript ── */
 .transcript {
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 24px 0 20px;
+  gap: 14px;
+  padding: 22px 8px 16px;
 }
 
 /* ── Empty state ── */
 .empty {
   margin: auto;
   text-align: center;
-  max-width: 440px;
-  padding: 40px 0;
+  max-width: 460px;
+  padding: 30px 0;
 }
 .empty-display {
-  font-family: "Fraunces", serif;
-  font-size: 38px;
-  font-weight: 500;
-  letter-spacing: -0.02em;
-  color: #f9fafb;
+  font-family: var(--font-display);
+  font-size: 44px;
+  color: var(--blue-deep);
   margin-bottom: 14px;
-  line-height: 1.2;
+  line-height: 1;
 }
 .empty-hint {
-  color: rgba(255, 255, 255, 0.4);
-  font-size: 15px;
-  line-height: 1.65;
+  color: var(--ink-soft);
+  font-family: var(--font-long);
+  font-size: 16px;
+  line-height: 1.6;
 }
+.empty-logo {
+  width: 84px;
+  height: 84px;
+  border-radius: 14px;
+  object-fit: contain;
+  margin-bottom: 18px;
+  opacity: 0.85;
+  filter: sepia(0.25) saturate(0.85);
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.empty-logo:hover { opacity: 1; transform: scale(1.04); }
 
 /* ── Bubbles ── */
 .bubble {
   max-width: 85%;
   padding: 12px 16px;
-  border-radius: 16px;
-  font-size: 15px;
+  border-radius: 4px;
+  font-size: 16px;
   line-height: 1.6;
   white-space: pre-wrap;
-  letter-spacing: -0.005em;
+  font-family: var(--font-serif);
+  border: 1px solid var(--border);
 }
 .bubble-user {
   align-self: flex-end;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  color: #f3f4f6;
-  border-bottom-right-radius: 4px;
+  background: var(--blue-bg);
+  border: 1px solid rgba(28, 63, 143, 0.3);
+  color: var(--blue-deep);
+  border-bottom-right-radius: 0;
+  box-shadow: var(--shadow-sm);
 }
 .bubble-assistant {
   align-self: flex-start;
   background: var(--surface);
   border: 1px solid var(--border);
-  color: rgba(249, 250, 251, 0.9);
-  border-bottom-left-radius: 4px;
+  color: var(--ink);
+  border-bottom-left-radius: 0;
 }
 
 /* ── Notes & Status ── */
@@ -222,107 +304,102 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.55);
-  padding: 4px 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  padding: 4px 12px;
+  border: 1px solid var(--gold-line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--gold-bg);
+  letter-spacing: 0.04em;
 }
 .status-dot {
-  color: var(--aqua, #5eead4);
-  font-family: "IBM Plex Mono", monospace;
+  color: var(--red);
+  font-family: var(--font-mono);
   font-size: 14px;
   line-height: 1;
 }
-.status-text {
-  animation: fadephrase 2.5s ease-in-out infinite;
-}
+.status-text { animation: fadephrase 2.5s ease-in-out infinite; }
 @keyframes fadephrase {
-  0%   { opacity: 0.35; }
-  15%  { opacity: 1; }
-  85%  { opacity: 1; }
-  100% { opacity: 0.35; }
+  0%, 100% { opacity: 0.4; }
+  15%      { opacity: 1; }
+  85%      { opacity: 1; }
 }
 
 /* ── A2UI Poll Card ── */
-.a2ui-surface {
-  align-self: stretch;
-  margin: 4px 0;
-}
+.a2ui-surface { align-self: stretch; margin: 4px 0; }
 
 .a2ui-card {
-  background: var(--paper);
+  background: linear-gradient(180deg, var(--paper-hi) 0%, var(--paper) 60%);
   color: var(--ink);
-  border-radius: 20px;
-  padding: 28px 28px 24px;
-  box-shadow: var(--shadow-xl);
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 6px;
+  padding: 26px 26px 22px;
+  border: 2px solid var(--gold);
+  box-shadow:
+    inset 0 0 0 2px var(--paper),
+    inset 0 0 0 3px rgba(28, 63, 143, 0.35),
+    var(--shadow-xl);
+  position: relative;
 }
 
 .eyebrow {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--ink-soft);
+  color: var(--red);
   margin-bottom: 10px;
 }
-
 .card-heading {
-  font-family: "Fraunces", serif;
-  font-weight: 640;
-  font-size: 26px;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 24px;
   line-height: 1.25;
-  letter-spacing: -0.015em;
-  margin: 0 0 20px;
-  color: var(--ink);
+  margin: 0 0 18px;
+  color: var(--blue-deep);
 }
-
 .section-label {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  margin: 20px 0 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  padding-top: 16px;
+  margin: 18px 0 10px;
+  border-top: 1px solid var(--gold-line);
+  padding-top: 14px;
 }
-
 .card-paragraph {
   margin: 0;
-  font-size: 15px;
-  line-height: 1.7;
-  color: #374151;
+  font-family: var(--font-long);
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ink);
 }
 
 /* ── Division Bars ── */
 .poll-option {
   position: relative;
   overflow: hidden;
-  border: 1.5px solid rgba(0, 0, 0, 0.08);
-  border-radius: 14px;
-  padding: 16px 18px;
+  border: 1.5px solid var(--gold-line);
+  border-radius: 4px;
+  padding: 14px 16px;
   margin-bottom: 12px;
   isolation: isolate;
-  background: #fff;
+  background: var(--paper-hi);
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
 }
-
 .poll-fill {
   position: absolute;
   inset: 0;
   transform-origin: left center;
   transform: scaleX(0);
-  transition: transform 700ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 700ms var(--ease-out);
   z-index: 0;
 }
 
-/* Tone colour system — each tone sets --tc, --tc-deep, --tc-bg */
+/* Tone system — each tone sets --tc, --tc-deep, --tc-bg */
 .tone-aqua  { --tc: var(--aqua);  --tc-deep: var(--aqua-deep);  --tc-bg: var(--aqua-bg); }
 .tone-clay  { --tc: var(--clay);  --tc-deep: var(--clay-deep);  --tc-bg: var(--clay-bg); }
 .tone-violet{ --tc: var(--violet);--tc-deep: var(--violet-deep);--tc-bg: var(--violet-bg); }
@@ -330,18 +407,18 @@ body {
 .tone-mint  { --tc: var(--mint);  --tc-deep: var(--mint-deep);  --tc-bg: var(--mint-bg); }
 .tone-sky   { --tc: var(--sky);   --tc-deep: var(--sky-deep);   --tc-bg: var(--sky-bg); }
 .tone-coral { --tc: var(--coral); --tc-deep: var(--coral-deep); --tc-bg: var(--coral-bg); }
-.tone-gold  { --tc: var(--gold);  --tc-deep: var(--gold-deep);  --tc-bg: var(--gold-bg); }
+.tone-gold  { --tc: var(--gold-opt); --tc-deep: var(--gold-opt-deep); --tc-bg: var(--gold-opt-bg); }
 
 .poll-fill {
-  background: linear-gradient(90deg, var(--tc-bg), color-mix(in srgb, var(--tc) 22%, transparent));
+  background: linear-gradient(90deg, var(--tc-bg), color-mix(in srgb, var(--tc) 26%, transparent));
 }
 .poll-id {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
   color: var(--tc-deep);
+  letter-spacing: 0.06em;
 }
-
 .poll-row {
   position: relative;
   z-index: 1;
@@ -350,18 +427,17 @@ body {
   align-items: baseline;
   gap: 12px;
 }
-
 .poll-label {
-  font-weight: 600;
-  font-size: 15px;
+  font-weight: 700;
+  font-size: 16px;
   display: flex;
   gap: 10px;
   align-items: baseline;
   color: var(--ink);
+  font-family: var(--font-serif);
 }
-
 .poll-tally {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   color: var(--ink-soft);
   white-space: nowrap;
@@ -369,7 +445,7 @@ body {
 
 /* ── Winner state ── */
 .is-winner {
-  border-color: var(--lamp);
+  border-color: var(--gold);
   box-shadow: 0 0 0 3px var(--lamp-glow), var(--shadow-md);
 }
 .is-winner .poll-tally {
@@ -386,215 +462,127 @@ body {
   gap: 6px;
   margin-top: 12px;
 }
-
 .chip {
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
-  background: #f3f1ec;
-  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: var(--paper);
+  border: 1px solid var(--gold-line);
   border-radius: 999px;
   padding: 4px 12px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
+  font-family: var(--font-serif);
+  color: var(--ink);
   cursor: help;
-  animation: stamp 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: stamp 300ms var(--ease-spring);
   transition: background 0.15s ease;
 }
-.chip:hover {
-  background: #eae7e0;
-}
-
+.chip:hover { background: var(--paper-warm); }
 .chip-provider {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   color: var(--ink-soft);
   font-weight: 500;
+  letter-spacing: 0.04em;
 }
-
 @keyframes stamp {
-  from {
-    transform: scale(0.6);
-    opacity: 0;
-  }
-  to {
-    transform: scale(1);
-    opacity: 1;
-  }
+  from { transform: scale(0.6) rotate(-6deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0); opacity: 1; }
 }
 
 /* ── Composer ── */
-/* The composer moves out of the page footer and lives right under the
-   table. Two flavours:
-     .is-hero — big centered "put a motion to the table" moment, only
-                shown before the first question.
-     .is-slim — a slim always-visible bar for follow-up questions once
-                results are on screen. */
 .composer {
   display: flex;
   gap: 10px;
-  margin: 0 auto 20px;
+  margin: 0 auto 18px;
   max-width: 620px;
   width: 100%;
   transition: max-width 320ms ease, margin 320ms ease, padding 320ms ease;
 }
-.composer.is-hero {
-  margin: 8px auto 28px;
-  padding: 4px 0;
-  max-width: 580px;
-}
-.composer.is-slim {
-  margin: 6px auto 14px;
-  padding: 0;
-  max-width: 720px;
-}
-.composer::before {
-  display: none; /* the hanging "01." mark from the old design is gone */
-}
+.composer.is-hero { margin: 0 auto var(--section-gap); padding: 2px 4px; max-width: 600px; }
+.composer.is-slim { margin: 4px auto 12px; padding: 0; max-width: 720px; }
+.composer::before { display: none; }
 
 .composer textarea {
   flex: 1;
   resize: none;
-  font: 15px/1.5 "Inter", sans-serif;
-  color: #f3f4f6;
-  background: var(--surface);
-  border: 1px solid var(--border-strong);
-  border-radius: 14px;
+  font: 16px/1.5 var(--font-serif);
+  color: var(--ink);
+  background: var(--paper-hi);
+  border: 1.5px solid var(--gold);
+  border-radius: 4px;
   padding: 12px 16px;
   transition: border-color 0.2s ease, background 0.2s ease,
               font-size 300ms ease, padding 300ms ease;
 }
 .composer.is-hero textarea {
-  font: 500 18px/1.35 "Fraunces", serif;
+  font: 400 20px/1.4 var(--font-long);
   font-style: italic;
-  padding: 16px 22px;
-  border-radius: 16px;
-  border-color: rgba(245, 158, 11, 0.28);
-  background: rgba(245, 158, 11, 0.03);
+  padding: 16px 20px;
+  border: 2px solid var(--gold);
+  background: var(--paper-hi);
 }
 .composer.is-hero textarea::placeholder {
   font-style: italic;
-  color: rgba(245, 158, 11, 0.7);
+  color: var(--ink-soft);
 }
-.composer.is-slim textarea {
-  font-size: 13px;
-  padding: 8px 14px;
-  border-radius: 10px;
-}
-.composer textarea::placeholder {
-  color: rgba(255, 255, 255, 0.62);
-}
-.composer textarea:hover {
-  background: var(--surface-hover);
-}
+.composer.is-slim textarea { font-size: 14px; padding: 9px 14px; }
+.composer textarea::placeholder { color: var(--ink-faint); }
+.composer textarea:hover { background: var(--paper-warm); }
 .composer textarea:focus-visible {
   outline: none;
-  border-color: var(--lamp);
-  box-shadow: 0 0 0 3px var(--lamp-glow);
-  background: var(--surface-hover);
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px var(--blue-bg);
+  background: var(--paper-hi);
 }
 
 .composer button {
-  font: 600 14px/1 "Inter", sans-serif;
-  color: var(--chamber-deep);
-  background: linear-gradient(180deg, #fbc23f 0%, var(--lamp) 55%, #dd8b09 100%);
-  border: none;
-  border-radius: 14px;
+  font: 700 15px/1 var(--font-serif);
+  color: var(--gold-pale);
+  background: var(--red);
+  border: 2px solid var(--gold);
+  border-radius: 4px;
   padding: 0 22px;
   cursor: pointer;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-    0 1px 3px rgba(0, 0, 0, 0.4);
+  letter-spacing: 0.02em;
+  box-shadow: 2px 3px 0 rgba(43, 32, 19, 0.4);
   transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease,
-              filter 0.15s ease,
-              font-size 300ms ease, padding 300ms ease, border-radius 300ms ease;
+              background 0.15s ease, font-size 300ms ease, padding 300ms ease,
+              border-radius 300ms ease;
   white-space: nowrap;
 }
-.composer.is-hero button { padding: 0 26px; border-radius: 16px; font-size: 15px; }
-.composer.is-slim button { padding: 0 14px; border-radius: 10px; font-size: 12px; }
+.composer.is-hero button { padding: 0 26px; font-size: 17px; }
+.composer.is-slim button { padding: 0 14px; font-size: 13px; }
 .composer.is-slim .btn-clear { padding: 0 10px; }
 .composer button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  filter: brightness(1.06);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.2),
-    0 6px 20px var(--lamp-glow);
+  transform: translate(-1px, -1px);
+  background: #c73a22;
+  box-shadow: 3px 4px 0 rgba(43, 32, 19, 0.45);
 }
 .composer button:active:not(:disabled) {
-  transform: translateY(0);
-  filter: brightness(0.97);
-  box-shadow:
-    inset 0 2px 4px rgba(0, 0, 0, 0.25),
-    0 1px 2px rgba(0, 0, 0, 0.3);
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(43, 32, 19, 0.4);
 }
-.composer button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
+.composer button:disabled { opacity: 0.45; cursor: default; }
 .composer button:focus-visible {
-  outline: 2px solid var(--lamp);
+  outline: 2px solid var(--blue);
   outline-offset: 3px;
 }
-
-/* Match .composer button specificity — a bare .btn-clear always lost. */
 .composer .btn-clear {
   background: transparent;
-  color: rgba(255, 255, 255, 0.62);
-  border: 1px solid var(--border);
-  padding: 0 14px;
-  font-size: 16px;
+  color: var(--ink-soft);
+  border: 1.5px solid var(--border-strong);
   box-shadow: none;
 }
 .composer .btn-clear:hover:not(:disabled) {
-  color: var(--lamp);
-  border-color: var(--lamp);
-  background: rgba(245, 158, 11, 0.06);
+  background: var(--surface);
+  color: var(--red);
+  transform: none;
   box-shadow: none;
-  filter: none;
 }
 
-/* ── Motion: Reduced ── */
-@media (prefers-reduced-motion: reduce) {
-  .poll-fill,
-  .chip,
-  .status::after,
-  .composer button {
-    transition: none;
-    animation: none;
-  }
-}
-
-/* ── Scrollbar ── */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-/* ── Masthead rule ── */
-.masthead-rule {
-  height: 1px;
-  margin-top: -1px;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    var(--border-strong) 20%,
-    var(--border-strong) 80%,
-    transparent 100%
-  );
-}
-
-/* ── Model Picker ── */
+/* ── Model picker (compact chip list) ── */
 .model-picker {
   display: flex;
   flex-wrap: wrap;
@@ -603,76 +591,53 @@ body {
   padding: 14px 2px 10px;
 }
 .model-picker-label {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 11px;
   font-weight: 600;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--ink-soft);
   margin-right: 4px;
 }
 .model-toggle {
   display: inline-flex;
   align-items: baseline;
   gap: 6px;
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: var(--paper-hi);
+  border: 1px solid var(--gold-line);
   border-radius: 999px;
   padding: 5px 14px;
-  font-size: 12.5px;
+  font-size: 13px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.4);
+  color: var(--ink-soft);
   cursor: pointer;
   transition: all 0.15s ease;
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-serif);
 }
 .model-toggle:hover:not(:disabled) {
-  background: var(--surface-hover);
-  border-color: var(--border-strong);
-  color: rgba(255, 255, 255, 0.6);
+  background: var(--paper-warm);
+  border-color: var(--gold);
+  color: var(--ink);
 }
 .model-toggle.is-on {
-  background: var(--aqua-bg);
-  border-color: rgba(94, 234, 212, 0.25);
-  color: var(--aqua);
+  background: var(--gold-bg);
+  border-color: var(--gold);
+  color: var(--blue-deep);
 }
-.model-toggle.is-on:hover:not(:disabled) {
-  background: rgba(94, 234, 212, 0.18);
-}
-.model-toggle:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
+.model-toggle.is-on:hover:not(:disabled) { background: rgba(176, 132, 44, 0.22); }
+.model-toggle:disabled { opacity: 0.5; cursor: default; }
 .model-toggle-provider {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
   opacity: 0.7;
+  letter-spacing: 0.04em;
 }
 
-/* ── Empty icon ── */
-.empty-logo {
-  width: 80px;
-  height: 80px;
-  border-radius: 16px;
-  object-fit: contain;
-  margin-bottom: 20px;
-  opacity: 0.7;
-  transition: opacity 0.3s ease;
-}
-.empty-logo:hover {
-  opacity: 1;
-}
+/* ── Empty icon / selection ── */
+::selection { background: var(--blue-bg); color: var(--blue-deep); }
 
-/* ── Selection ── */
-::selection {
-  background: var(--lamp-glow);
-  color: #f9fafb;
-}
-
-/* ── Tabs (Poll / Debate / Stats) — primary nav with inline hints ──── */
+/* ── Tabs (Poll / Debate / Stats) ── */
 .tabs {
-  /* No more auto-margin push — with the brand gone from the left, tabs
-     start from the shell edge and read as a proper section nav. */
   display: flex;
   gap: 0;
   align-items: stretch;
@@ -683,1087 +648,311 @@ body {
   border: none;
   padding: 8px 18px 12px;
   font: inherit;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--ink-soft);
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 2px;
   border-bottom: 2px solid transparent;
-  transition: color 0.18s ease, border-color 0.22s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: color 0.18s ease, border-color 0.22s var(--ease-spring);
   text-align: left;
   min-width: 92px;
 }
 .tab-label {
-  font-family: "Fraunces", serif;
-  font-weight: 500;
-  font-size: 16px;
-  letter-spacing: -0.005em;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 17px;
   line-height: 1.1;
 }
 .tab-hint {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 10px;
-  letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.62);
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
   line-height: 1.3;
   transition: color 0.18s ease;
 }
-.tab:hover { color: rgba(255, 255, 255, 0.85); }
-.tab:hover .tab-hint { color: rgba(255, 255, 255, 0.55); }
-.tab.is-on {
-  color: var(--paper);
-  border-bottom-color: var(--lamp);
-}
-.tab.is-on .tab-hint { color: var(--lamp); opacity: 0.75; }
-/* Override the older .tab::after spring rule from the earlier design pass */
+.tab:hover { color: var(--ink); }
+.tab:hover .tab-hint { color: var(--ink-soft); }
+.tab.is-on { color: var(--blue-deep); border-bottom-color: var(--red); }
+.tab.is-on .tab-hint { color: var(--red); opacity: 0.85; }
 .tab::after { display: none; }
+.tab.is-on::after { display: none; }
 @media (max-width: 600px) {
   .tab { min-width: 0; padding: 8px 12px 12px; }
   .tab-hint { display: none; }
 }
 
-/* ── Tool-call badges (poll transcript + debate cards) ──────────────────── */
+/* ── Tool-call badges ── */
 .tool-note {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin: 4px 0 4px 16px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.62);
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 6px 4px;
 }
 .tool-note-agent {
-  font-family: "IBM Plex Mono", monospace;
-  color: var(--paper);
-  opacity: 0.8;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
 }
 .tool-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(125, 211, 252, 0.12);
-  color: var(--sky);
-  font-size: 11px;
-  font-family: "IBM Plex Mono", monospace;
-  border: 1px solid rgba(125, 211, 252, 0.25);
-}
-
-/* ── Debate view ────────────────────────────────────────────────────────── */
-.debate-transcript { max-width: 900px; }
-.tally-bar {
-  display: flex;
-  gap: 3px;
-  width: 100%;
-  height: 26px;
-  padding: 3px;
-  border-radius: 9px;
-  overflow: hidden;
-  margin: 12px 0 24px;
-  background: rgba(0, 0, 0, 0.35);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-.tally-seg {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  color: var(--chamber-deep);
-  font-weight: 600;
-  font-size: 11px;
-  font-family: "IBM Plex Mono", monospace;
-  border-radius: 6px;
-  transition: width 0.65s var(--ease-out);
-  min-width: 0;
-  overflow: hidden;
-  white-space: nowrap;
-  /* Tone comes from the .tone-* utility classes via --tc */
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--tc) 88%, white) 0%,
-    var(--tc) 55%,
-    color-mix(in srgb, var(--tc) 82%, var(--tc-deep)) 100%
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
-}
-
-.debate-round { margin-bottom: 24px; }
-.debate-round-title {
-  font-family: "Fraunces", serif;
-  font-size: 15px;
-  color: var(--ink-soft);
-  margin-bottom: 10px;
-}
-.debate-round-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 12px;
-}
-.debate-card {
-  background: var(--paper);
-  color: var(--ink);
-  border-radius: 10px;
-  padding: 12px 14px;
-  border-left: 4px solid var(--aqua-deep);
-}
-.debate-card.tone-aqua   { border-left-color: var(--aqua-deep); }
-.debate-card.tone-clay   { border-left-color: var(--clay-deep); }
-.debate-card.tone-violet { border-left-color: var(--violet-deep); }
-.debate-card.tone-rose   { border-left-color: var(--rose-deep); }
-.debate-card.tone-mint   { border-left-color: var(--mint-deep); }
-.debate-card.tone-sky    { border-left-color: var(--sky-deep); }
-.debate-card.tone-coral  { border-left-color: var(--coral-deep); }
-.debate-card.tone-gold   { border-left-color: var(--gold-deep); }
-.debate-card-head {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin-bottom: 6px;
-  font-size: 12px;
-  font-family: "IBM Plex Mono", monospace;
-}
-.debate-card-name { font-weight: 600; }
-.debate-card-vote { color: var(--ink-soft); }
-.debate-card-flip {
-  margin-left: auto;
-  color: var(--clay-ink);
-  font-size: 10px;
-}
-.debate-card-reason {
-  font-size: 13px;
-  line-height: 1.5;
-}
-.debate-card-tools {
-  margin-top: 8px;
-  display: flex;
-  flex-wrap: wrap;
   gap: 4px;
-}
-.debate-summary { margin-top: 24px; }
-
-/* ── Stats view ─────────────────────────────────────────────────────────── */
-.stats-view { max-width: 900px; }
-.stats-section { margin-bottom: 40px; }
-.stats-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.stats-head h2 {
-  font-family: "Fraunces", serif;
-  font-weight: 500;
-  font-size: 18px;
-  color: var(--paper);
-}
-.stats-window {
-  display: flex;
-  gap: 2px;
-  padding: 2px;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-.stats-window-btn {
-  background: transparent;
-  border: none;
-  color: rgba(255, 255, 255, 0.62);
-  border-radius: 6px;
+  background: var(--paper-hi);
+  border: 1px solid var(--gold-line);
+  border-radius: 4px;
   padding: 3px 10px;
-  font: inherit;
-  font-size: 12px;
-  cursor: pointer;
-  transition: background 160ms ease, color 160ms ease;
-}
-.stats-window-btn:hover:not(.is-on) { color: rgba(255, 255, 255, 0.75); }
-.stats-window-btn.is-on {
-  background: var(--paper);
-  color: var(--ink);
-  font-weight: 600;
-}
-.stats-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  font-family: "IBM Plex Mono", monospace;
-  color: var(--paper);
-}
-.stats-table th,
-.stats-table td {
-  padding: 9px 10px;
-  text-align: left;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-  font-variant-numeric: tabular-nums;
-}
-.stats-table th {
-  color: rgba(255, 255, 255, 0.62);
-  font-weight: 400;
+  font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.stats-table tbody tr { transition: background 140ms ease; }
-.stats-table tbody tr:hover { background: rgba(255, 255, 255, 0.025); }
-/* The provider tag sits inside the model cell — give it air. */
-.stats-table .model-toggle-provider { margin-right: 8px; }
-.score-cell {
-  position: relative;
-  height: 18px;
-  width: 100%;
-  min-width: 100px;
-  display: flex;
-  align-items: center;
-}
-.score-bar {
-  position: absolute;
-  left: 0;
-  top: 3px;
-  height: 12px;
-  background: linear-gradient(90deg, var(--aqua-deep) 0%, var(--sky-deep) 100%);
-  border-radius: 4px;
-  opacity: 0.75;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
-  transform-origin: left center;
-  animation: score-grow 700ms var(--ease-out) both;
-  transition: width 400ms var(--ease-out);
-}
-@keyframes score-grow {
-  from { transform: scaleX(0); }
-  to   { transform: scaleX(1); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .score-bar { animation: none; }
-}
-.score-cell span {
-  position: relative;
-  z-index: 1;
-  padding-left: 6px;
-}
-.stats-hint {
-  color: rgba(255, 255, 255, 0.62);
-  font-size: 11px;
-  margin-top: 8px;
-}
-.questions-feed {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-.questions-feed li {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 8px 4px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  font-size: 13px;
-  color: var(--paper);
-}
-.mode-badge {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-family: "IBM Plex Mono", monospace;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-.mode-badge.mode-poll   { background: rgba(94, 234, 212, 0.16); color: var(--aqua); }
-.mode-badge.mode-debate { background: rgba(196, 181, 253, 0.16); color: var(--violet); }
-.q-text { flex: 1; }
-.q-meta {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.62);
-}
-
-/* ── Debate verdict card ───────────────────────────────────────────────── */
-.verdict {
-  margin: 28px 0 16px;
-  padding: 24px 26px 20px;
-  background: linear-gradient(180deg, #fffdf9 0%, var(--paper) 60%);
   color: var(--ink);
-  border-radius: 14px;
-  border-left: 6px solid var(--aqua-deep);
-  position: relative;
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
-  animation: verdict-rise 480ms var(--ease-out) both;
-}
-@keyframes verdict-rise {
-  from { opacity: 0; transform: translateY(14px) scale(0.99); }
-  to   { opacity: 1; transform: translateY(0) scale(1); }
-}
-.verdict.tone-aqua   { border-left-color: var(--aqua-deep); }
-.verdict.tone-clay   { border-left-color: var(--clay-deep); }
-.verdict.tone-violet { border-left-color: var(--violet-deep); }
-.verdict.tone-rose   { border-left-color: var(--rose-deep); }
-.verdict.tone-mint   { border-left-color: var(--mint-deep); }
-.verdict.tone-sky    { border-left-color: var(--sky-deep); }
-.verdict.tone-coral  { border-left-color: var(--coral-deep); }
-.verdict.tone-gold   { border-left-color: var(--gold-deep); }
-.verdict-eyebrow {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  margin-bottom: 8px;
-}
-.verdict-headline {
-  font-family: "Fraunces", serif;
-  font-weight: 640;
-  font-size: 40px;
-  line-height: 1.05;
-  letter-spacing: -0.015em;
-  margin-bottom: 4px;
-}
-.verdict-sub {
-  font-size: 14px;
-  color: var(--ink-soft);
-  margin-bottom: 18px;
-}
-.verdict-tally {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 16px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-.verdict-tally li {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.04);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
-  color: var(--ink);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-.verdict-tally li.is-won {
-  background: rgba(0, 0, 0, 0.08);
-  border-color: rgba(0, 0, 0, 0.15);
-  font-weight: 600;
-}
-.verdict-tally li.tone-aqua.is-won   { background: var(--aqua-bg); border-color: var(--aqua-deep); }
-.verdict-tally li.tone-clay.is-won   { background: var(--clay-bg); border-color: var(--clay-deep); }
-.verdict-tally li.tone-violet.is-won { background: var(--violet-bg); border-color: var(--violet-deep); }
-.verdict-tally li.tone-rose.is-won   { background: var(--rose-bg); border-color: var(--rose-deep); }
-.verdict-tally li.tone-mint.is-won   { background: var(--mint-bg); border-color: var(--mint-deep); }
-.verdict-tally li.tone-sky.is-won    { background: var(--sky-bg); border-color: var(--sky-deep); }
-.verdict-tally li.tone-coral.is-won  { background: var(--coral-bg); border-color: var(--coral-deep); }
-.verdict-tally li.tone-gold.is-won   { background: var(--gold-bg); border-color: var(--gold-deep); }
-.verdict-opt { font-weight: 500; }
-.verdict-count {
-  font-variant-numeric: tabular-nums;
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.05);
-}
-.verdict-voters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px 16px;
-  padding-top: 14px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-  font-size: 12px;
-  color: var(--ink-soft);
-  font-family: "IBM Plex Mono", monospace;
-}
-.verdict-voter { display: inline-flex; align-items: center; gap: 4px; }
-.verdict-voter-name { color: var(--ink); font-weight: 500; }
-.verdict-voter-vote { color: var(--ink); }
-.judge-ruling {
-  margin-top: 16px;
-  padding: 14px 16px 12px;
-  border-top: 3px double rgba(0, 0, 0, 0.14);
-  margin-left: -16px;
-  margin-right: -16px;
-  animation: judge-in 420ms var(--ease-out) 240ms both;
-}
-@keyframes judge-in {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-.judge-winner {
-  font-family: "Fraunces", serif;
-  font-weight: 640;
-  font-size: 22px;
-  line-height: 1.1;
-  margin-bottom: 4px;
-}
-.judge-rationale {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.55;
-  color: var(--ink-soft);
-}
-.judge-ruling.is-dissent {
-  background: linear-gradient(90deg, rgba(217, 119, 6, 0.07), transparent 65%);
-  border-left: 3px solid var(--clay-deep);
-  border-radius: 0 6px 6px 0;
-}
-.judge-ruling.is-dissent .verdict-eyebrow { color: var(--clay-ink); }
-@media (prefers-reduced-motion: reduce) {
-  .verdict, .judge-ruling { animation: none; }
-}
-
-/* ── Rabble minutes card ────────────────────────────────────────────────
-   A tight pull-quote block that sits between the ballots and the verdict.
-   Hairline gold rule on the left, small caps eyebrow, big Fraunces italic
-   body — reads like an epigraph, not a chat bubble. */
-.minutes {
-  align-self: stretch;
-  margin: 24px 0 4px;
-  padding: 16px 22px 18px 26px;
-  border-left: 2px solid var(--lamp);
-  background: linear-gradient(
-    90deg,
-    rgba(245, 158, 11, 0.06) 0%,
-    rgba(245, 158, 11, 0) 60%
-  );
-  position: relative;
-}
-.minutes::before {
-  content: "";
-  position: absolute;
-  left: 26px;
-  right: 22px;
-  bottom: 10px;
-  height: 1px;
-  background: rgba(255, 255, 255, 0.06);
-}
-.minutes-eyebrow {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--lamp);
-  margin-bottom: 8px;
-}
-.minutes-body {
-  font-family: "Fraunces", serif;
-  font-weight: 400;
-  font-style: italic;
-  font-size: 20px;
-  line-height: 1.45;
-  letter-spacing: -0.005em;
-  color: #f3f4f6;
-  margin: 0;
-}
-.minutes-body::first-letter {
-  font-weight: 500;
-}
-
-/* ── Panel picker dead-slug state ───────────────────────────────────────── */
-.model-toggle.is-dead {
-  opacity: 0.42;
-  cursor: not-allowed;
-  text-decoration: line-through;
-  text-decoration-thickness: 1px;
-  text-decoration-color: rgba(239, 68, 68, 0.6);
-  background: rgba(239, 68, 68, 0.05);
-  border-color: rgba(239, 68, 68, 0.15);
-}
-.model-toggle.is-dead:hover {
-  transform: none;
-}
-.model-toggle-dead {
-  margin-left: 6px;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  color: rgba(239, 68, 68, 0.8);
-  letter-spacing: 0.04em;
-}
-.model-picker-hint {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-  color: rgba(239, 68, 68, 0.7);
-  letter-spacing: 0.02em;
-  margin-left: 6px;
-}
-
-.tool-badge.is-cached {
-  background: rgba(107, 114, 128, 0.15);
-  color: rgba(255, 255, 255, 0.55);
-  border-color: rgba(107, 114, 128, 0.25);
-  font-style: italic;
-}
-
-/* ── Reasoning text: inline URL → clickable host badge ─────────────────── */
-.reason-link {
-  color: var(--ink);
-  text-decoration: none;
-  background: rgba(0, 0, 0, 0.05);
-  border-bottom: 1px solid rgba(0, 0, 0, 0.25);
-  padding: 0 4px;
-  border-radius: 2px;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
-  transition: background 0.15s, border-color 0.15s;
-}
-.reason-link:hover {
-  background: rgba(20, 184, 166, 0.15);
-  border-bottom-color: var(--aqua-deep);
-}
-
-/* ── Sources block under each debate ballot ─────────────────────────────── */
-.sources {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
-}
-.sources-label {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  margin-bottom: 6px;
-}
-.sources-label-sub {
-  margin-top: 10px;
-}
-.sources-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-.sources-list li {
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 12px;
-}
-.sources-list li.is-cached { opacity: 0.55; }
-.sources-list a {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  color: var(--ink);
-  text-decoration: none;
-  padding: 3px 8px;
-  background: rgba(0, 0, 0, 0.04);
-  border-left: 2px solid var(--aqua-deep);
-  border-radius: 0 4px 4px 0;
-  transition: background 0.15s, border-color 0.15s;
-  min-width: 0;
-}
-.sources-list a:hover {
-  background: rgba(20, 184, 166, 0.12);
-  border-left-color: var(--aqua);
-}
-.src-host {
-  font-family: "IBM Plex Mono", monospace;
-  font-weight: 600;
-  color: var(--ink);
-}
-.src-path {
-  font-family: "IBM Plex Mono", monospace;
-  color: var(--ink-soft);
-  font-size: 11px;
+  white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 100%;
 }
-.src-flag {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  color: var(--ink-soft);
-  font-style: italic;
-}
-.sources-queries {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 6px;
-}
-.src-query {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.04);
-  color: var(--ink-soft);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-  border: 1px solid rgba(0, 0, 0, 0.06);
-  max-width: 300px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.src-query.is-cached {
-  opacity: 0.55;
-  font-style: italic;
-}
-
-/* Poll-mode tool note: browsed hostname is now an <a> */
 .tool-badge-link {
-  cursor: pointer;
   text-decoration: none;
+  border-left: 2px solid var(--blue);
 }
 .tool-badge-link:hover {
-  background: rgba(125, 211, 252, 0.22);
-  border-color: var(--sky);
+  background: var(--blue-bg);
+  border-left-color: var(--blue-deep);
+}
+.tool-badge.is-cached {
+  background: var(--surface);
+  color: var(--ink-soft);
+  border-color: var(--border);
+  font-style: italic;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════
-   DESIGN TRICKS — the "not just another AI SaaS" pass
+   STORY BAND — the 1C "Bayeux Chronicle" narrative tapestry, integrated
+   into the Illuminated Codex as the hero/empty-state. Three scenes read
+   left → right: they gather (Poll) · they contend (Debate) · it is
+   decided (Verdict). Latin captions, hatched scene panels, gilded frame.
    ═══════════════════════════════════════════════════════════════════════ */
-
-/* ── Ambient background: cursor spotlight + paper grain ─────────────────
-   The spotlight is a fixed radial gradient anchored on (--mx, --my),
-   which main.jsx updates on pointermove. Grain is a tiny inline SVG
-   turbulence tile at ~3% opacity so the chamber never feels perfectly
-   flat. Both live under everything (z-index -1) and pointer-events off. */
-body::before,
-body::after {
-  content: "";
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: -1;
+.story-band {
+  margin: 0 auto var(--section-gap);
+  max-width: var(--column);
+  border: 2px solid var(--gold);
+  background: var(--paper-hi);
+  box-shadow: inset 0 0 0 1px var(--paper), inset 0 0 0 2px rgba(28, 63, 143, 0.25),
+              var(--shadow-md);
+  overflow: hidden;
 }
-body::before {
-  /* Ambient cursor spotlight removed — user preferred no glow. */
-  background: none;
+.story-band-caption {
+  text-align: center;
+  padding: 9px 12px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--gold-line);
+  background: repeating-linear-gradient(90deg, var(--paper) 0 2px, transparent 2px 7px);
 }
-body::after {
-  background-image: url("data:image/svg+xml;utf8,\
-<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'>\
-<filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/>\
-<feColorMatrix values='0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.55 0'/></filter>\
-<rect width='100%' height='100%' filter='url(%23n)' opacity='0.05'/></svg>");
-  opacity: 0.5;
-  mix-blend-mode: screen;
+.story-band-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
 }
-
-/* Respect reduced motion. */
-@media (prefers-reduced-motion: reduce) {
-  body::before { transition: none; }
-  .seat-halo, .thinking-pulse { animation: none !important; }
-}
-
-/* ── Seating chart: replaces the teal pill wall ──────────────────────── */
-.seating {
+.story-scene {
+  padding: 0;
   display: flex;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 18px 4px 12px;
-  position: relative;
+  flex-direction: column;
 }
-.seating-label {
-  font-family: "Fraunces", serif;
-  font-style: italic;
-  font-weight: 500;
-  font-size: 14px;
-  letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.42);
-  padding-top: 22px;
-  flex-shrink: 0;
+.story-scene + .story-scene { border-left: 1px solid var(--gold-line); }
+.story-scene-head {
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: 7px 10px;
+  text-align: center;
+  line-height: 1.3;
 }
-.seating-row {
+.story-scene-head .latin { display: block; font-style: italic; opacity: 0.82; font-weight: 400; }
+.story-scene--poll .story-scene-head { background: var(--blue); }
+.story-scene--debate .story-scene-head { background: var(--mint-deep); }
+.story-scene--verdict .story-scene-head { background: var(--red); }
+.story-scene-panel {
+  aspect-ratio: 16 / 10;
+  margin: 10px;
+  border: 1px solid var(--red);
+  background: var(--paper-lo);
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px 14px;
-  flex: 1;
-}
-.seating-hint {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-  color: rgba(239, 68, 68, 0.65);
-  align-self: flex-end;
-  padding-bottom: 6px;
-}
-
-.seat {
-  display: inline-flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
-  background: transparent;
-  border: none;
-  padding: 6px 4px 4px;
-  cursor: pointer;
-  font: inherit;
-  color: rgba(255, 255, 255, 0.4);
-  transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1),
-              color 0.15s ease;
-  min-width: 78px;
-}
-.seat:hover:not(:disabled) { transform: translateY(-2px); }
-.seat:disabled { cursor: default; }
-
-.seat-disc {
-  position: relative;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  isolation: isolate;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1.5px solid rgba(255, 255, 255, 0.08);
-  transition: background 0.25s ease, border-color 0.25s ease,
-              transform 0.25s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.seat-disc-inner {
-  font-family: "IBM Plex Mono", monospace;
-  font-weight: 600;
-  font-size: 13px;
-  letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.5);
-  transition: color 0.15s ease;
-}
-.seat.is-on .seat-disc {
-  background: var(--tc-bg);
-  border-color: var(--tc-deep);
-  box-shadow:
-    inset 0 0 0 1px var(--tc-bg),
-    0 0 0 4px rgba(0, 0, 0, 0);
-}
-.seat.is-on .seat-disc-inner { color: var(--tc); }
-.seat.is-on:hover:not(:disabled) .seat-disc {
-  box-shadow:
-    inset 0 0 0 1px var(--tc-bg),
-    0 0 0 4px rgba(0, 0, 0, 0.15);
-}
-.seat.is-on { color: var(--tc); }
-
-.seat-name {
-  font-family: "Inter", system-ui, sans-serif;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: -0.005em;
-  color: inherit;
+  justify-content: center;
+  gap: 6px;
   text-align: center;
-  max-width: 96px;
-  line-height: 1.2;
-}
-.seat.is-on .seat-name { color: rgba(255, 255, 255, 0.9); }
-.seat-provider {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 9px;
-  letter-spacing: 0.08em;
-  text-transform: lowercase;
-  color: rgba(255, 255, 255, 0.28);
-}
-.seat.is-on .seat-provider { color: var(--tc); opacity: 0.7; }
-
-/* Thinking pulse — a slow halo ring while their agent.run() is pending. */
-.seat.is-thinking .seat-halo {
-  position: absolute;
-  inset: -4px;
-  border-radius: 50%;
-  border: 1.5px solid var(--tc);
-  opacity: 0.6;
-  animation: seat-pulse 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-@keyframes seat-pulse {
-  0%   { transform: scale(1);   opacity: 0.7; }
-  70%  { transform: scale(1.35); opacity: 0; }
-  100% { transform: scale(1.35); opacity: 0; }
-}
-
-.seat.is-dead { opacity: 0.35; cursor: not-allowed; }
-.seat.is-dead .seat-name { text-decoration: line-through;
-                           text-decoration-color: rgba(239, 68, 68, 0.6); }
-.seat-flag {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 9px;
-  color: rgba(239, 68, 68, 0.85);
-  letter-spacing: 0.06em;
-}
-
-/* ── Tab underline with a spring ─────────────────────────────────────── */
-.tab {
   position: relative;
   overflow: hidden;
 }
-.tab::after {
-  content: "";
+.story-scene-video {
   position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 2px;
-  height: 2px;
-  background: var(--aqua-deep);
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
 }
-.tab.is-on::after { transform: scaleX(1); }
-
-/* ── Composer as a lectern ──────────────────────────────────────────── */
-.composer {
+.story-scene-panel--single {
+  aspect-ratio: 16 / 9;
+  margin: 10px 0 14px;
+}
+.story-scene-mark,
+.story-scene-glyph {
   position: relative;
-}
-.composer::before {
-  content: "01.";
-  position: absolute;
-  left: -34px;
-  top: 14px;
-  font-family: "Fraunces", serif;
-  font-weight: 500;
-  font-size: 22px;
-  color: rgba(245, 158, 11, 0.55);
-  letter-spacing: -0.01em;
-}
-@media (max-width: 820px) {
-  .composer::before { display: none; }
-}
-
-/* ── Round title: Roman-numeral treatment ────────────────────────────── */
-.debate-round-title {
-  display: flex;
-  align-items: baseline;
-  gap: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-  padding-bottom: 6px;
-  margin-bottom: 12px;
-}
-.round-mark {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.62);
-}
-.round-numeral {
-  font-family: "Fraunces", serif;
-  font-weight: 500;
-  font-style: italic;
-  font-size: 24px;
-  color: var(--paper);
-  letter-spacing: 0.02em;
-  line-height: 1;
-}
-
-/* ── Ballot card arrival: fade + subtle rise ─────────────────────────── */
-.debate-card {
-  animation: card-arrive 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes card-arrive {
-  from { opacity: 0; transform: translateY(6px) scale(0.985); }
-  to   { opacity: 1; transform: translateY(0)   scale(1); }
-}
-
-/* ── Old .model-picker classes: leave in place for backward compat but
-   they're no longer emitted by the JSX. Nothing to remove — dead CSS
-   costs less than a rebuild does. */
-
-/* ── Vote-arc matrix: the debate at a glance ─────────────────────────── */
-.matrix {
-  margin: 8px 0 28px;
-  padding: 16px 18px 14px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-}
-.matrix-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-.matrix-eyebrow {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--lamp);
-}
-.matrix-legend {
-  font-family: "Fraunces", serif;
-  font-style: italic;
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.62);
-}
-.matrix-grid {
-  display: grid;
-  row-gap: 8px;
-  column-gap: 6px;
-  align-items: center;
-}
-.matrix-corner { }
-.matrix-col-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: center;
-  gap: 4px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-}
-.matrix-col-head .round-mark {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 9px;
-  letter-spacing: 0.18em;
-  color: rgba(255, 255, 255, 0.62);
-}
-.matrix-col-head .round-numeral {
-  font-family: "Fraunces", serif;
-  font-style: italic;
-  font-size: 15px;
-  color: var(--paper);
-}
-.matrix-final {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.62);
-}
-.matrix-row-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding-right: 6px;
-}
-.matrix-disc {
-  display: inline-grid;
-  place-items: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  background: var(--tc-bg);
-  border: 1px solid var(--tc-deep);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 9px;
-  font-weight: 600;
-  color: var(--tc);
-  flex-shrink: 0;
-}
-.matrix-row-name {
-  font-family: "Inter", system-ui, sans-serif;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.75);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.matrix-cell {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  height: 22px;
-  position: relative;
-}
-.matrix-dot {
-  display: inline-block;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--tc);
-  box-shadow: 0 0 0 2px var(--tc-bg);
-  animation: dot-arrive 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes dot-arrive {
-  from { transform: scale(0);   opacity: 0; }
-  to   { transform: scale(1);   opacity: 1; }
-}
-.matrix-flip {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
-  color: var(--lamp);
-  margin-left: 2px;
-}
-.matrix-cell.is-abstain { opacity: 0.35; }
-.matrix-dash {
-  font-family: "IBM Plex Mono", monospace;
-  color: rgba(255, 255, 255, 0.25);
-}
-.matrix-final-cell .matrix-dash { color: rgba(255, 255, 255, 0.62); }
-.matrix-final-cell {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 11px;
-  color: var(--paper);
-  padding-left: 8px;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-/* ── Verdict count-up-friendly numeric styling ────────────────────────── */
-.verdict-count { font-variant-numeric: tabular-nums; }
-
-/* ── Verdict wax-seal stamp ──────────────────────────────────────────── */
-.verdict { position: relative; }
-.verdict-stamp {
-  position: absolute;
-  top: 20px;
-  right: 22px;
-  transform: rotate(-8deg);
-  font-family: "Fraunces", serif;
-  font-weight: 500;
-  font-size: 22px;
-  letter-spacing: 0.28em;
-  text-transform: uppercase;
-  color: rgba(164, 35, 26, 0.88);
-  border: 3px double rgba(164, 35, 26, 0.68);
-  padding: 6px 14px;
-  border-radius: 4px;
+  z-index: 1;
   pointer-events: none;
-  opacity: 0;
-  animation: stamp-thud 520ms cubic-bezier(0.5, 1.7, 0.3, 1) 260ms forwards;
-  mix-blend-mode: multiply;
-  text-shadow: 0 0 1px rgba(164, 35, 26, 0.4);
+  text-shadow: 0 1px 3px rgba(13, 10, 6, 0.7), 0 0 1px rgba(13, 10, 6, 0.9);
 }
-.verdict-stamp-tied {
-  color: rgba(107, 114, 128, 0.85);
-  border-color: rgba(107, 114, 128, 0.6);
+.story-scene-mark {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--red);
 }
-@keyframes stamp-thud {
-  0%   { opacity: 0; transform: rotate(-8deg) scale(1.8); }
-  60%  { opacity: 0.95; transform: rotate(-8deg) scale(0.95); }
-  100% { opacity: 0.88; transform: rotate(-8deg) scale(1); }
+.story-scene-glyph {
+  font-family: var(--font-display);
+  font-size: 30px;
+  line-height: 1;
+  color: var(--paper);
 }
-@media (prefers-reduced-motion: reduce) {
-  .verdict-stamp {
-    animation: none;
-    opacity: 0.88;
-    transform: rotate(-8deg);
-  }
+.story-scene-desc {
+  display: none;
+}
+.story-scene-text {
+  font-family: var(--font-long);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0 12px 14px;
+}
+.story-scene-text strong { color: var(--blue-deep); }
+.story-scene--verdict .story-scene-text strong { color: var(--red); }
+
+/* ════════════════════════════════════════════════════════════════════
+   CODEX BANNER — the top of "1A · Illuminated Codex": folio masthead
+   strip, the full-width council tapestry (council.jpg) in a gilded
+   triple frame, and the hero block (gothic Rabble + illuminated drop-cap
+   lead paragraph).
+   ════════════════════════════════════════════════════════════════════ */
+.codex-banner {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto var(--section-gap);
+}
+.codex-folio {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(28, 63, 143, 0.28);
+  padding: 0 0 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+}
+.codex-folio span:last-child { color: var(--red); }
+.codex-folio-r { color: var(--ink-soft); }
+.codex-tapestry {
+  margin: 16px 0 24px;
+  border: 3px solid var(--gold);
+  box-shadow: inset 0 0 0 2px var(--paper), inset 0 0 0 4px var(--blue),
+    0 12px 30px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  padding: 3px;
+  background: var(--paper-hi);
+}
+.codex-tapestry img {
+  display: block;
+  width: 100%;
+ height: clamp(220px, 38vw, 340px);
+  object-fit: cover;
+  object-position: center 44%;
+}
+.codex-hero { padding: 0; text-align: center; }
+.codex-hero-title {
+  font-family: var(--font-display);
+  font-size: clamp(56px, 11vw, 96px);
+  line-height: 0.9;
+  color: var(--blue-deep);
+  letter-spacing: 0.01em;
+  margin: 0;
+}
+.codex-hero-lead {
+  font-family: var(--font-serif);
+  font-size: clamp(17px, 2.4vw, 22px);
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 20px 0 0;
+  text-align: left;
+}
+/* Illuminated drop cap — red gothic initial on a blue panel, gilded. */
+.codex-dropcap {
+  float: left;
+  font-family: var(--font-display);
+  font-size: 68px;
+  line-height: 0.72;
+  color: var(--red);
+  background: var(--blue);
+  padding: 8px 12px 4px;
+  margin: 6px 14px 2px 0;
+  border: 2px solid var(--gold);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   THE TABLE — round table with chairs around it
-   ═══════════════════════════════════════════════════════════════════════ */
+/* Placeholder divider band (replace divider-placeholder.svg to swap). */
+.codex-divider {
+  margin: 22px 0 0;
+  padding: 0;
+  text-align: center;
+}
+.codex-divider img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-top: 1px solid var(--gold);
+  border-bottom: 1px solid var(--gold);
+}
 
+@media (max-width: 640px) {
+  .codex-hero-title { font-size: 54px; }
+  .codex-dropcap { font-size: 54px; padding: 6px 10px 2px; }
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   CHAMBER — the round table of panelists (Illuminated Codex treatment)
+   ════════════════════════════════════════════════════════════════════ */
 .chamber {
-  padding: 8px 4px 14px;
+  padding: 10px 4px 14px;
   display: flex;
   flex-direction: column;
   align-items: center;
 }
 .chamber-hint {
-  margin-top: 4px;
-  font-family: "IBM Plex Mono", monospace;
+  margin-top: 6px;
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: rgba(239, 68, 68, 1);
+  color: var(--red);
+  letter-spacing: 0.04em;
 }
 
 .table-scene {
   position: relative;
   width: 100%;
   height: clamp(320px, 44vw, 400px);
-  max-width: 720px;
+  max-width: var(--column);
+  margin: 0 auto var(--section-gap);
   margin: 0 auto;
 }
 
-/* The oval table itself. Paper-toned, with a subtle inner shadow so it
-   reads as a solid surface rather than a flat blob. */
+/* The oval table — a gilded medallion. */
 .round-table {
   position: absolute;
   left: 50%;
@@ -1773,18 +962,13 @@ body::after {
   height: 42%;
   border-radius: 50%;
   background:
-    radial-gradient(
-      ellipse at 40% 30%,
-      rgba(250, 248, 244, 0.06) 0%,
-      rgba(250, 248, 244, 0.02) 40%,
-      rgba(15, 20, 25, 0.4) 100%
-    ),
-    linear-gradient(140deg, #1a2028 0%, #12181d 100%);
-  border: 1px solid rgba(245, 158, 11, 0.14);
+    radial-gradient(ellipse at 40% 30%, var(--paper-hi) 0%, var(--paper-warm) 55%, var(--paper-lo) 100%);
+  border: 3px solid var(--gold);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.05),
-    inset 0 -8px 24px rgba(0, 0, 0, 0.4),
-    0 6px 20px rgba(0, 0, 0, 0.35);
+    inset 0 0 0 2px var(--paper),
+    inset 0 0 0 3px rgba(28, 63, 143, 0.3),
+    inset 0 0 18px rgba(28, 63, 143, 0.18),
+    0 8px 22px rgba(0, 0, 0, 0.28);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -1796,30 +980,27 @@ body::after {
   position: absolute;
   inset: 8px;
   border-radius: 50%;
-  border: 1px dashed rgba(245, 158, 11, 0.14);
-  /* No rotation: the ring is elliptical, so spinning it would tumble it
-     out of the table. A slow opacity breath keeps it alive instead. */
+  border: 1px dashed var(--gold-line);
   animation: table-ring-breathe 8s ease-in-out infinite;
 }
 @keyframes table-ring-breathe {
-  0%, 100% { opacity: 0.6; }
+  0%, 100% { opacity: 0.5; }
   50%      { opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .round-table::before { animation: none; }
 }
 .table-watermark {
-  font-family: "Fraunces", serif;
-  font-style: italic;
-  font-weight: 500;
-  font-size: clamp(14px, 2.4vw, 20px);
-  letter-spacing: 0.14em;
+  font-family: var(--font-mono);
+  font-size: clamp(11px, 1.6vw, 14px);
+  letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: rgba(245, 158, 11, 0.24);
+  color: var(--gold);
   user-select: none;
+  opacity: 0.6;
 }
 
-/* Chair = the model. Absolutely positioned via inline (left, top) from JSX. */
+/* Chair = the model. Positioned via inline (left, top) from JSX. */
 .chair {
   position: absolute;
   transform: translate(-50%, -50%);
@@ -1832,9 +1013,9 @@ body::after {
   padding: 4px 2px;
   cursor: pointer;
   font: inherit;
-  color: rgba(255, 255, 255, 0.65);
+  color: var(--ink-soft);
   transition:
-    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.35s var(--ease-out),
     color 0.15s ease,
     filter 0.2s ease;
   width: 108px;
@@ -1848,64 +1029,65 @@ body::after {
 
 .chair-disc {
   position: relative;
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   display: grid;
   place-items: center;
   isolation: isolate;
-  background: rgba(20, 26, 32, 0.85);
-  border: 1.5px solid rgba(255, 255, 255, 0.1);
-  transition: background 0.25s ease, border-color 0.25s ease,
-              box-shadow 0.25s ease;
+  background: var(--blue);
+  border: 2px solid var(--gold);
+  transition: background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: var(--shadow-sm);
 }
 .chair-disc-inner {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--font-mono);
   font-weight: 600;
   font-size: 13px;
   letter-spacing: 0.02em;
-  color: rgba(255, 255, 255, 0.55);
+  color: var(--gold-lt);
   transition: color 0.15s ease;
 }
 .chair.is-on .chair-disc {
-  background: var(--tc-bg);
-  border-color: var(--tc-deep);
+  background: var(--red);
+  border-color: var(--gold-lt);
   border-width: 2px;
+  box-shadow: 0 0 0 3px var(--gold-bg), var(--shadow-sm);
 }
-.chair.is-on .chair-disc-inner { color: var(--tc); }
-.chair.is-on { color: var(--tc); }
-.chair:not(.is-on) { filter: saturate(0.55); }
+.chair.is-on .chair-disc-inner { color: var(--gold-pale); }
+.chair.is-on { color: var(--blue-deep); }
+.chair:not(.is-on) { filter: saturate(0.5) brightness(0.9); }
+.chair:not(.is-on) .chair-disc { background: var(--ink-soft); }
 
 .chair-name {
-  font-family: "Inter", system-ui, sans-serif;
-  font-size: 11.5px;
-  font-weight: 500;
-  letter-spacing: -0.005em;
+  font-family: var(--font-serif);
+  font-size: 12px;
+  font-weight: 700;
   color: inherit;
   text-align: center;
   max-width: 108px;
   line-height: 1.2;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: rgba(15, 20, 25, 0.65);
-  backdrop-filter: blur(4px);
+  padding: 1px 6px;
+  border-radius: 2px;
+  background: var(--paper-hi);
+  border: 1px solid var(--gold-line);
 }
-.chair.is-on .chair-name { color: rgba(255, 255, 255, 0.95); }
+.chair.is-on .chair-name { color: var(--blue-deep); background: var(--paper-warm); }
 .chair-provider {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.08em;
   text-transform: lowercase;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--ink-faint);
 }
-.chair.is-on .chair-provider { color: var(--tc); opacity: 0.75; }
+.chair.is-on .chair-provider { color: var(--red); opacity: 0.85; }
 
 .chair.is-thinking .chair-halo {
   position: absolute;
   inset: -3px;
   border-radius: 50%;
-  border: 1.5px dashed var(--tc);
-  opacity: 0.55;
+  border: 1.5px dashed var(--gold);
+  opacity: 0.7;
   animation: seat-spin 6s linear infinite;
 }
 @keyframes seat-spin {
@@ -1914,23 +1096,22 @@ body::after {
 }
 
 .chair.is-dead {
-  opacity: 0.32;
+  opacity: 0.35;
   cursor: not-allowed;
-  filter: saturate(0.2) blur(0.3px);
+  filter: saturate(0.15) blur(0.3px);
 }
 .chair.is-dead .chair-name {
   text-decoration: line-through;
-  text-decoration-color: rgba(239, 68, 68, 0.6);
+  text-decoration-color: var(--red);
 }
 .chair-flag {
-  font-family: "IBM Plex Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 9px;
-  color: rgba(239, 68, 68, 1);
+  color: var(--red);
   letter-spacing: 0.06em;
 }
 
-/* Narrow screens: fall back to a compact scrolling row so chairs don't
-   crash together on a phone. */
+/* Narrow screens: compact scrolling row. */
 @media (max-width: 640px) {
   .table-scene {
     height: auto;
@@ -1950,125 +1131,98 @@ body::after {
   .chair:hover:not(:disabled) { transform: translateY(-2px); }
 }
 
-/* ── Table logo in the middle ────────────────────────────────────────── */
+/* Table logo in the middle. */
 .table-logo {
   width: 46%;
   max-width: 72px;
   height: auto;
-  opacity: 0.95;
-  filter: drop-shadow(0 0 12px rgba(245, 158, 11, 0.35));
+  opacity: 0.9;
+  filter: sepia(0.3) saturate(0.85) drop-shadow(0 0 8px var(--gold-bg));
   animation: table-breathe 6s ease-in-out infinite;
   user-select: none;
   pointer-events: none;
 }
 @keyframes table-breathe {
-  0%, 100% { opacity: 0.88; transform: scale(1); }
-  50%      { opacity: 1;    transform: scale(1.03); }
+  0%, 100% { opacity: 0.82; transform: scale(1); }
+  50%      { opacity: 1; transform: scale(1.03); }
 }
 @media (prefers-reduced-motion: reduce) {
   .table-logo { animation: none; opacity: 0.9; }
 }
-
-/* ── Matrix: SVG connecting lines + hover states ─────────────────────── */
-.matrix-grid { position: relative; }
-.matrix-lines {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-  z-index: 1;
-}
-.matrix-line {
-  animation: line-draw 620ms cubic-bezier(0.22, 1, 0.36, 1) both;
-  transition: stroke-width 220ms ease, opacity 220ms ease;
-}
-@keyframes line-draw {
-  from { stroke-dashoffset: 200; }
-  to   { stroke-dashoffset: 0; }
+.table-wordmark {
+  font-family: var(--font-display);
+  font-size: clamp(16px, 2vw, 24px);
+  line-height: 1;
+  color: var(--blue-deep);
+  user-select: none;
+  opacity: 0.92;
+  margin-top: 2px;
 }
 
-.matrix-row-head,
-.matrix-cell,
-.matrix-final-cell {
-  position: relative;
-  z-index: 2;
-  transition: opacity 200ms ease, transform 200ms ease, color 200ms ease;
+/* ════════════════════════════════════════════════════════════════════
+   DEBATE VIEW
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Motion headline (the user's question, illuminated). */
+.motion-headline {
+  margin: 12px 0 20px;
+  padding: 14px 20px 16px;
+  border-left: 3px solid var(--gold);
+  background: linear-gradient(90deg, var(--gold-bg) 0%, transparent 65%);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
-/* Row/col heads are <button>s (keyboard + touch tracing) — strip chrome. */
-.matrix-row-head,
-.matrix-col-head {
-  background: transparent;
-  border: none;
-  padding: 0;
-  font: inherit;
-  color: inherit;
-  text-align: left;
+.motion-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--red);
 }
-.matrix-col-head {
-  padding-bottom: 6px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+.motion-quote {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-style: italic;
+  font-size: clamp(20px, 2.4vw, 26px);
+  line-height: 1.28;
+  color: var(--blue-deep);
 }
-.matrix-row-head {
-  cursor: pointer;
-  padding: 4px 6px 4px 0;
+
+/* Tally bar (overall vote share). */
+.tally-bar {
+  display: flex;
+  overflow: hidden;
+  margin: 12px 0 24px;
+  background: var(--paper-hi);
+  border: 1px solid var(--gold-line);
   border-radius: 4px;
-  transition: background 200ms ease;
+  box-shadow: inset 0 1px 3px rgba(43, 32, 19, 0.25);
 }
-.matrix-row-head.is-hot {
-  background: rgba(255, 255, 255, 0.04);
-}
-.matrix-row-head.is-hot .matrix-disc {
-  border-color: var(--tc);
-}
-.matrix-row-head.is-hot .matrix-row-name {
-  color: rgba(255, 255, 255, 0.98);
-}
-
-.matrix-cell.is-dim { opacity: 0.25; }
-.matrix-cell.is-hot .matrix-dot,
-.matrix-cell.is-colhot .matrix-dot {
-  transform: scale(1.25);
-}
-.matrix-dot { transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1); }
-
-.matrix-col-head {
-  cursor: pointer;
-  transition: color 180ms ease, border-color 180ms ease;
-}
-.matrix-col-head.is-hot .round-numeral { color: var(--lamp); }
-.matrix-col-head.is-hot { border-bottom-color: rgba(245, 158, 11, 0.4); }
-
-.matrix-final-cell.is-hot {
-  color: var(--lamp);
-  transform: translateX(2px);
+.tally-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--paper);
+  font-weight: 700;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  border-radius: 0;
+  transition: width 0.65s var(--ease-out);
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--tc) 90%, white) 0%, var(--tc) 55%, var(--tc-deep) 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-.matrix-flip {
-  animation: flip-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-  animation-delay: 340ms;
-  display: inline-block;
-}
-@keyframes flip-pop {
-  0%   { opacity: 0; transform: rotate(-90deg) scale(0.3); }
-  60%  { opacity: 1; transform: rotate(20deg)  scale(1.2); }
-  100% { opacity: 1; transform: rotate(0)     scale(1); }
-}
-
-/* Staggered dot arrival (inline-style animation-delay from JSX) */
-.matrix-cell { animation: cell-arrive 300ms ease-out both; }
-@keyframes cell-arrive {
-  from { opacity: 0; transform: translateY(4px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Collapsible round with narrated header ──────────────────────────── */
+.debate-round { margin-bottom: 24px; }
 .debate-round-title {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--gold-line);
   padding: 8px 4px 8px 6px;
   margin-bottom: 12px;
   background: transparent;
@@ -2084,36 +1238,48 @@ body::after {
   transition: background 180ms ease, border-color 180ms ease;
 }
 .debate-round-title:hover {
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom-color: rgba(245, 158, 11, 0.35);
+  background: var(--gold-bg);
+  border-bottom-color: var(--gold);
 }
-.debate-round.is-collapsed .debate-round-title {
-  margin-bottom: 8px;
+.debate-round-title .round-numeral,
+.debate-round-title .round-mark {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--blue-deep);
 }
+.debate-round-title .round-mark { color: var(--red); }
+.debate-round.is-collapsed .debate-round-title { margin-bottom: 8px; }
 .round-narration {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 11.5px;
-  color: rgba(255, 255, 255, 0.55);
-  letter-spacing: 0.02em;
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--ink-soft);
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 .round-chevron {
-  font-family: "IBM Plex Mono", monospace;
-  color: rgba(255, 255, 255, 0.5);
-  transition: transform 220ms cubic-bezier(0.34, 1.56, 0.64, 1),
-              color 180ms ease;
+  font-family: var(--font-mono);
+  color: var(--gold);
+  transition: transform 220ms var(--ease-spring), color 180ms ease;
   font-size: 12px;
 }
-.round-chevron.is-open {
-  transform: rotate(90deg);
-  color: var(--lamp);
-}
-.debate-round-title:hover .round-chevron { color: var(--lamp); }
+.round-chevron.is-open { transform: rotate(90deg); color: var(--red); }
+.debate-round-title:hover .round-chevron { color: var(--red); }
 
-/* Mini row shown when the round is collapsed */
+.debate-round-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+  animation: grid-expand 320ms var(--ease-out) both;
+}
+@keyframes grid-expand {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Mini row shown when the round is collapsed. */
 .round-mini {
   display: flex;
   flex-wrap: wrap;
@@ -2131,18 +1297,14 @@ body::after {
   gap: 6px;
   padding: 3px 10px 3px 6px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.03);
-  border: 1px solid var(--tc-bg);
-  font-family: "IBM Plex Mono", monospace;
+  background: var(--paper-hi);
+  border: 1px solid var(--gold-line);
+  font-family: var(--font-mono);
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.7);
-  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1),
-              background 180ms ease;
+  color: var(--ink);
+  transition: transform 180ms var(--ease-spring), background 180ms ease;
 }
-.round-mini-chip:hover {
-  transform: translateY(-1px) scale(1.05);
-  background: color-mix(in srgb, var(--tc-bg) 60%, rgba(255, 255, 255, 0.03));
-}
+.round-mini-chip:hover { transform: translateY(-1px) scale(1.05); background: color-mix(in srgb, var(--tc-bg) 60%, var(--paper-hi)); }
 .round-mini-dot {
   width: 8px;
   height: 8px;
@@ -2150,18 +1312,9 @@ body::after {
   background: var(--tc);
   box-shadow: 0 0 0 2px var(--tc-bg);
 }
-.round-mini-flip { color: var(--lamp); }
+.round-mini-flip { color: var(--red); }
 
-/* Round grid animates in on expand */
-.debate-round-grid {
-  animation: grid-expand 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-@keyframes grid-expand {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── "Actively working" indicator to the left of a matrix row ───────── */
+/* "Actively working" indicator beside a matrix row. */
 .matrix-work {
   display: inline-flex;
   align-items: flex-end;
@@ -2184,130 +1337,790 @@ body::after {
 .matrix-work-bar:nth-child(2) { animation-delay: 120ms; }
 .matrix-work-bar:nth-child(3) { animation-delay: 240ms; }
 @keyframes work-bar {
-  0%, 100% { height: 5px;  opacity: 0.5; }
+  0%, 100% { height: 5px; opacity: 0.5; }
   50%      { height: 16px; opacity: 1; }
 }
 @media (prefers-reduced-motion: reduce) {
   .matrix-work-bar { animation: none; height: 10px; opacity: 0.7; }
 }
 
-/* ── Motion headline (replaces the user chat bubble) ─────────────────── */
-.motion-headline {
-  margin: 12px 0 20px;
-  padding: 14px 20px 16px;
-  border-left: 3px solid var(--lamp);
-  background: linear-gradient(
-    90deg,
-    rgba(245, 158, 11, 0.08) 0%,
-    rgba(245, 158, 11, 0) 65%
-  );
+.debate-card {
+  background: var(--paper-hi);
+  color: var(--ink);
+  border-radius: 4px;
+  padding: 12px 14px;
+  border: 1px solid var(--gold-line);
+  border-left: 4px solid var(--aqua-deep);
+  box-shadow: var(--shadow-sm);
+}
+.debate-card.tone-aqua   { border-left-color: var(--aqua-deep); }
+.debate-card.tone-clay   { border-left-color: var(--clay-deep); }
+.debate-card.tone-violet { border-left-color: var(--violet-deep); }
+.debate-card.tone-rose   { border-left-color: var(--rose-deep); }
+.debate-card.tone-mint   { border-left-color: var(--mint-deep); }
+.debate-card.tone-sky    { border-left-color: var(--sky-deep); }
+.debate-card.tone-coral  { border-left-color: var(--coral-deep); }
+.debate-card.tone-gold   { border-left-color: var(--gold-opt-deep); }
+.debate-card-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-family: var(--font-mono);
+}
+.debate-card-name { font-weight: 600; color: var(--blue-deep); }
+.debate-card-vote { color: var(--ink-soft); }
+.debate-card-flip {
+  margin-left: auto;
+  color: var(--red);
+  font-size: 10px;
+}
+.debate-card-reason {
+  font-family: var(--font-long);
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.debate-card-tools {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.debate-summary { margin-top: 24px; }
+
+/* ── Sources block under each ballot ── */
+.sources {
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px solid var(--gold-line);
+}
+.sources-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 6px;
+}
+.sources-label-sub { margin-top: 10px; }
+.sources-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
-.motion-eyebrow {
-  font-family: "IBM Plex Mono", monospace;
+.sources-list li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+}
+.sources-list li.is-cached { opacity: 0.55; }
+.sources-list a {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  color: var(--ink);
+  text-decoration: none;
+  padding: 3px 8px;
+  background: var(--surface);
+  border-left: 2px solid var(--blue);
+  border-radius: 0 2px 2px 0;
+  transition: background 0.15s, border-color 0.15s;
+  min-width: 0;
+}
+.sources-list a:hover { background: var(--blue-bg); border-left-color: var(--blue-deep); }
+.src-host { font-family: var(--font-mono); font-weight: 600; color: var(--ink); }
+.src-path {
+  font-family: var(--font-mono);
+  color: var(--ink-soft);
+  font-size: 11px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.src-flag { font-family: var(--font-mono); font-size: 10px; color: var(--ink-soft); font-style: italic; }
+.sources-queries { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.src-query {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+.src-query.is-cached { opacity: 0.55; font-style: italic; }
+
+/* ── Debate verdict card (with wax seal) ── */
+.verdict {
+  margin: 28px 0 16px;
+  padding: 24px 26px 20px;
+  background: linear-gradient(180deg, var(--paper-hi) 0%, var(--paper-warm) 60%);
+  color: var(--ink);
+  border-radius: 4px;
+  border: 2px solid var(--blue);
+  border-left: 6px solid var(--aqua-deep);
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-lg);
+  animation: verdict-rise 480ms var(--ease-out) both;
+}
+@keyframes verdict-rise {
+  from { opacity: 0; transform: translateY(14px) scale(0.99); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.verdict.tone-aqua   { border-left-color: var(--aqua-deep); }
+.verdict.tone-clay   { border-left-color: var(--clay-deep); }
+.verdict.tone-violet { border-left-color: var(--violet-deep); }
+.verdict.tone-rose   { border-left-color: var(--rose-deep); }
+.verdict.tone-mint   { border-left-color: var(--mint-deep); }
+.verdict.tone-sky    { border-left-color: var(--sky-deep); }
+.verdict.tone-coral  { border-left-color: var(--coral-deep); }
+.verdict.tone-gold   { border-left-color: var(--gold-opt-deep); }
+.verdict-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 8px;
+}
+.verdict-headline {
+  font-family: var(--font-display);
+  font-size: 44px;
+  line-height: 1;
+  color: var(--blue-deep);
+  margin-bottom: 6px;
+  padding-right: 96px; /* room for the wax seal */
+}
+.verdict-sub {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 15px;
+  color: var(--ink);
+  margin-bottom: 18px;
+}
+.verdict-tally {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 16px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.verdict-tally li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink);
+  border: 1px solid var(--border);
+}
+.verdict-tally li.is-won {
+  background: var(--gold-bg);
+  border-color: var(--gold);
+  font-weight: 600;
+}
+.verdict-tally li.tone-aqua.is-won   { background: var(--aqua-bg); border-color: var(--aqua-deep); }
+.verdict-tally li.tone-clay.is-won   { background: var(--clay-bg); border-color: var(--clay-deep); }
+.verdict-tally li.tone-violet.is-won { background: var(--violet-bg); border-color: var(--violet-deep); }
+.verdict-tally li.tone-rose.is-won   { background: var(--rose-bg); border-color: var(--rose-deep); }
+.verdict-tally li.tone-mint.is-won   { background: var(--mint-bg); border-color: var(--mint-deep); }
+.verdict-tally li.tone-sky.is-won    { background: var(--sky-bg); border-color: var(--sky-deep); }
+.verdict-tally li.tone-coral.is-won  { background: var(--coral-bg); border-color: var(--coral-deep); }
+.verdict-tally li.tone-gold.is-won   { background: var(--gold-opt-bg); border-color: var(--gold-opt-deep); }
+.verdict-opt { font-weight: 500; }
+.verdict-count {
+  font-variant-numeric: tabular-nums;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: rgba(43, 32, 19, 0.08);
+}
+.verdict-voters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--gold-line);
+  font-size: 12px;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+}
+.verdict-voter { display: inline-flex; align-items: center; gap: 4px; }
+.verdict-voter-name { color: var(--blue-deep); font-weight: 600; }
+.verdict-voter-vote { color: var(--ink); }
+
+/* Wax seal stamp on the verdict. */
+.verdict-stamp {
+  position: absolute;
+  top: 22px;
+  right: 26px;
+  width: 92px;
+  height: 92px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 38% 32%, #c9452c 0%, #9c2916 60%, #74180a 100%);
+  display: grid;
+  place-items: center;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4), inset 0 2px 6px rgba(255, 255, 255, 0.25);
+  border: 2px solid rgba(255, 220, 180, 0.25);
+  animation: sealthud 600ms var(--ease-spring) both;
+  font-family: var(--font-display);
+  font-size: 15px;
+  letter-spacing: 0.12em;
+  color: #f3d9b8;
+  text-align: center;
+  line-height: 1;
+}
+@keyframes sealthud {
+  0%   { opacity: 0; transform: rotate(-9deg) scale(1.7); }
+  60%  { opacity: 1; transform: rotate(-9deg) scale(0.94); }
+  100% { opacity: 1; transform: rotate(-9deg) scale(1); }
+}
+.verdict-stamp-tied {
+  background: radial-gradient(circle at 38% 32%, #6a5636 0%, #4a3a22 60%, #2e2412 100%);
+}
+
+.judge-ruling {
+  margin-top: 16px;
+  padding: 14px 16px 12px;
+  border-top: 3px double var(--gold);
+  margin-left: -16px;
+  margin-right: -16px;
+  animation: judge-in 420ms var(--ease-out) 240ms both;
+}
+@keyframes judge-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.judge-winner {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 22px;
+  line-height: 1.1;
+  margin-bottom: 4px;
+  color: var(--blue-deep);
+}
+.judge-rationale {
+  margin: 0;
+  font-family: var(--font-long);
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.judge-ruling.is-dissent {
+  background: linear-gradient(90deg, var(--red-bg), transparent 65%);
+  border-left: 3px solid var(--red-deep);
+  border-radius: 0 4px 4px 0;
+}
+.judge-ruling.is-dissent .verdict-eyebrow { color: var(--red); }
+@media (prefers-reduced-motion: reduce) {
+  .verdict, .judge-ruling, .verdict-stamp { animation: none; }
+}
+
+/* ── Rabble minutes card ── */
+.minutes {
+  align-self: stretch;
+  margin: 24px 0 4px;
+  padding: 16px 22px 18px 26px;
+  border-left: 3px solid var(--gold);
+  background: linear-gradient(90deg, var(--gold-bg) 0%, transparent 60%);
+  position: relative;
+}
+.minutes::before {
+  content: "";
+  position: absolute;
+  left: 26px;
+  right: 22px;
+  bottom: 10px;
+  height: 1px;
+  background: var(--gold-line);
+}
+.minutes-eyebrow {
+  font-family: var(--font-mono);
   font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--red);
+  margin-bottom: 8px;
+}
+.minutes-body {
+  font-family: var(--font-serif);
+  font-weight: 400;
+  font-style: italic;
+  font-size: 20px;
+  line-height: 1.45;
+  color: var(--ink);
+  margin: 0;
+}
+/* Illuminated drop cap on the first letter of the minutes. */
+.minutes-body::first-letter {
+  font-family: var(--font-display);
+  font-style: normal;
+  font-weight: 700;
+  font-size: 64px;
+  line-height: 0.72;
+  float: left;
+  color: var(--red);
+  background: var(--blue);
+  padding: 8px 10px 2px;
+  margin: 4px 10px 0 0;
+  border: 2px solid var(--gold);
+}
+
+/* ── Reasoning links / panel picker dead slug ── */
+.reason-link {
+  color: var(--blue-deep);
+  text-decoration: none;
+  background: var(--blue-bg);
+  border-bottom: 1px solid var(--blue);
+  padding: 0 4px;
+  border-radius: 2px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.reason-link:hover { background: rgba(28, 63, 143, 0.2); border-bottom-color: var(--blue-deep); }
+
+.model-toggle.is-dead {
+  opacity: 0.42;
+  cursor: not-allowed;
+  text-decoration: line-through;
+  text-decoration-thickness: 1px;
+  text-decoration-color: var(--red);
+  background: var(--red-bg);
+  border-color: rgba(176, 49, 28, 0.3);
+}
+.model-toggle.is-dead:hover { transform: none; }
+.model-toggle-dead {
+  margin-left: 6px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--red);
+  letter-spacing: 0.04em;
+}
+.model-picker-hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--red);
+  letter-spacing: 0.02em;
+  margin-left: 6px;
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   STATS VIEW
+   ════════════════════════════════════════════════════════════════════ */
+.stats-view { max-width: 900px; }
+.stats-section { margin-bottom: 40px; }
+.stats-section h2 {
+  font-family: var(--font-display);
+  font-size: 26px;
+  color: var(--blue-deep);
+}
+.stats-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.stats-head h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  color: var(--blue-deep);
+}
+.stats-window {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--gold-line);
+}
+.stats-window-btn {
+  background: transparent;
+  border: none;
+  color: var(--ink-soft);
+  border-radius: 2px;
+  padding: 3px 10px;
+  font: inherit;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+.stats-window-btn:hover:not(.is-on) { color: var(--ink); }
+.stats-window-btn.is-on {
+  background: var(--blue);
+  color: var(--gold-pale);
+  font-weight: 600;
+}
+.stats-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--ink);
+}
+.stats-table th,
+.stats-table td {
+  padding: 9px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--gold-line);
+  font-variant-numeric: tabular-nums;
+}
+.stats-table th {
+  color: var(--ink-soft);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.stats-table tbody tr { transition: background 140ms ease; }
+.stats-table tbody tr:hover { background: var(--gold-bg); }
+.stats-table .model-toggle-provider { margin-right: 8px; }
+.score-cell {
+  position: relative;
+  height: 18px;
+  width: 100%;
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+}
+.score-bar {
+  position: absolute;
+  left: 0;
+  top: 3px;
+  height: 12px;
+  background: linear-gradient(90deg, var(--blue) 0%, var(--gold) 100%);
+  border-radius: 3px;
+  opacity: 0.85;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  transform-origin: left center;
+  animation: score-grow 700ms var(--ease-out) both;
+  transition: width 400ms var(--ease-out);
+}
+@keyframes score-grow {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .score-bar { animation: none; }
+}
+.score-cell span {
+  position: relative;
+  z-index: 1;
+  padding-left: 6px;
+}
+.stats-hint {
+  color: var(--ink-soft);
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: 13px;
+  margin-top: 8px;
+}
+.questions-feed {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.questions-feed li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--gold-line);
+  font-size: 14px;
+  font-family: var(--font-serif);
+  color: var(--ink);
+}
+.mode-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  border: 1px solid var(--gold-line);
+}
+.mode-badge.mode-poll { background: var(--blue-bg); color: var(--blue-deep); }
+.mode-badge.mode-debate { background: var(--mint-bg); color: var(--mint-deep); }
+.q-text { flex: 1; }
+.q-meta {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+/* ════════════════════════════════════════════════════════════════════
+   DEBATE MATRIX — SVG connecting lines + hover trace
+   ════════════════════════════════════════════════════════════════════ */
+.matrix {
+  margin: 18px 0 24px;
+  padding: 16px 14px;
+  background: var(--paper-hi);
+  border: 1px solid var(--gold-line);
+  border-radius: 4px;
+}
+.matrix-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.matrix-eyebrow {
+  font-family: var(--font-mono);
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: var(--lamp);
+  color: var(--red);
 }
-.motion-quote {
-  font-family: "Fraunces", serif;
-  font-weight: 500;
-  font-style: italic;
-  font-size: clamp(20px, 2.4vw, 28px);
-  line-height: 1.28;
-  letter-spacing: -0.005em;
-  color: var(--paper);
+.matrix-legend {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-soft);
+}
+.matrix-grid { position: relative; }
+.matrix-lines {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 1;
+}
+.matrix-line {
+  animation: line-draw 620ms var(--ease-out) both;
+  transition: stroke-width 220ms ease, opacity 220ms ease;
+}
+@keyframes line-draw {
+  from { stroke-dashoffset: 200; }
+  to   { stroke-dashoffset: 0; }
 }
 
-/* ── Rabble wordmark inside the round table ─────────────────────────── */
-.table-wordmark {
-  font-family: "Fraunces", serif;
-  font-weight: 500;
-  font-style: italic;
-  font-size: clamp(16px, 1.8vw, 22px);
-  letter-spacing: 0.005em;
-  color: var(--paper);
-  user-select: none;
-  opacity: 0.92;
-  margin-top: 2px;
-  line-height: 1;
+.matrix-row-head,
+.matrix-cell,
+.matrix-final-cell {
+  position: relative;
+  z-index: 2;
+  transition: opacity 200ms ease, transform 200ms ease, color 200ms ease;
+}
+.matrix-row-head,
+.matrix-col-head {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.matrix-corner { }
+.matrix-col-head {
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--gold-line);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.matrix-col-head .round-mark { color: var(--red); }
+.matrix-col-head .round-numeral { color: var(--blue-deep); font-weight: 600; }
+.matrix-final {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-soft);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.matrix-row-head {
+  cursor: pointer;
+  padding: 4px 6px 4px 0;
+  border-radius: 3px;
+  transition: background 200ms ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.matrix-row-head.is-hot { background: var(--gold-bg); }
+.matrix-row-head.is-hot .matrix-disc { border-color: var(--tc); }
+.matrix-row-head.is-hot .matrix-row-name { color: var(--blue-deep); }
+.matrix-disc {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  background: var(--tc-bg);
+  border: 2px solid var(--tc-deep);
+  font-family: var(--font-mono);
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--tc-deep);
+  flex-shrink: 0;
+}
+.matrix-row-name {
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+}
+.matrix-cell {
+  text-align: center;
+  padding: 4px;
+  animation: cell-arrive 300ms ease-out both;
+}
+@keyframes cell-arrive {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.matrix-cell.is-dim { opacity: 0.25; }
+.matrix-cell.is-abstain { opacity: 0.35; }
+.matrix-cell.is-hot .matrix-dot,
+.matrix-cell.is-colhot .matrix-dot { transform: scale(1.25); }
+.matrix-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--tc);
+  box-shadow: 0 0 0 3px var(--tc-bg);
+  transition: transform 220ms var(--ease-spring);
+}
+.matrix-dash {
+  color: var(--ink-faint);
+  font-family: var(--font-mono);
+  font-size: 14px;
+}
+.matrix-final-cell { text-align: center; padding: 4px; }
+.matrix-final-cell .matrix-dash { color: var(--ink-soft); }
+.matrix-final-cell.is-hot {
+  color: var(--red);
+  font-weight: 700;
+  transform: translateX(2px);
+}
+.matrix-flip {
+  animation: flip-pop 420ms var(--ease-spring) both;
+  animation-delay: 340ms;
+  display: inline-block;
+  color: var(--red);
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+@keyframes flip-pop {
+  0%   { opacity: 0; transform: rotate(-90deg) scale(0.3); }
+  60%  { opacity: 1; transform: rotate(20deg) scale(1.2); }
+  100% { opacity: 1; transform: rotate(0) scale(1); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .matrix-cell, .matrix-line, .matrix-flip { animation: none; }
 }
 
-/* ── Composer caption (replaces the orphaned empty-state paragraph) ──── */
+/* Composer caption (kept for the slim/empty moments). */
 .composer-caption {
   max-width: 580px;
-  margin: -8px auto 24px;
+  margin: -6px auto 24px;
   padding: 0 20px;
-  font-family: "Fraunces", serif;
+  font-family: var(--font-serif);
   font-style: italic;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.62);
+  color: var(--ink-soft);
   text-align: center;
 }
 
+/* ───────────────────────────────────────────────────────────────────────
+   Landing page — the codex front door (codex banner + story band + CTA).
+   Reached on load and by pressing the “Rabble.” mark top-left. No round
+   table here; that lives in the Poll tab.
+   ─────────────────────────────────────────────────────────────────────── */
+.landing {
+  max-width: var(--column);
+  margin: 0 auto;
+  padding: 4px 0 0;
+}
+.landing-cta {
+  margin: 8px 0 32px;
+  text-align: center;
+}
+.btn-gilded {
+  font: 700 16px/1 var(--font-serif);
+  color: var(--blue-deep);
+  background: var(--paper-hi);
+  border: 2px solid var(--gold);
+  border-radius: 4px;
+  padding: 14px 28px;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  box-shadow: 2px 3px 0 rgba(43, 32, 19, 0.4),
+              inset 0 0 0 1px rgba(176, 132, 44, 0.3);
+  transition: transform 0.15s ease, box-shadow 0.15s ease,
+              background 0.15s ease, color 0.15s ease;
+}
+.btn-gilded:hover {
+  transform: translate(-1px, -1px);
+  background: var(--gold-bg);
+  box-shadow: 3px 4px 0 rgba(43, 32, 19, 0.45),
+              inset 0 0 0 1px rgba(176, 132, 44, 0.5);
+}
+.btn-gilded:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(43, 32, 19, 0.4);
+}
+.btn-gilded:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════
-   MOBILE MODE — .shell.is-mobile, set from App.jsx when the visitor is on
-   a phone (coarse pointer on a small screen, or any narrow viewport).
-   Width-based media queries above stay as a fallback; this class is the
-   design mode: bigger tap targets, no hover-dependent UI, sideways
-   scrolling instead of crushed grids, and iOS-safe input sizes.
+   MOBILE MODE — .shell.is-mobile, set from App.jsx on phones.
+   Bigger tap targets, no hover-dependent UI, sideways scrolling grids,
+   iOS-safe 16px inputs. The manuscript frame tightens on a phone.
    ═══════════════════════════════════════════════════════════════════════ */
-
-.shell.is-mobile {
-  padding: 0 14px calc(env(safe-area-inset-bottom, 0px) + 4px);
-}
+.shell.is-mobile { padding: 16px 8px 28px; }
+.shell.is-mobile::before { inset: 8px 4px; }
+.shell.is-mobile::after { inset: 8px 4px; }
 .shell.is-mobile button,
-.shell.is-mobile a {
-  -webkit-tap-highlight-color: transparent;
-}
+.shell.is-mobile a { -webkit-tap-highlight-color: transparent; }
 
-/* Masthead: tabs share the row evenly, hints off, wordmark tight */
+/* Masthead: tabs share the row evenly, hints off, wordmark tight. */
 .shell.is-mobile .masthead { gap: 10px; }
 .shell.is-mobile .masthead-mark {
   padding: 0 12px 6px 0;
   margin-right: 2px;
-  font-size: 15px;
+  font-size: 24px;
 }
-.shell.is-mobile .tab {
-  flex: 1;
-  min-width: 0;
-  padding: 10px 6px 12px;
-  align-items: center;
-}
+.shell.is-mobile .tab { flex: 1; min-width: 0; padding: 10px 6px 12px; align-items: center; }
 .shell.is-mobile .tab-label { font-size: 15px; }
 .shell.is-mobile .tab-hint { display: none; }
 
-/* Composer: 16px inputs so iOS doesn't zoom on focus; 44px tap targets */
+/* Composer: 16px inputs so iOS doesn't zoom on focus; 44px tap targets. */
 .shell.is-mobile .composer { gap: 8px; }
 .shell.is-mobile .composer textarea { font-size: 16px; }
-.shell.is-mobile .composer.is-hero textarea {
-  font-size: 17px;
-  padding: 14px 16px;
-  /* Room for the placeholder to wrap to two lines without clipping */
-  min-height: 78px;
-}
-.shell.is-mobile .composer.is-slim textarea {
-  font-size: 16px;
-  /* The placeholder wraps at phone width — give it the second line */
-  min-height: 58px;
-}
-.shell.is-mobile .composer button {
-  min-height: 44px;
-  padding: 0 16px;
-  font-size: 14px;
-}
+.shell.is-mobile .composer.is-hero textarea { font-size: 17px; padding: 14px 16px; min-height: 78px; }
+.shell.is-mobile .composer.is-slim textarea { font-size: 16px; min-height: 58px; }
+.shell.is-mobile .composer button { min-height: 44px; padding: 0 16px; font-size: 14px; }
 .shell.is-mobile .composer .btn-clear { padding: 0 12px; }
 .shell.is-mobile .composer::before { display: none; }
 .shell.is-mobile .composer-caption { font-size: 12px; padding: 0 8px; }
-.shell.is-mobile .empty-display { font-size: 28px; }
+.shell.is-mobile .empty-display { font-size: 34px; }
 
-/* Home: always the compact chip layout — the oval table needs a wide
-   viewport, and landscape phones shouldn't get the desktop scene. */
+/* Story band stacks to a single column on a phone. */
+.shell.is-mobile .story-band-grid { grid-template-columns: 1fr; }
+.shell.is-mobile .story-scene + .story-scene { border-left: none; border-top: 1px solid var(--gold-line); }
+
+/* Home: always the compact chip layout. */
 .shell.is-mobile .table-scene {
   height: auto;
   display: flex;
@@ -2326,7 +2139,7 @@ body::after {
 }
 .shell.is-mobile .chair:hover:not(:disabled) { transform: translateY(-2px); }
 
-/* Debate view */
+/* Debate view. */
 .shell.is-mobile .motion-headline { padding: 12px 14px; margin: 8px 0 16px; }
 .shell.is-mobile .tally-bar { height: 30px; }
 .shell.is-mobile .matrix {
@@ -2335,32 +2148,30 @@ body::after {
   -webkit-overflow-scrolling: touch;
 }
 .shell.is-mobile .matrix-grid { min-width: 460px; }
-/* Hover instructions mean nothing on a touch screen */
+.shell.is-mobile .matrix-legend { display: none; }
 .shell.is-mobile .debate-round-grid { grid-template-columns: 1fr; }
 .shell.is-mobile .debate-card { padding: 12px; }
 .shell.is-mobile .debate-round-title { padding: 10px 4px 10px 6px; }
-.shell.is-mobile .round-narration { font-size: 10.5px; }
+.shell.is-mobile .round-narration { font-size: 11px; }
 
-/* Verdict card */
+/* Verdict card. */
 .shell.is-mobile .verdict { padding: 18px 16px 16px; }
-.shell.is-mobile .verdict-headline { font-size: 30px; }
+.shell.is-mobile .verdict-headline { font-size: 30px; padding-right: 72px; }
 .shell.is-mobile .verdict-stamp {
   top: 14px;
   right: 12px;
-  font-size: 14px;
-  letter-spacing: 0.2em;
-  padding: 4px 10px;
+  width: 64px;
+  height: 64px;
+  font-size: 11px;
 }
 .shell.is-mobile .verdict-voters { flex-direction: column; gap: 6px; }
-.shell.is-mobile .judge-ruling {
-  margin-left: -8px;
-  margin-right: -8px;
-  padding: 12px 8px 10px;
-}
+.shell.is-mobile .judge-ruling { margin-left: -8px; margin-right: -8px; padding: 12px 8px 10px; }
 .shell.is-mobile .judge-winner { font-size: 19px; }
 .shell.is-mobile .minutes { padding: 12px 14px 14px 18px; }
+.shell.is-mobile .minutes-body { font-size: 18px; }
+.shell.is-mobile .minutes-body::first-letter { font-size: 48px; }
 
-/* Stats: the table scrolls sideways instead of crushing */
+/* Stats: the table scrolls sideways instead of crushing. */
 .shell.is-mobile .stats-table {
   display: block;
   overflow-x: auto;
@@ -2370,7 +2181,7 @@ body::after {
 .shell.is-mobile .stats-head { flex-wrap: wrap; gap: 8px; }
 .shell.is-mobile .questions-feed li { flex-wrap: wrap; }
 
-/* Poll card + transcript */
-.shell.is-mobile .a2ui-card { padding: 18px 16px 16px; border-radius: 14px; }
+/* Poll card + transcript. */
+.shell.is-mobile .a2ui-card { padding: 18px 16px 16px; border-radius: 4px; }
 .shell.is-mobile .card-heading { font-size: 21px; }
 .shell.is-mobile .bubble { max-width: 95%; }
