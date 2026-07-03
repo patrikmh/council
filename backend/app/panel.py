@@ -32,22 +32,19 @@ FRAMER_MAX_TOKENS = int(os.getenv("POLL_FRAMER_MAX_TOKENS", "256"))
 SUMMARY_MAX_TOKENS = int(os.getenv("POLL_SUMMARY_MAX_TOKENS", "128"))
 
 # Reasoning tokens — same idea as debate.py
-REASONING_EFFORT = os.getenv("POLL_REASONING_EFFORT", "medium")  # minimal|low|medium|high
+# NOTE: reasoning.max_tokens only (no reasoning.effort) — OpenAI rejects both.
 REASONING_TOKEN_BUDGET = int(os.getenv("POLL_REASONING_TOKEN_BUDGET", "4096"))
 
 POLL_PANELIST_SETTINGS = ModelSettings(
     max_tokens=POLL_PANELIST_MAX_TOKENS,
-    thinking=REASONING_EFFORT,
     extra_body={"reasoning": {"max_tokens": REASONING_TOKEN_BUDGET}},
 )
 FRAMER_SETTINGS = ModelSettings(
     max_tokens=FRAMER_MAX_TOKENS,
-    thinking=REASONING_EFFORT,
     extra_body={"reasoning": {"max_tokens": REASONING_TOKEN_BUDGET}},
 )
 POLL_SUMMARY_SETTINGS = ModelSettings(
     max_tokens=SUMMARY_MAX_TOKENS,
-    thinking=REASONING_EFFORT,
     extra_body={"reasoning": {"max_tokens": REASONING_TOKEN_BUDGET}},
 )
 
