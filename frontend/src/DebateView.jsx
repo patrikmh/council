@@ -373,7 +373,9 @@ function VoteMatrix({ snapshot, thinkingSet }) {
   const dotRefs = useRef({}); // key: `${name}:${ri}` -> HTMLElement
   const [lines, setLines] = useState([]); // {rowKey, x1, y1, x2, y2, color}
   const [hoveredRow, setHoveredRow] = useState(null);
+  const [pinnedRow, setPinnedRow] = useState(null);
   const [hoveredCol, setHoveredCol] = useState(null);
+  const tracedRow = pinnedRow ?? hoveredRow;
 
   const rounds = snapshot?.rounds;
 
@@ -446,7 +448,7 @@ function VoteMatrix({ snapshot, thinkingSet }) {
     >
       <div className="matrix-head">
         <div className="matrix-eyebrow">The arc</div>
-        <div className="matrix-legend">hover a row to trace a panelist · ↷ = flip</div>
+        <div className="matrix-legend">tap or hover a row to trace a panelist · ↷ = flip</div>
       </div>
       <div
         ref={gridRef}
@@ -459,7 +461,7 @@ function VoteMatrix({ snapshot, thinkingSet }) {
             recomputed on layout changes. */}
         <svg className="matrix-lines" aria-hidden="true">
           {lines.map((ln, i) => {
-            const isHot = hoveredRow === ln.rowKey;
+            const isHot = tracedRow === ln.rowKey;
             return (
               <line
                 key={i}
@@ -470,7 +472,7 @@ function VoteMatrix({ snapshot, thinkingSet }) {
                 stroke={ln.color}
                 strokeWidth={isHot ? 2.5 : 1.5}
                 strokeLinecap="round"
-                opacity={hoveredRow && !isHot ? 0.18 : 0.6}
+                opacity={tracedRow && !isHot ? 0.18 : 0.6}
                 className="matrix-line"
                 style={{
                   strokeDasharray: 200,
@@ -484,14 +486,18 @@ function VoteMatrix({ snapshot, thinkingSet }) {
 
         <div className="matrix-corner" />
         {rounds.map((r, ri) => (
-          <div
+          <button
             key={r.index}
+            type="button"
             className={`matrix-col-head ${hoveredCol === ri ? "is-hot" : ""}`}
             onMouseEnter={() => setHoveredCol(ri)}
+            onFocus={() => setHoveredCol(ri)}
+            onBlur={() => setHoveredCol(null)}
+            onClick={() => setHoveredCol((prev) => (prev === ri ? null : ri))}
           >
             <span className="round-mark">R</span>
             <span className="round-numeral">{romanOf(r.index)}</span>
-          </div>
+          </button>
         ))}
         <div className="matrix-col-head matrix-final">Final</div>
 
@@ -499,12 +505,19 @@ function VoteMatrix({ snapshot, thinkingSet }) {
           const cells = rounds.map((r, ri) => ballotFor(p.name, ri));
           const final = [...cells].reverse().find((c) => c) || null;
           const tone = toneForProvider(p.provider);
-          const isHot = hoveredRow === p.name;
+          const isHot = tracedRow === p.name;
           return (
             <React.Fragment key={p.name}>
-              <div
+              <button
+                type="button"
                 className={`matrix-row-head tone-${tone} ${isHot ? "is-hot" : ""}`}
                 onMouseEnter={() => setHoveredRow(p.name)}
+                onFocus={() => setHoveredRow(p.name)}
+                onBlur={() => setHoveredRow(null)}
+                onClick={() =>
+                  setPinnedRow((prev) => (prev === p.name ? null : p.name))
+                }
+                aria-pressed={pinnedRow === p.name}
               >
                 <span
                   className={`matrix-work ${thinkingSet?.has(p.name) ? "is-working" : ""}`}
@@ -518,12 +531,12 @@ function VoteMatrix({ snapshot, thinkingSet }) {
                   <span>{initialsOf(p.name)}</span>
                 </span>
                 <span className="matrix-row-name">{p.name}</span>
-              </div>
+              </button>
               {cells.map((b, ri) => {
                 const optIdx = b ? snapshot.options.indexOf(b.vote) : -1;
                 const cellTone = optIdx >= 0 ? toneFor(optIdx) : null;
                 const flipped = !!b?.flipped_from;
-                const dim = hoveredRow && hoveredRow !== p.name;
+                const dim = tracedRow && tracedRow !== p.name;
                 return (
                   <div
                     key={ri}

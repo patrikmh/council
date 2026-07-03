@@ -1996,6 +1996,20 @@ body::after {
   z-index: 2;
   transition: opacity 200ms ease, transform 200ms ease, color 200ms ease;
 }
+/* Row/col heads are <button>s (keyboard + touch tracing) — strip chrome. */
+.matrix-row-head,
+.matrix-col-head {
+  background: transparent;
+  border: none;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+.matrix-col-head {
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
 .matrix-row-head {
   cursor: pointer;
   padding: 4px 6px 4px 0;
@@ -2322,7 +2336,6 @@ body::after {
 }
 .shell.is-mobile .matrix-grid { min-width: 460px; }
 /* Hover instructions mean nothing on a touch screen */
-.shell.is-mobile .matrix-legend { display: none; }
 .shell.is-mobile .debate-round-grid { grid-template-columns: 1fr; }
 .shell.is-mobile .debate-card { padding: 12px; }
 .shell.is-mobile .debate-round-title { padding: 10px 4px 10px 6px; }
