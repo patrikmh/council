@@ -77,7 +77,7 @@
   /* Layout rhythm — the shared column width + section spacing that all
      major blocks (codex banner, round table, composer, story band) align
      to, so the page reads as a single manuscript column. */
-  --column: 720px;
+  --column: 800px;
   --section-gap: 28px;
 }
 
@@ -120,19 +120,19 @@ body::after {
    (gold → parchment → blue) with red corner diamonds. */
 .shell {
   position: relative;
-  max-width: 760px;
+  max-width: 860px;
   min-height: 100dvh;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  padding: 26px 22px 40px;
+  padding: 28px 28px 44px;
   z-index: 1;
 }
 /* The page itself — applied as the parchment behind the content. */
 .shell::before {
   content: "";
   position: absolute;
-  inset: 14px 8px;
+  inset: 16px 10px;
   z-index: -1;
   background:
     repeating-linear-gradient(92deg, rgba(120, 90, 40, 0.04) 0 2px, transparent 2px 6px),
@@ -149,7 +149,7 @@ body::after {
 .shell::after {
   content: "";
   position: absolute;
-  inset: 14px 8px;
+  inset: 16px 10px;
   z-index: -1;
   pointer-events: none;
   background:
@@ -501,7 +501,7 @@ body::after {
   transition: max-width 320ms ease, margin 320ms ease, padding 320ms ease;
 }
 .composer.is-hero { margin: 0 auto var(--section-gap); padding: 2px 4px; max-width: 600px; }
-.composer.is-slim { margin: 4px auto 12px; padding: 0; max-width: 720px; }
+.composer.is-slim { margin: 4px auto 12px; padding: 0; max-width: var(--column); }
 .composer::before { display: none; }
 
 .composer textarea {
@@ -844,7 +844,7 @@ body::after {
    ════════════════════════════════════════════════════════════════════ */
 .codex-banner {
   width: 100%;
-  max-width: 720px;
+  max-width: var(--column);
   margin: 0 auto var(--section-gap);
 }
 .codex-folio {
@@ -1165,14 +1165,35 @@ body::after {
 
 /* Motion headline (the user's question, illuminated). */
 .motion-headline {
-  margin: 12px 0 20px;
-  padding: 14px 20px 16px;
-  border-left: 3px solid var(--gold);
-  background: linear-gradient(90deg, var(--gold-bg) 0%, transparent 65%);
+  position: relative;
+  margin: 14px 0 22px;
+  padding: 16px 22px 18px;
+  border: 1px solid var(--gold);
+  border-radius: 3px;
+  background:
+    linear-gradient(180deg, rgba(255,250,235,0.45), rgba(239,227,198,0) 56px),
+    var(--paper-hi);
+  box-shadow:
+    inset 0 0 0 3px var(--paper),
+    inset 0 0 0 4px var(--gold-line),
+    inset 0 0 24px rgba(176,132,44,0.10);
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 7px;
 }
+.motion-headline::before,
+.motion-headline::after {
+  content: "";
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: var(--red);
+  transform: rotate(45deg);
+  box-shadow: 0 0 0 1px var(--gold-line);
+  top: 7px;
+}
+.motion-headline::before { left: 7px; }
+.motion-headline::after  { right: 7px; }
 .motion-eyebrow {
   font-family: var(--font-mono);
   font-size: 10px;
@@ -1217,38 +1238,101 @@ body::after {
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.3);
 }
 
-.debate-round { margin-bottom: 24px; }
+/* ═════════════════════════════════════════════════════════════════════
+   Debate rounds — expandable charter chapter headings.
+   Each round is a ruled header that expands to reveal model reasoning.
+   ═════════════════════════════════════════════════════════════════════ */
+.debate-round {
+  margin-bottom: 12px;
+  animation: round-arrive 420ms var(--ease-out) both;
+}
+@keyframes round-arrive {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 .debate-round-title {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   gap: 10px;
-  border-bottom: 1px solid var(--gold-line);
-  padding: 8px 4px 8px 6px;
-  margin-bottom: 12px;
-  background: transparent;
-  color: inherit;
+  padding: 12px 10px 10px 8px;
+  margin-bottom: 0;
+  background: var(--paper-hi);
+  color: var(--ink);
   cursor: pointer;
   font: inherit;
   width: 100%;
   text-align: left;
-  border-radius: 0;
-  border-left: none;
-  border-right: none;
-  border-top: none;
-  transition: background 180ms ease, border-color 180ms ease;
+  border: 1px solid var(--gold-line);
+  border-radius: 3px;
+  box-shadow:
+    inset 0 0 0 2px var(--paper),
+    inset 0 0 0 3px rgba(176,132,44,0.18);
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 .debate-round-title:hover {
-  background: var(--gold-bg);
-  border-bottom-color: var(--gold);
+  background: linear-gradient(90deg, var(--gold-bg), rgba(176,132,44,0.02) 60%);
+  border-color: var(--gold);
+  box-shadow:
+    inset 0 0 0 2px var(--paper),
+    inset 0 0 0 3px var(--gold-line),
+    0 2px 8px rgba(176,132,44,0.15);
+  transform: translateY(-1px);
 }
+.debate-round-title:active {
+  transform: translateY(0);
+}
+.debate-round.is-collapsed .debate-round-title { margin-bottom: 6px; }
+.debate-round.is-open .debate-round-title {
+  border-radius: 3px 3px 0 0;
+  border-bottom-color: transparent;
+  margin-bottom: 0;
+}
+/* Chevron — wrapped for larger click target + rotation animation. */
+.round-chevron-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--gold-bg);
+  border: 1px solid var(--gold-line);
+  flex-shrink: 0;
+  transition: background 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+.debate-round-title:hover .round-chevron-wrap {
+  background: var(--gold);
+  border-color: var(--gold);
+  box-shadow: 0 0 8px rgba(176,132,44,0.4);
+}
+.round-chevron {
+  font-size: 13px;
+  color: var(--blue-deep);
+  transition: transform 300ms var(--ease-spring), color 180ms ease;
+  line-height: 1;
+}
+.round-chevron.is-open { transform: rotate(90deg); color: var(--red); }
+.debate-round-title:hover .round-chevron { color: var(--red); }
+/* Round label — “Round” + roman numeral. */
 .debate-round-title .round-numeral,
 .debate-round-title .round-mark {
-  font-family: var(--font-mono);
-  font-weight: 600;
+  font-family: var(--font-display);
+  font-weight: 400;
   color: var(--blue-deep);
 }
-.debate-round-title .round-mark { color: var(--red); }
-.debate-round.is-collapsed .debate-round-title { margin-bottom: 8px; }
+.debate-round-title .round-mark {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--red);
+  text-transform: uppercase;
+}
+.debate-round-title .round-numeral {
+  font-size: 22px;
+  line-height: 1;
+}
+/* Narration summary — compressed tally. */
 .round-narration {
   font-family: var(--font-serif);
   font-style: italic;
@@ -1259,32 +1343,63 @@ body::after {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.round-chevron {
+/* Flip badge in round header — signals a flip happened this round. */
+.round-flip-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--red);
+  color: var(--paper);
   font-family: var(--font-mono);
-  color: var(--gold);
-  transition: transform 220ms var(--ease-spring), color 180ms ease;
-  font-size: 12px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  animation: flip-badge-pulse 2s ease-in-out infinite;
+  flex-shrink: 0;
 }
-.round-chevron.is-open { transform: rotate(90deg); color: var(--red); }
-.debate-round-title:hover .round-chevron { color: var(--red); }
-
+@keyframes flip-badge-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(176,49,28,0); }
+  50%      { box-shadow: 0 0 0 4px rgba(176,49,28,0.35); }
+}
+/* Expand hint — “expand for reasoning” — visible only when collapsed. */
+.round-expand-hint {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--ink-faint);
+  text-transform: uppercase;
+  flex-shrink: 0;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+.round-expand-hint.is-hidden { opacity: 0; transform: translateX(8px); pointer-events: none; }
+.debate-round-title:hover .round-expand-hint { color: var(--gold); }
+/* Round content — the grid of model cards when expanded. */
 .debate-round-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 12px;
+  padding: 14px 12px 16px;
+  background: var(--paper);
+  border: 1px solid var(--gold-line);
+  border-top: none;
+  border-radius: 0 0 3px 3px;
+  box-shadow: inset 0 0 0 2px var(--paper-hi), inset 0 0 0 3px rgba(176,132,44,0.12);
   animation: grid-expand 320ms var(--ease-out) both;
 }
 @keyframes grid-expand {
-  from { opacity: 0; transform: translateY(-6px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; max-height: 0; }
+  to   { opacity: 1; max-height: 2000px; }
 }
-
 /* Mini row shown when the round is collapsed. */
 .round-mini {
   display: flex;
   flex-wrap: wrap;
   gap: 6px 8px;
-  padding: 0 4px 12px;
+  padding: 6px 4px 8px;
   animation: mini-arrive 260ms ease-out both;
 }
 @keyframes mini-arrive {
@@ -1295,16 +1410,24 @@ body::after {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px 3px 6px;
+  padding: 4px 10px 4px 6px;
   border-radius: 999px;
   background: var(--paper-hi);
   border: 1px solid var(--gold-line);
   font-family: var(--font-mono);
   font-size: 11px;
   color: var(--ink);
-  transition: transform 180ms var(--ease-spring), background 180ms ease;
+  transition: transform 180ms var(--ease-spring), background 180ms ease, box-shadow 180ms ease;
 }
-.round-mini-chip:hover { transform: translateY(-1px) scale(1.05); background: color-mix(in srgb, var(--tc-bg) 60%, var(--paper-hi)); }
+.round-mini-chip:hover {
+  transform: translateY(-1px) scale(1.05);
+  background: color-mix(in srgb, var(--tc-bg) 60%, var(--paper-hi));
+  box-shadow: 0 2px 6px rgba(43,32,19,0.18);
+}
+.round-mini-chip.has-flip {
+  border-color: var(--red);
+  box-shadow: 0 0 0 1px rgba(176,49,28,0.2);
+}
 .round-mini-dot {
   width: 8px;
   height: 8px;
@@ -1312,7 +1435,34 @@ body::after {
   background: var(--tc);
   box-shadow: 0 0 0 2px var(--tc-bg);
 }
-.round-mini-flip { color: var(--red); }
+.round-mini-flip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--red);
+  animation: flip-badge-arrive 400ms var(--ease-spring) both;
+}
+.round-mini-flip .flip-arrow {
+  display: inline-block;
+  animation: flip-rotate 1.6s ease-in-out infinite;
+}
+@keyframes flip-rotate {
+  0%, 100% { transform: rotate(0deg); }
+  30%      { transform: rotate(-25deg); }
+  70%      { transform: rotate(25deg); }
+}
+.round-mini-flip .flip-label {
+  color: var(--ink-soft);
+  font-size: 8px;
+  letter-spacing: 0.02em;
+}
+@keyframes flip-badge-arrive {
+  from { opacity: 0; transform: scale(0.6) rotate(-30deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0); }
+}
 
 /* "Actively working" indicator beside a matrix row. */
 .matrix-work {
@@ -1374,8 +1524,24 @@ body::after {
 .debate-card-vote { color: var(--ink-soft); }
 .debate-card-flip {
   margin-left: auto;
-  color: var(--red);
-  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px 2px 6px;
+  border-radius: 999px;
+  background: var(--red);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  animation: flip-badge-arrive 400ms var(--ease-spring) both;
+}
+.debate-card-flip .flip-arrow {
+  display: inline-block;
+  font-size: 12px;
+  animation: flip-rotate 1.6s ease-in-out infinite;
 }
 .debate-card-reason {
   font-family: var(--font-long);
@@ -1497,7 +1663,7 @@ body::after {
   line-height: 1;
   color: var(--blue-deep);
   margin-bottom: 6px;
-  padding-right: 96px; /* room for the wax seal */
+  padding-right: 108px; /* room for the wax seal */
 }
 .verdict-sub {
   font-family: var(--font-serif);
@@ -1560,34 +1726,76 @@ body::after {
 .verdict-voter-name { color: var(--blue-deep); font-weight: 600; }
 .verdict-voter-vote { color: var(--ink); }
 
-/* Wax seal stamp on the verdict. */
+/* ═════════════════════════════════════════════════════════════════════
+   Wax seal stamp on the verdict — a more realistic pressed-wax disc
+   with drip edge, rope impression ring, and embossed lettering.
+   ═════════════════════════════════════════════════════════════════════ */
 .verdict-stamp {
   position: absolute;
-  top: 22px;
-  right: 26px;
-  width: 92px;
-  height: 92px;
+  top: 18px;
+  right: 22px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
-  background: radial-gradient(circle at 38% 32%, #c9452c 0%, #9c2916 60%, #74180a 100%);
+  background:
+    radial-gradient(circle at 38% 30%, #d44d33 0%, #b53422 35%, #8c2415 65%, #6a180a 100%);
   display: grid;
   place-items: center;
-  box-shadow: 0 6px 14px rgba(0, 0, 0, 0.4), inset 0 2px 6px rgba(255, 255, 255, 0.25);
-  border: 2px solid rgba(255, 220, 180, 0.25);
-  animation: sealthud 600ms var(--ease-spring) both;
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.35),
+    inset 0 3px 8px rgba(255, 200, 160, 0.28),
+    inset 0 -4px 10px rgba(40, 10, 0, 0.5),
+    inset 0 0 18px rgba(100, 30, 10, 0.3);
+  border: 2px solid rgba(200, 150, 100, 0.18);
+  animation: sealthud 680ms var(--ease-spring) both;
   font-family: var(--font-display);
-  font-size: 15px;
-  letter-spacing: 0.12em;
+  font-size: 14px;
+  letter-spacing: 0.14em;
   color: #f3d9b8;
   text-align: center;
   line-height: 1;
+  transform: rotate(-9deg);
+}
+/* Rope impression ring — an inset circular groove. */
+.verdict-stamp::before {
+  content: "";
+  position: absolute;
+  inset: 8px;
+  border-radius: 50%;
+  border: 2px solid rgba(180, 120, 80, 0.3);
+  box-shadow:
+    inset 0 0 0 1px rgba(60, 20, 5, 0.5),
+    0 0 0 1px rgba(220, 170, 120, 0.2);
+  pointer-events: none;
+}
+/* Wax drip blobs at the seal edge. */
+.verdict-stamp::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 20% 100%, rgba(160, 40, 15, 0.6) 0 6px, transparent 7px),
+    radial-gradient(circle at 75% 95%, rgba(140, 35, 12, 0.5) 0 5px, transparent 6px),
+    radial-gradient(circle at 95% 50%, rgba(150, 38, 14, 0.45) 0 4px, transparent 5px);
+  pointer-events: none;
 }
 @keyframes sealthud {
-  0%   { opacity: 0; transform: rotate(-9deg) scale(1.7); }
-  60%  { opacity: 1; transform: rotate(-9deg) scale(0.94); }
-  100% { opacity: 1; transform: rotate(-9deg) scale(1); }
+  0%   { opacity: 0; transform: rotate(-9deg) scale(1.8); filter: blur(4px); }
+  55%  { opacity: 1; transform: rotate(-9deg) scale(0.92); filter: blur(0); }
+  75%  { transform: rotate(-9deg) scale(1.04); }
+  100% { opacity: 1; transform: rotate(-9deg) scale(1); filter: blur(0); }
 }
 .verdict-stamp-tied {
-  background: radial-gradient(circle at 38% 32%, #6a5636 0%, #4a3a22 60%, #2e2412 100%);
+  background:
+    radial-gradient(circle at 38% 30%, #7a6640 0%, #5a4830 35%, #3e3220 65%, #2a2215 100%);
+  box-shadow:
+    0 8px 18px rgba(0, 0, 0, 0.5),
+    0 2px 4px rgba(0, 0, 0, 0.35),
+    inset 0 3px 8px rgba(200, 180, 140, 0.2),
+    inset 0 -4px 10px rgba(20, 15, 5, 0.5),
+    inset 0 0 18px rgba(60, 50, 30, 0.3);
 }
 
 .judge-ruling {
@@ -1623,8 +1831,122 @@ body::after {
   border-radius: 0 4px 4px 0;
 }
 .judge-ruling.is-dissent .verdict-eyebrow { color: var(--red); }
+
+/* ── Verdict footnotes & sources — colophon bibliography ── */
+.verdict-sources {
+  margin-top: 18px;
+  padding: 14px 16px 10px;
+  border-top: 2px solid var(--gold);
+  animation: footnote-in 320ms ease-out both;
+}
+@keyframes footnote-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.verdict-sources-eyebrow {
+  font-family: var(--font-display);
+  font-size: 17px;
+  line-height: 1;
+  color: var(--blue-deep);
+  letter-spacing: 0.02em;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--gold-line);
+}
+.verdict-sources-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  counter-reset: footnote;
+}
+.verdict-source {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 4px 0;
+  font-family: var(--font-serif);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-soft);
+  border-bottom: 1px dotted var(--gold-line);
+}
+.verdict-source:last-child { border-bottom: none; }
+.verdict-source.is-cached { opacity: 0.6; }
+.verdict-source-num {
+  flex-shrink: 0;
+  width: 18px;
+  text-align: right;
+  font-family: var(--font-display);
+  font-size: 13px;
+  color: var(--red);
+  line-height: 1;
+}
+.verdict-source a {
+  color: var(--blue-deep);
+  text-decoration: none;
+  border-bottom: 1px solid var(--gold-line);
+  transition: border-color 180ms ease, color 180ms ease;
+}
+.verdict-source a:hover {
+  border-bottom-color: var(--blue-deep);
+  color: var(--red);
+}
+.verdict-source-host {
+  font-weight: 600;
+  font-size: 12px;
+}
+.verdict-source-path {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--ink-faint);
+  margin-left: 4px;
+}
+/* Highlight target when a footnote ref is clicked (scroll-to). */
+.verdict-source:target {
+  background: var(--gold-bg);
+  border-radius: 2px;
+  transition: background 600ms ease;
+}
+
+/* ── Oxford-style footnote reference markers ── */
+/* Superscript raised numbers in running text that link to the footnote list. */
+.fn-ref {
+  color: var(--blue-deep);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 160ms ease;
+  line-height: 0;
+}
+.fn-ref sup {
+  font-size: 10px;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  color: var(--red);
+  vertical-align: super;
+  line-height: 0;
+  padding: 0 1px;
+}
+.fn-ref:hover sup {
+  color: var(--blue-deep);
+  text-shadow: 0 0 3px rgba(28, 63, 143, 0.4);
+}
+.fn-ref:visited sup {
+  color: var(--red);
+}
+/* "see notes" cross-reference in judge's rationale when no URLs are inline. */
+.fn-see-sources .fn-ref sup {
+  font-size: 9px;
+  font-style: italic;
+  color: var(--ink-soft);
+  letter-spacing: 0.02em;
+}
+.fn-see-sources .fn-ref:hover sup {
+  color: var(--blue-deep);
+  text-shadow: 0 0 3px rgba(28, 63, 143, 0.4);
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .verdict, .judge-ruling, .verdict-stamp { animation: none; }
+  .verdict, .judge-ruling, .verdict-stamp, .verdict-sources { animation: none; }
 }
 
 /* ── Rabble minutes card ── */
@@ -1866,32 +2188,81 @@ body::after {
 /* ════════════════════════════════════════════════════════════════════
    DEBATE MATRIX — SVG connecting lines + hover trace
    ════════════════════════════════════════════════════════════════════ */
+/* ═════════════════════════════════════════════════════════════════════
+   The arc — debate matrix, recast as an illuminated tally charter.
+   A gilded, triple-ruled panel of rota (rounds) × consilium (panelists),
+   with inked pigment dots, gilded medallion headers, a traced filigree
+   thread for the hovered panelist, and wax-seal corner studs.
+   ═════════════════════════════════════════════════════════════════════ */
 .matrix {
-  margin: 18px 0 24px;
-  padding: 16px 14px;
-  background: var(--paper-hi);
-  border: 1px solid var(--gold-line);
-  border-radius: 4px;
+  position: relative;
+  margin: 22px 0 28px;
+  padding: 22px 18px 24px;
+  background:
+    linear-gradient(180deg, rgba(255,250,235,0.45), rgba(239,227,198,0) 64px),
+    var(--paper-hi);
+  border: 1px solid var(--gold);
+  border-radius: 3px;
+  box-shadow:
+    0 2px 0 rgba(43,32,19,0.18),
+    inset 0 0 0 3px var(--paper),
+    inset 0 0 0 4px var(--gold-line),
+    inset 0 0 26px rgba(176,132,44,0.10);
 }
+/* Red corner diamonds — the charter's quartet of wax seals. */
+.matrix::before,
+.matrix::after {
+  content: "";
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  background: var(--red);
+  transform: rotate(45deg);
+  box-shadow: 0 0 0 1px var(--gold-line);
+  top: 8px;
+  z-index: 3;
+}
+.matrix::before { left: 8px; }
+.matrix::after  { right: 8px; }
+
 .matrix-head {
   display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  margin-bottom: 12px;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: 18px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid var(--gold-line);
 }
 .matrix-eyebrow {
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--red);
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 400;
+ line-height: 1;
+  color: var(--blue-deep);
+  letter-spacing: 0.03em;
+  text-transform: none;
 }
+/* Flanking gold hairlines around the gothic "The arc". */
+.matrix-eyebrow::before,
+.matrix-eyebrow::after {
+  content: "";
+  width: 52px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold));
+}
+.matrix-eyebrow::after { background: linear-gradient(270deg, transparent, var(--gold)); }
 .matrix-legend {
   font-family: var(--font-mono);
+  font-style: italic;
   font-size: 10px;
   color: var(--ink-soft);
+  letter-spacing: 0.02em;
 }
+
 .matrix-grid { position: relative; }
 .matrix-lines {
   position: absolute;
@@ -1903,8 +2274,17 @@ body::after {
   z-index: 1;
 }
 .matrix-line {
+  filter: drop-shadow(0 0 1px rgba(176,132,44,0.45));
   animation: line-draw 620ms var(--ease-out) both;
-  transition: stroke-width 220ms ease, opacity 220ms ease;
+  transition: stroke-width 220ms ease, opacity 220ms ease, filter 220ms ease;
+}
+/* Glowing traced line — pulsing glow when a row is hovered/pinned. */
+.matrix-line.is-hot-line {
+  animation: line-draw 620ms var(--ease-out) both, arc-pulse 2.2s ease-in-out infinite;
+}
+@keyframes arc-pulse {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(176,132,44,0.4)); }
+  50%      { filter: drop-shadow(0 0 8px rgba(243,224,163,0.6)); }
 }
 @keyframes line-draw {
   from { stroke-dashoffset: 200; }
@@ -1916,7 +2296,7 @@ body::after {
 .matrix-final-cell {
   position: relative;
   z-index: 2;
-  transition: opacity 200ms ease, transform 200ms ease, color 200ms ease;
+  transition: opacity 200ms ease, transform 200ms ease, color 200ms ease, background 200ms ease, box-shadow 200ms ease;
 }
 .matrix-row-head,
 .matrix-col-head {
@@ -1926,35 +2306,77 @@ body::after {
   font: inherit;
   color: inherit;
   text-align: left;
+  cursor: pointer;
 }
 .matrix-corner { }
+/* Round column headers — gilded medallions with roman numerals. */
 .matrix-col-head {
-  padding-bottom: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--gold-line);
+}
+.matrix-col-head .round-mark {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  color: var(--red);
+  text-transform: uppercase;
+}
+.matrix-col-head .round-numeral {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 19px;
+  line-height: 1;
+  color: var(--blue-deep);
+}
+.matrix-col-head.is-hot .round-numeral { color: var(--red); }
+.matrix-col-head.is-hot {
+  position: relative;
+}
+.matrix-col-head.is-hot::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 18px;
+  height: 2px;
+  background: var(--gold);
+  border-radius: 2px;
+}
+.matrix-final {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 10px;
   border-bottom: 1px solid var(--gold-line);
   font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--ink-soft);
-}
-.matrix-col-head .round-mark { color: var(--red); }
-.matrix-col-head .round-numeral { color: var(--blue-deep); font-weight: 600; }
-.matrix-final {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--red);
   text-transform: uppercase;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.18em;
 }
 .matrix-row-head {
   cursor: pointer;
-  padding: 4px 6px 4px 0;
+  padding: 5px 6px;
   border-radius: 3px;
-  transition: background 200ms ease;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
 }
-.matrix-row-head.is-hot { background: var(--gold-bg); }
-.matrix-row-head.is-hot .matrix-disc { border-color: var(--tc); }
+.matrix-row-head.is-hot {
+  background: linear-gradient(90deg, var(--gold-bg), rgba(176,132,44,0.02) 85%);
+  box-shadow: inset 2px 0 0 var(--gold);
+}
+.matrix-row-head.is-hot .matrix-disc {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 2px var(--gold-bg), 0 0 7px rgba(176,132,44,0.45);
+}
 .matrix-row-head.is-hot .matrix-row-name { color: var(--blue-deep); }
 .matrix-disc {
   width: 30px;
@@ -1964,11 +2386,13 @@ body::after {
   place-items: center;
   background: var(--tc-bg);
   border: 2px solid var(--tc-deep);
+  box-shadow: inset 0 0 0 1px rgba(255,250,235,0.4);
   font-family: var(--font-mono);
   font-weight: 600;
   font-size: 11px;
   color: var(--tc-deep);
   flex-shrink: 0;
+  transition: box-shadow 200ms ease, border-color 200ms ease;
 }
 .matrix-row-name {
   font-family: var(--font-serif);
@@ -1978,45 +2402,72 @@ body::after {
 }
 .matrix-cell {
   text-align: center;
-  padding: 4px;
+  padding: 6px 4px;
   animation: cell-arrive 300ms ease-out both;
 }
 @keyframes cell-arrive {
   from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
-.matrix-cell.is-dim { opacity: 0.25; }
-.matrix-cell.is-abstain { opacity: 0.35; }
+.matrix-cell.is-dim { opacity: 0.22; }
+.matrix-cell.is-abstain { opacity: 0.4; }
 .matrix-cell.is-hot .matrix-dot,
-.matrix-cell.is-colhot .matrix-dot { transform: scale(1.25); }
+.matrix-cell.is-colhot .matrix-dot {
+  transform: scale(1.25);
+  box-shadow: 0 0 0 3px var(--gold-bg), inset 0 0 0 1px rgba(255,250,235,0.6);
+}
 .matrix-dot {
   display: inline-block;
   width: 14px;
   height: 14px;
   border-radius: 50%;
   background: var(--tc);
-  box-shadow: 0 0 0 3px var(--tc-bg);
-  transition: transform 220ms var(--ease-spring);
+  box-shadow:
+    0 0 0 3px var(--tc-bg),
+    inset 0 0 0 1px rgba(255,250,235,0.5),
+    0 1px 2px rgba(43,32,19,0.3);
+  transition: transform 220ms var(--ease-spring), box-shadow 220ms ease;
 }
 .matrix-dash {
   color: var(--ink-faint);
   font-family: var(--font-mono);
   font-size: 14px;
 }
-.matrix-final-cell { text-align: center; padding: 4px; }
-.matrix-final-cell .matrix-dash { color: var(--ink-soft); }
+.matrix-final-cell {
+  text-align: center;
+  padding: 6px 4px;
+  font-family: var(--font-serif);
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink-soft);
+  border-left: 1px solid var(--gold-line);
+}
+.matrix-final-cell .matrix-dash { color: var(--ink-faint); }
 .matrix-final-cell.is-hot {
   color: var(--red);
-  font-weight: 700;
   transform: translateX(2px);
 }
 .matrix-flip {
-  animation: flip-pop 420ms var(--ease-spring) both;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  animation: flip-pop 520ms var(--ease-spring) both;
   animation-delay: 340ms;
-  display: inline-block;
   color: var(--red);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-weight: 700;
+  font-size: 10px;
+  text-shadow: 0 0 1px rgba(176,132,44,0.6);
+}
+.matrix-flip .flip-arrow {
+  font-size: 13px;
+  display: inline-block;
+  animation: flip-rotate 1.6s ease-in-out infinite;
+}
+.matrix-flip .flip-from {
+  font-size: 8px;
+  color: var(--ink-faint);
+  font-style: italic;
 }
 @keyframes flip-pop {
   0%   { opacity: 0; transform: rotate(-90deg) scale(0.3); }
@@ -2024,7 +2475,8 @@ body::after {
   100% { opacity: 1; transform: rotate(0) scale(1); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .matrix-cell, .matrix-line, .matrix-flip { animation: none; }
+  .matrix-cell, .matrix-line, .matrix-flip, .debate-round, .round-mini-chip, .round-mini-flip, .debate-card-flip, .round-flip-badge, .verdict-sources { animation: none; }
+  .round-mini-flip .flip-arrow, .debate-card-flip .flip-arrow { animation: none; }
 }
 
 /* Composer caption (kept for the slim/empty moments). */
@@ -2160,9 +2612,9 @@ body::after {
 .shell.is-mobile .verdict-stamp {
   top: 14px;
   right: 12px;
-  width: 64px;
-  height: 64px;
-  font-size: 11px;
+  width: 72px;
+  height: 72px;
+  font-size: 12px;
 }
 .shell.is-mobile .verdict-voters { flex-direction: column; gap: 6px; }
 .shell.is-mobile .judge-ruling { margin-left: -8px; margin-right: -8px; padding: 12px 8px 10px; }

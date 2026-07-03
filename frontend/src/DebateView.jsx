@@ -128,6 +128,47 @@ function pathOf(url) {
   }
 }
 
+/* ── Oxford-style footnotes: replace URLs with superscript footnote numbers.
+   Two-pass matching:
+     1. Exact URL match (after stripping trailing / and fragments)
+     2. Hostname match — if the text mentions a domain from the source list
+   Unmatched URLs fall back to a host-name link (linkifyReasoning style). */
+function footnotify(text, sourceMap) {
+  if (!sourceMap || !sourceMap.size || !text) return text;
+
+  /* Build a normalized lookup: strip trailing / and #fragments */
+  const normLookup = new Map();
+  const hostLookup = new Map();
+  for (const [url, idx] of sourceMap) {
+    const norm = url.replace(/\/+$/, "").split("#")[0].split("?")[0];
+    normLookup.set(norm, idx);
+    try { hostLookup.set(new URL(url).host.replace(/^www\./, ""), idx); } catch {}
+  }
+
+  const parts = text.split(/(https?:\/\/[^\s)\]]+)/g);
+  return parts.map((part, i) => {
+    if (!/^https?:/.test(part)) return <React.Fragment key={i}>{part}</React.Fragment>;
+    /* Try exact, then normalized, then hostname match. */
+    const norm = part.replace(/\/+$/, "").split("#")[0].split("?")[0];
+    const idx = sourceMap.get(part) ?? normLookup.get(norm) ?? (() => {
+      try { return hostLookup.get(new URL(part).host.replace(/^www\./, "")); } catch { return undefined; }
+    })();
+    if (idx != null) {
+      return (
+        <a key={i} href={`#fn-${idx + 1}`} className="fn-ref">
+          <sup>{idx + 1}</sup>
+        </a>
+      );
+    }
+    /* URL not in sources — fall back to a plain host link. */
+    return (
+      <a key={i} href={part} target="_blank" rel="noopener noreferrer" className="reason-link" title={part}>
+        {hostOf(part)}
+      </a>
+    );
+  });
+}
+
 // Turn any http(s) URL in a run of text into a clickable link. The link
 // label is the host so the reasoning stays readable at a glance; the full
 // URL is the href and a title tooltip.
@@ -150,6 +191,7 @@ function linkifyReasoning(text) {
     ),
   );
 }
+
 
 function Sources({ toolCalls }) {
   if (!toolCalls?.length) return null;
@@ -243,9 +285,10 @@ function TallyBar({ snapshot }) {
   );
 }
 
-function AgentCard({ ballot, toolCalls, snapshot }) {
+function AgentCard({ ballot, toolCalls, snapshot, sourceMap }) {
   const idx = optionIndex(snapshot, ballot.vote);
   const tone = idx >= 0 ? toneFor(idx) : "aqua";
+  const text = ballot.argument || ballot.reasoning;
   return (
     <div className={`debate-card tone-${tone}`}>
       <div className="debate-card-head">
@@ -254,12 +297,12 @@ function AgentCard({ ballot, toolCalls, snapshot }) {
         <span className="debate-card-vote">→ {ballot.vote}</span>
         {ballot.flipped_from && (
           <span className="debate-card-flip">
-            flipped from {ballot.flipped_from}
+            <span className="flip-arrow">↷</span> flipped from {ballot.flipped_from}
           </span>
         )}
       </div>
       <div className="debate-card-reason">
-        {linkifyReasoning(ballot.argument || ballot.reasoning)}
+        {sourceMap?.size ? footnotify(text, sourceMap) : linkifyReasoning(text)}
       </div>
       <Sources toolCalls={toolCalls} />
     </div>
@@ -298,7 +341,7 @@ function CountUp({ target }) {
   return <>{n}</>;
 }
 
-function Verdict({ snapshot }) {
+function Verdict({ snapshot, toolCalls, sourceMap }) {
   if (!snapshot?.done || !snapshot.rounds?.length) return null;
   const finalRound = snapshot.rounds[snapshot.rounds.length - 1].ballots;
   const tally = snapshot.tally || {};
@@ -309,6 +352,27 @@ function Verdict({ snapshot }) {
   const idx = snapshot.options.indexOf(winners[0]?.opt);
   const tone = idx >= 0 ? toneFor(idx) : "aqua";
   const tie = winners.length > 1;
+
+  /* ── Aggregate all browse/tool sources from every round ── */
+  const allSources = React.useMemo(() => {
+    const byUrl = new Map();
+    if (!toolCalls || !snapshot?.rounds) return [];
+    for (const r of snapshot.rounds) {
+      for (const b of r.ballots) {
+        const key = `${r.index}:${b.name}`;
+        const calls = toolCalls[key] || [];
+        for (const c of calls) {
+          if (c.tool === "browse" && c.url) {
+            const existing = byUrl.get(c.url);
+            if (!existing || (existing.cached && !c.cached)) {
+              byUrl.set(c.url, c);
+            }
+          }
+        }
+      }
+    }
+    return [...byUrl.values()];
+  }, [toolCalls, snapshot?.rounds]);
 
   return (
     <section className={`verdict tone-${tone} ${tie ? "is-tied" : "is-carried"}`}>
@@ -361,7 +425,37 @@ function Verdict({ snapshot }) {
             {!tie && snapshot.judge.verdict !== winners[0]?.opt && " — dissent"}
           </div>
           <div className="judge-winner">{snapshot.judge.verdict}</div>
-          <p className="judge-rationale">{snapshot.judge.rationale}</p>
+          <p className="judge-rationale">
+            {footnotify(snapshot.judge.rationale, sourceMap)}
+            {/* If the rationale has no URL footnotes, add a cross-ref to the footnote list */}
+            {allSources.length > 0 && !/(https?:\/\/[^\s)\]]+)/.test(snapshot.judge.rationale) && (
+              <span className="fn-see-sources">
+                {" "}<a href={`#fn-1`} className="fn-ref"><sup>see notes</sup></a>
+              </span>
+            )}
+          </p>
+        </div>
+      )}
+      {allSources.length > 0 && (
+        <div className="verdict-sources">
+          <div className="verdict-sources-eyebrow">Sources & footnotes</div>
+          <ol className="verdict-sources-list">
+            {allSources.map((s, i) => (
+              <li key={s.url} id={`fn-${i + 1}`} className={`verdict-source ${s.cached ? "is-cached" : ""}`}>
+                <span className="verdict-source-num">{i + 1}</span>
+                <a
+                  href={s.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={s.url}
+                >
+                  <span className="verdict-source-host">{hostOf(s.url)}</span>
+                  <span className="verdict-source-path">{pathOf(s.url).slice(0, 56)}</span>
+                </a>
+                {s.cached && <span className="src-flag">cached</span>}
+              </li>
+            ))}
+          </ol>
         </div>
       )}
     </section>
@@ -371,7 +465,8 @@ function Verdict({ snapshot }) {
 function VoteMatrix({ snapshot, thinkingSet }) {
   const gridRef = useRef(null);
   const dotRefs = useRef({}); // key: `${name}:${ri}` -> HTMLElement
-  const [lines, setLines] = useState([]); // {rowKey, x1, y1, x2, y2, color}
+  const [lines, setLines] = useState([]);
+  const [nodes, setNodes] = useState([]);
   const [hoveredRow, setHoveredRow] = useState(null);
   const [pinnedRow, setPinnedRow] = useState(null);
   const [hoveredCol, setHoveredCol] = useState(null);
@@ -380,6 +475,8 @@ function VoteMatrix({ snapshot, thinkingSet }) {
   const rounds = snapshot?.rounds;
 
   // Recompute connecting lines whenever the ballots or viewport change.
+  // Lines are forced HORIZONTAL at each row's average Y — they read
+  // left-to-right across the arc, tracing a panelist's journey.
   useLayoutEffect(() => {
     if (!gridRef.current || !rounds?.length) return;
     function recompute() {
@@ -387,10 +484,8 @@ function VoteMatrix({ snapshot, thinkingSet }) {
       if (!grid) return;
       const gridBox = grid.getBoundingClientRect();
       const next = [];
-      for (const rowKey of Object.keys(dotRefs.current)) {
-        // rowKey shape: "Name:ri"
-      }
-      // Iterate row-by-row: connect each dot to the next dot in that row.
+      const nodes = [];  // dot centre positions for node markers
+      // Group dots by row (panelist).
       const rows = {};
       for (const key of Object.keys(dotRefs.current)) {
         const [name, ri] = key.split(":");
@@ -398,21 +493,35 @@ function VoteMatrix({ snapshot, thinkingSet }) {
       }
       for (const [name, dots] of Object.entries(rows)) {
         dots.sort((a, b) => a.ri - b.ri);
+        // Compute the row's average Y to force horizontal traces.
+        const ys = dots.map(d => {
+          const r = d.el?.getBoundingClientRect();
+          return r ? r.top + r.height / 2 - gridBox.top : null;
+        }).filter(y => y != null);
+        const rowY = ys.length ? ys.reduce((a, b) => a + b, 0) / ys.length : 0;
+        // Collect node positions for diamond markers.
+        for (let i = 0; i < dots.length; i++) {
+          const r = dots[i].el?.getBoundingClientRect();
+          if (!r) continue;
+          const cx = r.left + r.width / 2 - gridBox.left;
+          const tone = dots[i].el?.dataset.tone || "";
+          nodes.push({ rowKey: name, cx, cy: rowY, tone });
+        }
+        // Horizontal segments between consecutive dots.
         for (let i = 0; i < dots.length - 1; i++) {
           const a = dots[i].el?.getBoundingClientRect();
           const b = dots[i + 1].el?.getBoundingClientRect();
           if (!a || !b) continue;
           const x1 = a.left + a.width / 2 - gridBox.left;
-          const y1 = a.top + a.height / 2 - gridBox.top;
           const x2 = b.left + b.width / 2 - gridBox.left;
-          const y2 = b.top + b.height / 2 - gridBox.top;
           const color = dots[i + 1].el?.dataset.tone
             ? `var(--${dots[i + 1].el.dataset.tone})`
-            : "rgba(255,255,255,0.2)";
-          next.push({ rowKey: name, x1, y1, x2, y2, color });
+            : "rgba(176,132,44,0.35)";
+          next.push({ rowKey: name, x1, y: rowY, x2, color });
         }
       }
       setLines(next);
+      setNodes(nodes);
     }
     recompute();
     const ro = new ResizeObserver(recompute);
@@ -448,7 +557,7 @@ function VoteMatrix({ snapshot, thinkingSet }) {
     >
       <div className="matrix-head">
         <div className="matrix-eyebrow">The arc</div>
-        <div className="matrix-legend">tap or hover a row to trace a panelist · ↷ = flip</div>
+        <div className="matrix-legend">tap a row to trace a panelist's journey · ↷ = flipped vote</div>
       </div>
       <div
         ref={gridRef}
@@ -460,28 +569,65 @@ function VoteMatrix({ snapshot, thinkingSet }) {
         {/* SVG overlay for connecting lines. Positioned absolutely,
             recomputed on layout changes. */}
         <svg className="matrix-lines" aria-hidden="true">
+          <defs>
+            {/* Gold arrowhead — the codex filament trace. */}
+            <marker id="arc-arrow" viewBox="0 0 10 6" refX="9" refY="3"
+              markerWidth="7" markerHeight="5" orient="auto">
+              <path d="M0,0.5 L8,3 L0,5.5" fill="none" stroke="var(--gold)" strokeWidth="1" />
+            </marker>
+            {/* Bright gold arrowhead for the traced row. */}
+            <marker id="arc-arrow-hot" viewBox="0 0 10 6" refX="9" refY="3"
+              markerWidth="8" markerHeight="6" orient="auto">
+              <path d="M0,0.5 L8,3 L0,5.5" fill="none" stroke="var(--gold-pale)" strokeWidth="1.2" />
+            </marker>
+            {/* Warm glow filter for the traced line. */}
+            <filter id="arc-glow">
+              <feGaussianBlur stdDeviation="2" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+          {/* Horizontal connecting traces — pure left-to-right at the row Y. */}
           {lines.map((ln, i) => {
             const isHot = tracedRow === ln.rowKey;
             return (
               <line
-                key={i}
+                key={`l${i}`}
                 x1={ln.x1}
-                y1={ln.y1}
+                y1={ln.y}
                 x2={ln.x2}
-                y2={ln.y2}
-                stroke={ln.color}
-                strokeWidth={isHot ? 2.5 : 1.5}
+                y2={ln.y}
+                stroke={isHot ? "var(--gold-pale)" : ln.color}
+                strokeWidth={isHot ? 2.5 : 1.2}
                 strokeLinecap="round"
-                opacity={tracedRow && !isHot ? 0.18 : 0.6}
-                className="matrix-line"
+                opacity={tracedRow && !isHot ? 0.10 : isHot ? 0.9 : 0.35}
+                className={`matrix-line ${isHot ? "is-hot-line" : ""}`}
                 style={{
-                  strokeDasharray: 200,
+                  strokeDasharray: 300,
                   strokeDashoffset: 0,
-                  animationDelay: `${i * 90}ms`,
+                  animationDelay: `${i * 70}ms`,
                 }}
+                markerEnd={isHot ? "url(#arc-arrow-hot)" : "url(#arc-arrow)"}
+                filter={isHot ? "url(#arc-glow)" : undefined}
               />
             );
           })}
+          {/* Diamond node markers on each dot of the traced row. */}
+          {nodes.filter(n => n.rowKey === tracedRow).map((n, i) => (
+            <g key={`n${i}`} transform={`translate(${n.cx},${n.cy})`}>
+              <rect
+                x="-4" y="-4" width="8" height="8"
+                transform="rotate(45)"
+                fill="var(--gold)"
+                stroke="var(--gold-pale)"
+                strokeWidth="0.5"
+                opacity="0.7"
+                rx="1"
+              />
+            </g>
+          ))}
         </svg>
 
         <div className="matrix-corner" />
@@ -570,8 +716,9 @@ function VoteMatrix({ snapshot, thinkingSet }) {
                           }}
                         />
                         {flipped && (
-                          <span className="matrix-flip" title={`flipped from ${b.flipped_from}`}>
-                            ↷
+                          <span className="matrix-flip" title={`flipped from ${b.flipped_from} → ${b.vote}`}>
+                            <span className="flip-arrow">↷</span>
+                            <span className="flip-from">{b.flipped_from}</span>
                           </span>
                         )}
                       </>
@@ -627,9 +774,10 @@ function narrateRound(round, options) {
   return parts.join("   ·   ");
 }
 
-function Round({ round, toolCalls, snapshot }) {
+function Round({ round, toolCalls, snapshot, sourceMap }) {
   const [open, setOpen] = useState(false);
   const narrated = narrateRound(round, snapshot?.options || []);
+  const hasFlips = round.ballots.some((b) => b.flipped_from);
   return (
     <div className={`debate-round ${open ? "is-open" : "is-collapsed"}`}>
       <button
@@ -638,23 +786,32 @@ function Round({ round, toolCalls, snapshot }) {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
       >
+        <span className="round-chevron-wrap" aria-hidden="true">
+          <span className={`round-chevron ${open ? "is-open" : ""}`}>▸</span>
+        </span>
         <span className="round-mark">Round</span>
         <span className="round-numeral">{romanOf(round.index)}</span>
         <span className="round-narration">{narrated}</span>
-        <span className={`round-chevron ${open ? "is-open" : ""}`} aria-hidden="true">
-          ▸
-        </span>
+        {hasFlips && <span className="round-flip-badge" aria-hidden="true">↷ flip</span>}
+        <span className={`round-expand-hint ${open ? "is-hidden" : ""}`}>expand for reasoning</span>
       </button>
       {!open && (
         <div className="round-mini">
           {round.ballots.map((b) => {
             const idx = snapshot?.options?.indexOf(b.vote) ?? -1;
             const tone = idx >= 0 ? toneFor(idx) : "aqua";
+            const flipIdx = b.flipped_from ? snapshot?.options?.indexOf(b.flipped_from) : -1;
+            const flipTone = flipIdx >= 0 ? toneFor(flipIdx) : null;
             return (
-              <span key={b.name} className={`round-mini-chip tone-${tone}`} title={`${b.name} voted ${b.vote}`}>
+              <span key={b.name} className={`round-mini-chip tone-${tone} ${b.flipped_from ? "has-flip" : ""}`} title={b.flipped_from ? `${b.name} flipped from ${b.flipped_from} → ${b.vote}` : `${b.name} voted ${b.vote}`}>
                 <span className="round-mini-dot" />
                 <span className="round-mini-name">{b.name.split(" ").slice(0, 2).join(" ")}</span>
-                {b.flipped_from && <span className="round-mini-flip">↷</span>}
+                {b.flipped_from && (
+                  <span className={`round-mini-flip tone-${flipTone || tone}`}>
+                    <span className="flip-arrow">↷</span>
+                    <span className="flip-label">{b.flipped_from}→{b.vote}</span>
+                  </span>
+                )}
               </span>
             );
           })}
@@ -668,6 +825,7 @@ function Round({ round, toolCalls, snapshot }) {
               ballot={b}
               snapshot={snapshot}
               toolCalls={toolCalls[`${round.index}:${b.name}`] || []}
+              sourceMap={sourceMap}
             />
           ))}
         </div>
@@ -681,6 +839,36 @@ export default function DebateView({ panelists, selected, toggleModel }) {
   const [draft, setDraft] = useState("");
   const threadId = useRef(crypto.randomUUID());
   const endRef = useRef(null);
+
+  /* ── Aggregate all browse/tool sources from every round ── */
+  const allSources = React.useMemo(() => {
+    const byUrl = new Map();
+    const tc = state.toolCalls;
+    const rounds = state.snapshot?.rounds;
+    if (!tc || !rounds) return [];
+    for (const r of rounds) {
+      for (const b of r.ballots) {
+        const key = `${r.index}:${b.name}`;
+        const calls = tc[key] || [];
+        for (const c of calls) {
+          if (c.tool === "browse" && c.url) {
+            const existing = byUrl.get(c.url);
+            if (!existing || (existing.cached && !c.cached)) {
+              byUrl.set(c.url, c);
+            }
+          }
+        }
+      }
+    }
+    return [...byUrl.values()];
+  }, [state.toolCalls, state.snapshot?.rounds]);
+
+  /* ── Oxford footnote map: URL → footnote index (1-based) ── */
+  const sourceMap = React.useMemo(() => {
+    const m = new Map();
+    allSources.forEach((s, i) => m.set(s.url, i));
+    return m;
+  }, [allSources]);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -799,6 +987,7 @@ export default function DebateView({ panelists, selected, toggleModel }) {
                 round={r}
                 snapshot={state.snapshot}
                 toolCalls={state.toolCalls}
+                sourceMap={sourceMap}
               />
             ))}
             {state.snapshot.stopped_early && (
@@ -812,7 +1001,7 @@ export default function DebateView({ panelists, selected, toggleModel }) {
                 <p className="minutes-body">{cleanSummary(state.summary)}</p>
               </aside>
             )}
-            <Verdict snapshot={state.snapshot} />
+            <Verdict snapshot={state.snapshot} toolCalls={state.toolCalls} sourceMap={sourceMap} />
           </>
         )}
         {state.running && <Spinner step={state.step} />}

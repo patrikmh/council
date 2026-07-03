@@ -41,3 +41,6 @@ frontend/.playwright-cli/
 # Raw source assets (the app serves copies from frontend/public)
 Make_a_video_in_this_style_tha.mp4
 Creative steampunk fusion design/
+
+# Local screenshots
+rabble-*.png
