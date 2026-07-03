@@ -15,6 +15,7 @@ from typing import AsyncIterator
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
+from pydantic_ai.settings import ModelSettings
 
 from .config import Panelist
 from .memory import RunMemory
@@ -23,6 +24,32 @@ from .tools import make_tools, OnToolCall
 log = logging.getLogger("rabble")
 
 PANELIST_TIMEOUT = float(os.getenv("PANELIST_TIMEOUT_SEC", "90"))
+
+# ── Model settings per role (cap tokens to save cost) ──────────────────────
+# Output tokens
+POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "256"))
+FRAMER_MAX_TOKENS = int(os.getenv("POLL_FRAMER_MAX_TOKENS", "256"))
+SUMMARY_MAX_TOKENS = int(os.getenv("POLL_SUMMARY_MAX_TOKENS", "128"))
+
+# Reasoning tokens — same idea as debate.py
+REASONING_EFFORT = os.getenv("POLL_REASONING_EFFORT", "low")  # minimal|low|medium|high
+REASONING_TOKEN_BUDGET = int(os.getenv("POLL_REASONING_TOKEN_BUDGET", "1024"))
+
+POLL_PANELIST_SETTINGS = ModelSettings(
+    max_tokens=POLL_PANELIST_MAX_TOKENS,
+    thinking=REASONING_EFFORT,
+    extra_body={"reasoning": {"max_tokens": REASONING_TOKEN_BUDGET}},
+)
+FRAMER_SETTINGS = ModelSettings(
+    max_tokens=FRAMER_MAX_TOKENS,
+    thinking=REASONING_EFFORT,
+    extra_body={"reasoning": {"max_tokens": REASONING_TOKEN_BUDGET}},
+)
+POLL_SUMMARY_SETTINGS = ModelSettings(
+    max_tokens=SUMMARY_MAX_TOKENS,
+    thinking=REASONING_EFFORT,
+    extra_body={"reasoning": {"max_tokens": REASONING_TOKEN_BUDGET}},
+)
 
 
 def today_iso() -> str:
@@ -149,7 +176,8 @@ SUMMARIZER_PROMPT = (
 
 
 async def frame_question(model, question: str) -> Framing:
-    agent = Agent(model, output_type=Framing, system_prompt=FRAMER_PROMPT)
+    agent = Agent(model, output_type=Framing, system_prompt=FRAMER_PROMPT,
+                   model_settings=FRAMER_SETTINGS)
     result = await agent.run(question)
     return result.output
 
@@ -188,6 +216,7 @@ async def cast_ballots(
                 system_prompt=_preamble(context) + PANELIST_PROMPT,
                 tools=make_tools(p.name, on_tool_call, memory=memory,
                                  round_index=round_index),
+                model_settings=POLL_PANELIST_SETTINGS,
             )
             result = await asyncio.wait_for(agent.run(prompt), timeout=PANELIST_TIMEOUT)
             log.info("panelist_done  name=%r vote=%r elapsed=%.1fs",
@@ -212,7 +241,8 @@ async def stream_summary(model, state: dict) -> AsyncIterator[str]:
     lines = [f"Question: {state['question']}", f"Options: {options_line}"]
     for b in state["ballots"]:
         lines.append(f"- {b['name']} voted {b['vote']}: {b['reasoning']}")
-    agent = Agent(model, system_prompt=SUMMARIZER_PROMPT)
+    agent = Agent(model, system_prompt=SUMMARIZER_PROMPT,
+                   model_settings=POLL_SUMMARY_SETTINGS)
     async with agent.run_stream("\n".join(lines)) as result:
         async for delta in result.stream_text(delta=True):
             yield delta

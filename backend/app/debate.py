@@ -19,6 +19,7 @@ from typing import AsyncIterator
 
 from pydantic import BaseModel, Field
 from pydantic_ai import Agent
+from pydantic_ai.settings import ModelSettings
 
 from .config import Panelist
 from .memory import RunMemory
@@ -28,6 +29,48 @@ from .tools import make_tools, OnToolCall
 log = logging.getLogger("rabble")
 
 DEBATE_ROUNDS = int(os.getenv("DEBATE_ROUNDS", "2"))
+
+# ── Model settings per role (cap tokens to save cost) ──────────────────────
+# Output tokens: what the model generates as visible text.
+PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "512"))
+JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "256"))
+SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "128"))
+
+# Reasoning tokens: internal chain-of-thought before the visible output.
+# Reasoning models (Grok 4, GPT-5, Claude Sonnet 5, GLM 5) can burn
+# thousands of thinking tokens — these caps keep cost predictable.
+# Set to 0 to disable extended thinking entirely.
+REASONING_EFFORT = os.getenv("DEBATE_REASONING_EFFORT", "low")  # minimal|low|medium|high
+REASONING_TOKEN_BUDGET = int(os.getenv("DEBATE_REASONING_TOKEN_BUDGET", "2048"))
+
+
+def _panelist_settings() -> ModelSettings:
+    return ModelSettings(
+        max_tokens=PANELIST_MAX_TOKENS,
+        thinking=REASONING_EFFORT,
+        extra_body={"reasoning": {"max_tokens": REASONING_TOKEN_BUDGET}},
+    )
+
+
+def _judge_settings() -> ModelSettings:
+    return ModelSettings(
+        max_tokens=JUDGE_MAX_TOKENS,
+        thinking=REASONING_EFFORT,
+        extra_body={"reasoning": {"max_tokens": REASONING_TOKEN_BUDGET}},
+    )
+
+
+def _summary_settings() -> ModelSettings:
+    return ModelSettings(
+        max_tokens=SUMMARY_MAX_TOKENS,
+        thinking=REASONING_EFFORT,
+        extra_body={"reasoning": {"max_tokens": REASONING_TOKEN_BUDGET}},
+    )
+
+
+PANELIST_SETTINGS = _panelist_settings()
+JUDGE_SETTINGS = _judge_settings()
+SUMMARY_SETTINGS = _summary_settings()
 
 
 class DebateBallot(BaseModel):
@@ -225,6 +268,7 @@ async def debate_round(
                 system_prompt=_preamble(context) + opener + _DEBATE_TAIL,
                 tools=make_tools(p.name, on_tool_call, memory=memory,
                                  round_index=round_index),
+                model_settings=PANELIST_SETTINGS,
             )
             result = await asyncio.wait_for(agent.run(prompt), timeout=PANELIST_TIMEOUT)
             ballot = result.output
@@ -285,7 +329,8 @@ def _transcript_lines(
 
 
 async def stream_debate_summary(model, state: dict) -> AsyncIterator[str]:
-    agent = Agent(model, system_prompt=DEBATE_SUMMARY_PROMPT)
+    agent = Agent(model, system_prompt=DEBATE_SUMMARY_PROMPT,
+                   model_settings=SUMMARY_SETTINGS)
     async with agent.run_stream("\n".join(_transcript_lines(state))) as result:
         async for delta in result.stream_text(delta=True):
             yield delta
@@ -333,7 +378,8 @@ async def _judge_sample(model, state: dict, criteria: list[str] | None) -> Verdi
     options = random.sample(state["options"], len(state["options"]))
     text = "\n".join(_transcript_lines(state, full=True, options=options))
     text = _map_names(text, aliases)
-    agent = Agent(model, output_type=Verdict, system_prompt=_judge_prompt(criteria))
+    agent = Agent(model, output_type=Verdict, system_prompt=_judge_prompt(criteria),
+                   model_settings=JUDGE_SETTINGS)
     result = await agent.run(text)
     real_names = {alias: name for name, alias in aliases.items()}
     return Verdict(
