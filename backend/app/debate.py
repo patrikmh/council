@@ -32,16 +32,17 @@ DEBATE_ROUNDS = int(os.getenv("DEBATE_ROUNDS", "2"))
 
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
 # Output tokens: what the model generates as visible text.
-PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "512"))
-JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "256"))
+PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "768"))
+JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "1024"))
 SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "128"))
 
 # Reasoning tokens: internal chain-of-thought before the visible output.
 # Reasoning models (Grok 4, GPT-5, Claude Sonnet 5, GLM 5) can burn
 # thousands of thinking tokens — these caps keep cost predictable.
-# Set to 0 to disable extended thinking entirely.
-REASONING_EFFORT = os.getenv("DEBATE_REASONING_EFFORT", "low")  # minimal|low|medium|high
-REASONING_TOKEN_BUDGET = int(os.getenv("DEBATE_REASONING_TOKEN_BUDGET", "2048"))
+# medium effort lets models engage with arguments and browse for evidence;
+# the token budget stops runaway reasoning spirals.
+REASONING_EFFORT = os.getenv("DEBATE_REASONING_EFFORT", "medium")  # minimal|low|medium|high
+REASONING_TOKEN_BUDGET = int(os.getenv("DEBATE_REASONING_TOKEN_BUDGET", "8192"))
 
 
 def _panelist_settings() -> ModelSettings:
