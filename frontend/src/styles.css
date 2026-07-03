@@ -501,7 +501,7 @@ body::after {
   transition: max-width 320ms ease, margin 320ms ease, padding 320ms ease;
 }
 .composer.is-hero { margin: 0 auto var(--section-gap); padding: 2px 4px; max-width: 600px; }
-.composer.is-slim { margin: 4px auto 12px; padding: 0; max-width: var(--column); }
+.composer.is-slim { margin: 4px auto 12px; padding: 0; max-width: 600px; }
 .composer::before { display: none; }
 
 .composer textarea {
