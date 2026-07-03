@@ -15,7 +15,10 @@
 
   /* Ink */
   --ink: #1a1d21;
-  --ink-soft: #6b7280;
+  --ink-soft: #5b6472;
+  /* Text-on-paper accent variants — never use these on the dark chamber */
+  --lamp-ink: #92610a;
+  --clay-ink: #b45309;
 
   /* Accent palette (one per voting option) */
   --aqua: #5eead4;
@@ -370,7 +373,7 @@ body {
   box-shadow: 0 0 0 3px var(--lamp-glow), var(--shadow-md);
 }
 .is-winner .poll-tally {
-  color: var(--lamp);
+  color: var(--lamp-ink);
   font-weight: 600;
 }
 
@@ -471,7 +474,7 @@ body {
 }
 .composer.is-hero textarea::placeholder {
   font-style: italic;
-  color: rgba(245, 158, 11, 0.5);
+  color: rgba(245, 158, 11, 0.7);
 }
 .composer.is-slim textarea {
   font-size: 13px;
@@ -479,7 +482,7 @@ body {
   border-radius: 10px;
 }
 .composer textarea::placeholder {
-  color: rgba(255, 255, 255, 0.3);
+  color: rgba(255, 255, 255, 0.62);
 }
 .composer textarea:hover {
   background: var(--surface-hover);
@@ -538,7 +541,7 @@ body {
 /* Match .composer button specificity — a bare .btn-clear always lost. */
 .composer .btn-clear {
   background: transparent;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.62);
   border: 1px solid var(--border);
   padding: 0 14px;
   font-size: 16px;
@@ -680,7 +683,7 @@ body {
   border: none;
   padding: 8px 18px 12px;
   font: inherit;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(255, 255, 255, 0.65);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -702,7 +705,7 @@ body {
   font-family: "IBM Plex Mono", monospace;
   font-size: 10px;
   letter-spacing: 0.06em;
-  color: rgba(255, 255, 255, 0.28);
+  color: rgba(255, 255, 255, 0.62);
   line-height: 1.3;
   transition: color 0.18s ease;
 }
@@ -727,7 +730,7 @@ body {
   gap: 8px;
   margin: 4px 0 4px 16px;
   font-size: 12px;
-  color: var(--ink-soft);
+  color: rgba(255, 255, 255, 0.62);
 }
 .tool-note-agent {
   font-family: "IBM Plex Mono", monospace;
@@ -825,7 +828,7 @@ body {
 .debate-card-vote { color: var(--ink-soft); }
 .debate-card-flip {
   margin-left: auto;
-  color: var(--clay-deep);
+  color: var(--clay-ink);
   font-size: 10px;
 }
 .debate-card-reason {
@@ -866,7 +869,7 @@ body {
 .stats-window-btn {
   background: transparent;
   border: none;
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.62);
   border-radius: 6px;
   padding: 3px 10px;
   font: inherit;
@@ -895,7 +898,7 @@ body {
   font-variant-numeric: tabular-nums;
 }
 .stats-table th {
-  color: var(--ink-soft);
+  color: rgba(255, 255, 255, 0.62);
   font-weight: 400;
   font-size: 11px;
   letter-spacing: 0.08em;
@@ -939,7 +942,7 @@ body {
   padding-left: 6px;
 }
 .stats-hint {
-  color: var(--ink-soft);
+  color: rgba(255, 255, 255, 0.62);
   font-size: 11px;
   margin-top: 8px;
 }
@@ -972,7 +975,7 @@ body {
 .q-meta {
   font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
-  color: var(--ink-soft);
+  color: rgba(255, 255, 255, 0.62);
 }
 
 /* ── Debate verdict card ───────────────────────────────────────────────── */
@@ -1104,7 +1107,7 @@ body {
   border-left: 3px solid var(--clay-deep);
   border-radius: 0 6px 6px 0;
 }
-.judge-ruling.is-dissent .verdict-eyebrow { color: var(--clay-deep); }
+.judge-ruling.is-dissent .verdict-eyebrow { color: var(--clay-ink); }
 @media (prefers-reduced-motion: reduce) {
   .verdict, .judge-ruling { animation: none; }
 }
@@ -1533,7 +1536,7 @@ body::after {
   font-weight: 600;
   letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(255, 255, 255, 0.62);
 }
 .round-numeral {
   font-family: "Fraunces", serif;
@@ -1584,7 +1587,7 @@ body::after {
   font-family: "Fraunces", serif;
   font-style: italic;
   font-size: 11px;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.62);
 }
 .matrix-grid {
   display: grid;
@@ -1605,7 +1608,7 @@ body::after {
   font-family: "IBM Plex Mono", monospace;
   font-size: 9px;
   letter-spacing: 0.18em;
-  color: rgba(255, 255, 255, 0.35);
+  color: rgba(255, 255, 255, 0.62);
 }
 .matrix-col-head .round-numeral {
   font-family: "Fraunces", serif;
@@ -1618,7 +1621,7 @@ body::after {
   font-size: 10px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(255, 255, 255, 0.62);
 }
 .matrix-row-head {
   display: flex;
@@ -1680,6 +1683,7 @@ body::after {
   font-family: "IBM Plex Mono", monospace;
   color: rgba(255, 255, 255, 0.25);
 }
+.matrix-final-cell .matrix-dash { color: rgba(255, 255, 255, 0.62); }
 .matrix-final-cell {
   font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
@@ -1747,7 +1751,7 @@ body::after {
   margin-top: 4px;
   font-family: "IBM Plex Mono", monospace;
   font-size: 11px;
-  color: rgba(239, 68, 68, 0.65);
+  color: rgba(239, 68, 68, 1);
 }
 
 .table-scene {
@@ -1828,7 +1832,7 @@ body::after {
   padding: 4px 2px;
   cursor: pointer;
   font: inherit;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(255, 255, 255, 0.65);
   transition:
     transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
     color 0.15s ease,
@@ -1892,7 +1896,7 @@ body::after {
   font-size: 9px;
   letter-spacing: 0.08em;
   text-transform: lowercase;
-  color: rgba(255, 255, 255, 0.32);
+  color: rgba(255, 255, 255, 0.62);
 }
 .chair.is-on .chair-provider { color: var(--tc); opacity: 0.75; }
 
@@ -1921,7 +1925,7 @@ body::after {
 .chair-flag {
   font-family: "IBM Plex Mono", monospace;
   font-size: 9px;
-  color: rgba(239, 68, 68, 0.85);
+  color: rgba(239, 68, 68, 1);
   letter-spacing: 0.06em;
 }
 
@@ -2228,7 +2232,7 @@ body::after {
   font-style: italic;
   font-size: 13px;
   line-height: 1.55;
-  color: rgba(255, 255, 255, 0.42);
+  color: rgba(255, 255, 255, 0.62);
   text-align: center;
 }
 
