@@ -32,7 +32,7 @@ DEBATE_ROUNDS = int(os.getenv("DEBATE_ROUNDS", "2"))
 
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
 # Output tokens: what the model generates as visible text.
-PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "1024"))
+PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "2000"))
 JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "1024"))
 SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "128"))
 
@@ -41,7 +41,7 @@ SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "128"))
 # thousands of thinking tokens — this cap keeps cost predictable.
 # NOTE: we use only reasoning.max_tokens (hard budget cap), NOT
 # reasoning.effort — OpenAI rejects having both set simultaneously.
-REASONING_TOKEN_BUDGET = int(os.getenv("DEBATE_REASONING_TOKEN_BUDGET", "20480"))
+REASONING_TOKEN_BUDGET = int(os.getenv("DEBATE_REASONING_TOKEN_BUDGET", "7000"))
 
 
 def _panelist_settings() -> ModelSettings:

@@ -27,13 +27,13 @@ PANELIST_TIMEOUT = float(os.getenv("PANELIST_TIMEOUT_SEC", "90"))
 
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
 # Output tokens
-POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "1024"))
+POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "2000"))
 FRAMER_MAX_TOKENS = int(os.getenv("POLL_FRAMER_MAX_TOKENS", "256"))
 SUMMARY_MAX_TOKENS = int(os.getenv("POLL_SUMMARY_MAX_TOKENS", "128"))
 
 # Reasoning tokens — same idea as debate.py
 # NOTE: reasoning.max_tokens only (no reasoning.effort) — OpenAI rejects both.
-REASONING_TOKEN_BUDGET = int(os.getenv("POLL_REASONING_TOKEN_BUDGET", "20480"))
+REASONING_TOKEN_BUDGET = int(os.getenv("POLL_REASONING_TOKEN_BUDGET", "7000"))
 
 POLL_PANELIST_SETTINGS = ModelSettings(
     max_tokens=POLL_PANELIST_MAX_TOKENS,
