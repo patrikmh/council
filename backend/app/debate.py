@@ -32,9 +32,9 @@ DEBATE_ROUNDS = int(os.getenv("DEBATE_ROUNDS", "2"))
 
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
 # Output tokens: what the model generates as visible text.
-PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "2000"))
+PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "1024"))
 JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "1024"))
-SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "128"))
+SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "512"))
 
 # Reasoning tokens: internal chain-of-thought before the visible output.
 # Reasoning models (Grok 4, GPT-5, Claude Sonnet 5, GLM 5) can burn
@@ -266,6 +266,7 @@ async def debate_round(
                 tools=make_tools(p.name, on_tool_call, memory=memory,
                                  round_index=round_index),
                 model_settings=PANELIST_SETTINGS,
+                retries=2,
             )
             result = await asyncio.wait_for(agent.run(prompt), timeout=PANELIST_TIMEOUT)
             ballot = result.output
@@ -376,7 +377,7 @@ async def _judge_sample(model, state: dict, criteria: list[str] | None) -> Verdi
     text = "\n".join(_transcript_lines(state, full=True, options=options))
     text = _map_names(text, aliases)
     agent = Agent(model, output_type=Verdict, system_prompt=_judge_prompt(criteria),
-                   model_settings=JUDGE_SETTINGS)
+                   model_settings=JUDGE_SETTINGS, retries=2)
     result = await agent.run(text)
     real_names = {alias: name for name, alias in aliases.items()}
     return Verdict(

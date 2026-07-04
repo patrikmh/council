@@ -27,9 +27,9 @@ PANELIST_TIMEOUT = float(os.getenv("PANELIST_TIMEOUT_SEC", "90"))
 
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
 # Output tokens
-POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "2000"))
-FRAMER_MAX_TOKENS = int(os.getenv("POLL_FRAMER_MAX_TOKENS", "256"))
-SUMMARY_MAX_TOKENS = int(os.getenv("POLL_SUMMARY_MAX_TOKENS", "128"))
+POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "1024"))
+FRAMER_MAX_TOKENS = int(os.getenv("POLL_FRAMER_MAX_TOKENS", "512"))
+SUMMARY_MAX_TOKENS = int(os.getenv("POLL_SUMMARY_MAX_TOKENS", "512"))
 
 # Reasoning tokens — same idea as debate.py
 # NOTE: reasoning.max_tokens only (no reasoning.effort) — OpenAI rejects both.
@@ -174,7 +174,7 @@ SUMMARIZER_PROMPT = (
 
 async def frame_question(model, question: str) -> Framing:
     agent = Agent(model, output_type=Framing, system_prompt=FRAMER_PROMPT,
-                   model_settings=FRAMER_SETTINGS)
+                   model_settings=FRAMER_SETTINGS, retries=2)
     result = await agent.run(question)
     return result.output
 
@@ -214,6 +214,7 @@ async def cast_ballots(
                 tools=make_tools(p.name, on_tool_call, memory=memory,
                                  round_index=round_index),
                 model_settings=POLL_PANELIST_SETTINGS,
+                retries=2,
             )
             result = await asyncio.wait_for(agent.run(prompt), timeout=PANELIST_TIMEOUT)
             log.info("panelist_done  name=%r vote=%r elapsed=%.1fs",
