@@ -32,8 +32,8 @@ DEBATE_ROUNDS = int(os.getenv("DEBATE_ROUNDS", "2"))
 
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
 # Output tokens: what the model generates as visible text.
-PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "1024"))
-JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "1024"))
+PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "4096"))
+JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "2048"))
 SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "512"))
 
 # Reasoning tokens: internal chain-of-thought before the visible output.

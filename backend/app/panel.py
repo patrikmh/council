@@ -27,8 +27,8 @@ PANELIST_TIMEOUT = float(os.getenv("PANELIST_TIMEOUT_SEC", "90"))
 
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
 # Output tokens
-POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "1024"))
-FRAMER_MAX_TOKENS = int(os.getenv("POLL_FRAMER_MAX_TOKENS", "512"))
+POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "4096"))
+FRAMER_MAX_TOKENS = int(os.getenv("POLL_FRAMER_MAX_TOKENS", "1024"))
 SUMMARY_MAX_TOKENS = int(os.getenv("POLL_SUMMARY_MAX_TOKENS", "512"))
 
 # Reasoning tokens — same idea as debate.py
