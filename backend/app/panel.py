@@ -28,9 +28,10 @@ PANELIST_TIMEOUT = float(os.getenv("PANELIST_TIMEOUT_SEC", "90"))
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
 # Output tokens — default 1024 (safe for all models incl. flash/budget).
 # Per-model overrides via MODEL_MAX_TOKENS env (shared with debate.py).
-POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "512"))
-FRAMER_MAX_TOKENS = int(os.getenv("POLL_FRAMER_MAX_TOKENS", "512"))
-SUMMARY_MAX_TOKENS = int(os.getenv("POLL_SUMMARY_MAX_TOKENS", "512"))
+# Default 0 = don't set max_tokens (use model native limit).
+POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "0"))
+FRAMER_MAX_TOKENS = int(os.getenv("POLL_FRAMER_MAX_TOKENS", "0"))
+SUMMARY_MAX_TOKENS = int(os.getenv("POLL_SUMMARY_MAX_TOKENS", "0"))
 
 # Per-model max_tokens overrides (same format as debate.py)
 MODEL_MAX_TOKENS_RAW = os.getenv("MODEL_MAX_TOKENS", "")
@@ -42,8 +43,10 @@ for _pair in MODEL_MAX_TOKENS_RAW.split(","):
         _MODEL_MAX_TOKENS[_slug.strip()] = int(_val.strip())
 
 
-def _panelist_max_tokens(slug: str) -> int:
-    return _MODEL_MAX_TOKENS.get(slug, POLL_PANELIST_MAX_TOKENS)
+def _panelist_max_tokens(slug: str) -> int | None:
+    if slug in _MODEL_MAX_TOKENS:
+        return _MODEL_MAX_TOKENS[slug]
+    return POLL_PANELIST_MAX_TOKENS if POLL_PANELIST_MAX_TOKENS > 0 else None
 
 
 # Per-model thinking overrides (same format as debate.py MODEL_THINKING)
@@ -57,18 +60,17 @@ for _pair in MODEL_THINKING_RAW.split(","):
 
 
 def _poll_panelist_settings(slug: str = "") -> ModelSettings:
-    ms = {"max_tokens": _panelist_max_tokens(slug)}
+    ms = {}
+    mt = _panelist_max_tokens(slug)
+    if mt is not None:
+        ms["max_tokens"] = mt
     if slug in _MODEL_THINKING:
         ms["thinking"] = _MODEL_THINKING[slug]
-    return ModelSettings(**ms)
+    return ModelSettings(**ms) if ms else ModelSettings()
 
 
-FRAMER_SETTINGS = ModelSettings(
-    max_tokens=FRAMER_MAX_TOKENS,
-)
-POLL_SUMMARY_SETTINGS = ModelSettings(
-    max_tokens=SUMMARY_MAX_TOKENS,
-)
+FRAMER_SETTINGS = ModelSettings()
+POLL_SUMMARY_SETTINGS = ModelSettings()
 
 
 def today_iso() -> str:

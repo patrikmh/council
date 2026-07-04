@@ -32,13 +32,13 @@ DEBATE_ROUNDS = int(os.getenv("DEBATE_ROUNDS", "2"))
 
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
 # Output tokens: what the model generates as visible text.
-# Some budget/flash models (Step 3.7 Flash, Mimo V2.5, Deepseek V4 Flash)
-# have very low output ceilings — sending 1024+ causes 400 errors.
-# We default to 512 (safe for ALL models) and allow per-model overrides
-# via MODEL_MAX_TOKENS env var for premium models that support more.
-PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "512"))
-JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "1024"))
-SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "512"))
+# Some budget/flash models have very low output ceilings or don't support
+# the max_tokens parameter at all. We default to NOT setting max_tokens
+# (models use their native limit). Per-model overrides via MODEL_MAX_TOKENS
+# and MODEL_THINKING env vars for premium models.
+PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "0"))
+JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "0"))
+SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "0"))
 
 # Per-model max_tokens overrides: models that support higher output.
 # Format: "slug=4096,slug=4096" — parsed into a dict at startup.
@@ -51,15 +51,16 @@ for _pair in MODEL_MAX_TOKENS_RAW.split(","):
         _MODEL_MAX_TOKENS[_slug.strip()] = int(_val.strip())
 
 
-def _panelist_max_tokens(slug: str) -> int:
-    """Return per-model max_tokens if overridden, else the default."""
-    return _MODEL_MAX_TOKENS.get(slug, PANELIST_MAX_TOKENS)
+def _panelist_max_tokens(slug: str) -> int | None:
+    """Return per-model max_tokens if overridden, else None (use native)."""
+    if slug in _MODEL_MAX_TOKENS:
+        return _MODEL_MAX_TOKENS[slug]
+    # Global fallback: 0 means don't set (use model native limit)
+    return PANELIST_MAX_TOKENS if PANELIST_MAX_TOKENS > 0 else None
 
 
-# Reasoning: we do NOT set thinking/reasoning.effort by default.
-# Budget models count thinking tokens against max_tokens, so setting
-# both makes them run out of budget before generating visible output.
-# Per-model thinking overrides via MODEL_THINKING env var (same format).
+# Per-model thinking overrides via MODEL_THINKING env var.
+# Format: "slug=low,slug=medium"
 MODEL_THINKING_RAW = os.getenv("MODEL_THINKING", "")
 _MODEL_THINKING: dict[str, str] = {}
 for _pair in MODEL_THINKING_RAW.split(","):
@@ -70,22 +71,27 @@ for _pair in MODEL_THINKING_RAW.split(","):
 
 
 def _panelist_settings(slug: str = "") -> ModelSettings:
-    ms = {"max_tokens": _panelist_max_tokens(slug)}
+    ms = {}
+    mt = _panelist_max_tokens(slug)
+    if mt is not None:
+        ms["max_tokens"] = mt
     if slug in _MODEL_THINKING:
         ms["thinking"] = _MODEL_THINKING[slug]
-    return ModelSettings(**ms)
+    return ModelSettings(**ms) if ms else ModelSettings()
 
 
 def _judge_settings() -> ModelSettings:
-    return ModelSettings(
-        max_tokens=JUDGE_MAX_TOKENS,
-    )
+    ms = {}
+    if JUDGE_MAX_TOKENS > 0:
+        ms["max_tokens"] = JUDGE_MAX_TOKENS
+    return ModelSettings(**ms) if ms else ModelSettings()
 
 
 def _summary_settings() -> ModelSettings:
-    return ModelSettings(
-        max_tokens=SUMMARY_MAX_TOKENS,
-    )
+    ms = {}
+    if SUMMARY_MAX_TOKENS > 0:
+        ms["max_tokens"] = SUMMARY_MAX_TOKENS
+    return ModelSettings(**ms) if ms else ModelSettings()
 
 
 JUDGE_SETTINGS = _judge_settings()
