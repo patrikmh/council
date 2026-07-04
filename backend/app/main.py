@@ -31,7 +31,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from . import a2ui, agui, openrouter as orcatalog, store, tavily
+from . import a2ui, agui, openrouter as orcatalog, store, tavily, parallel
+from .tools import _context_fn, _search_client, _WEB_PROVIDER
 from .memory import RunMemory
 from .config import build_panel, framer_model, judge_model
 from .debate import (
@@ -54,10 +55,12 @@ log = logging.getLogger("rabble")
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     await store.init_db()
-    if tavily.client.available:
-        log.info("tavily_ok panelists will have web_search + browse tools")
+    if _search_client().available:
+        log.info("web_tools_ok provider=%s panelists will have web_search + browse tools",
+                 _WEB_PROVIDER)
     else:
-        log.warning("tavily_disabled TAVILY_API_KEY not set — panelists will run without web tools")
+        log.warning("web_tools_disabled no API key for %s — panelists will run without web tools",
+                    _WEB_PROVIDER)
     yield
 
 
@@ -252,11 +255,11 @@ async def run_agent(body: RunAgentInput, request: Request) -> StreamingResponse:
             framing = await frame_question(framer_model(panel), question)
             yield agui.sse(agui.step_finished("frame_question"))
 
-            # Preflight: one Tavily search on the question, injected into
+            # Preflight: one web search on the question, injected into
             # every panelist's system prompt so nobody argues from stale
             # training data alone.
             yield agui.sse(agui.step_started("gather_context"))
-            context = await tavily.context_block(question)
+            context = await _context_fn()(question)
             if context:
                 yield agui.sse(agui.custom("tool_call", {
                     "agent": "framer", "tool": "web_search",
@@ -427,7 +430,7 @@ async def run_debate(body: RunAgentInput, request: Request) -> StreamingResponse
             yield agui.sse(agui.step_finished("frame_question"))
 
             yield agui.sse(agui.step_started("gather_context"))
-            context = await tavily.context_block(question)
+            context = await _context_fn()(question)
             if context:
                 yield agui.sse(agui.custom("tool_call", {
                     "agent": "framer", "tool": "web_search",

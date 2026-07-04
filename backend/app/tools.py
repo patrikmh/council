@@ -12,9 +12,31 @@ import time
 from typing import Awaitable, Callable
 
 from . import tavily
+from . import parallel
 from .memory import RunMemory
 
 log = logging.getLogger("rabble")
+
+# ── Web tool provider switch ────────────────────────────────────────────
+# Set WEB_PROVIDER=tavily (default) or WEB_PROVIDER=parallel.
+# Both modules share the same SearchHit/Page dataclasses so the tools
+# layer is provider-agnostic.
+_WEB_PROVIDER = os.getenv("WEB_PROVIDER", "tavily").strip().lower()
+
+
+def _search_client():
+    """Return the active search/extract client based on WEB_PROVIDER."""
+    if _WEB_PROVIDER == "parallel":
+        return parallel.client
+    return tavily.client
+
+
+def _context_fn():
+    """Return the active context_block function based on WEB_PROVIDER."""
+    if _WEB_PROVIDER == "parallel":
+        return parallel.context_block
+    return tavily.context_block
+
 
 OnToolCall = Callable[[dict], Awaitable[None] | None]
 
@@ -47,7 +69,7 @@ def make_tools(
     list — better to hand the model no tools than to hand it tools that
     always fail and let it burn its retry budget.
     """
-    if not tavily.client.available:
+    if not _search_client().available:
         log.info("tools_disabled name=%r reason=%r", agent_name, "TAVILY_API_KEY not set")
         return []
     state = {"used": 0}
@@ -93,7 +115,7 @@ def make_tools(
         t0 = time.monotonic()
         log.info("tool_call name=%r tool=web_search q=%r", agent_name, query[:80])
         try:
-            hits = await tavily.client.search(query, limit=5)
+            hits = await _search_client().search(query, limit=5)
         except Exception as exc:
             log.exception("tool_error name=%r tool=web_search", agent_name)
             return f"web_search failed: {type(exc).__name__}: {exc}"
@@ -132,7 +154,7 @@ def make_tools(
         t0 = time.monotonic()
         log.info("tool_call name=%r tool=browse url=%r", agent_name, url[:80])
         try:
-            page = await tavily.client.extract(url)
+            page = await _search_client().extract(url)
         except Exception as exc:
             log.exception("tool_error name=%r tool=browse", agent_name)
             return f"browse failed: {type(exc).__name__}: {exc}"
