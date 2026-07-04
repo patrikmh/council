@@ -32,12 +32,12 @@ DEBATE_ROUNDS = int(os.getenv("DEBATE_ROUNDS", "2"))
 
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
 # Output tokens: what the model generates as visible text.
-# Some budget/flash models cap at 1024 output tokens — sending 4096
-# causes a 400 error. We default to 1024 (safe for all) and allow
-# per-model overrides via MODEL_MAX_TOKENS env var.
-DEFAULT_PANELIST_MAX_TOKENS = 1024
-PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "1024"))
-JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "2048"))
+# Some budget/flash models (Step 3.7 Flash, Mimo V2.5, Deepseek V4 Flash)
+# have very low output ceilings — sending 1024+ causes 400 errors.
+# We default to 512 (safe for ALL models) and allow per-model overrides
+# via MODEL_MAX_TOKENS env var for premium models that support more.
+PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "512"))
+JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "1024"))
 SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "512"))
 
 # Per-model max_tokens overrides: models that support higher output.
@@ -56,30 +56,35 @@ def _panelist_max_tokens(slug: str) -> int:
     return _MODEL_MAX_TOKENS.get(slug, PANELIST_MAX_TOKENS)
 
 
-# Reasoning control: set effort level (low/medium/high).
-# We use reasoning.effort only — NOT reasoning.max_tokens, because
-# OpenAI rejects having both set simultaneously.
-REASONING_EFFORT = os.getenv("DEBATE_REASONING_EFFORT", "low")  # minimal|low|medium|high
+# Reasoning: we do NOT set thinking/reasoning.effort by default.
+# Budget models count thinking tokens against max_tokens, so setting
+# both makes them run out of budget before generating visible output.
+# Per-model thinking overrides via MODEL_THINKING env var (same format).
+MODEL_THINKING_RAW = os.getenv("MODEL_THINKING", "")
+_MODEL_THINKING: dict[str, str] = {}
+for _pair in MODEL_THINKING_RAW.split(","):
+    _pair = _pair.strip()
+    if "=" in _pair:
+        _slug, _val = _pair.split("=", 1)
+        _MODEL_THINKING[_slug.strip()] = _val.strip()
 
 
 def _panelist_settings(slug: str = "") -> ModelSettings:
-    return ModelSettings(
-        max_tokens=_panelist_max_tokens(slug),
-        thinking=REASONING_EFFORT,
-    )
+    ms = {"max_tokens": _panelist_max_tokens(slug)}
+    if slug in _MODEL_THINKING:
+        ms["thinking"] = _MODEL_THINKING[slug]
+    return ModelSettings(**ms)
 
 
 def _judge_settings() -> ModelSettings:
     return ModelSettings(
         max_tokens=JUDGE_MAX_TOKENS,
-        thinking=REASONING_EFFORT,
     )
 
 
 def _summary_settings() -> ModelSettings:
     return ModelSettings(
         max_tokens=SUMMARY_MAX_TOKENS,
-        thinking=REASONING_EFFORT,
     )
 
 

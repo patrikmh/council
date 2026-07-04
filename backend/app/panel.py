@@ -28,8 +28,8 @@ PANELIST_TIMEOUT = float(os.getenv("PANELIST_TIMEOUT_SEC", "90"))
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
 # Output tokens — default 1024 (safe for all models incl. flash/budget).
 # Per-model overrides via MODEL_MAX_TOKENS env (shared with debate.py).
-POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "1024"))
-FRAMER_MAX_TOKENS = int(os.getenv("POLL_FRAMER_MAX_TOKENS", "1024"))
+POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "512"))
+FRAMER_MAX_TOKENS = int(os.getenv("POLL_FRAMER_MAX_TOKENS", "512"))
 SUMMARY_MAX_TOKENS = int(os.getenv("POLL_SUMMARY_MAX_TOKENS", "512"))
 
 # Per-model max_tokens overrides (same format as debate.py)
@@ -46,25 +46,28 @@ def _panelist_max_tokens(slug: str) -> int:
     return _MODEL_MAX_TOKENS.get(slug, POLL_PANELIST_MAX_TOKENS)
 
 
-# Reasoning tokens — same idea as debate.py
-# reasoning.effort only (no reasoning.max_tokens) — OpenAI rejects both.
-REASONING_EFFORT = os.getenv("POLL_REASONING_EFFORT", "low")  # minimal|low|medium|high
+# Per-model thinking overrides (same format as debate.py MODEL_THINKING)
+MODEL_THINKING_RAW = os.getenv("MODEL_THINKING", "")
+_MODEL_THINKING: dict[str, str] = {}
+for _pair in MODEL_THINKING_RAW.split(","):
+    _pair = _pair.strip()
+    if "=" in _pair:
+        _slug, _val = _pair.split("=", 1)
+        _MODEL_THINKING[_slug.strip()] = _val.strip()
 
 
 def _poll_panelist_settings(slug: str = "") -> ModelSettings:
-    return ModelSettings(
-        max_tokens=_panelist_max_tokens(slug),
-        thinking=REASONING_EFFORT,
-    )
+    ms = {"max_tokens": _panelist_max_tokens(slug)}
+    if slug in _MODEL_THINKING:
+        ms["thinking"] = _MODEL_THINKING[slug]
+    return ModelSettings(**ms)
 
 
 FRAMER_SETTINGS = ModelSettings(
     max_tokens=FRAMER_MAX_TOKENS,
-    thinking=REASONING_EFFORT,
 )
 POLL_SUMMARY_SETTINGS = ModelSettings(
     max_tokens=SUMMARY_MAX_TOKENS,
-    thinking=REASONING_EFFORT,
 )
 
 
