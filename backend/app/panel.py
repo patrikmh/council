@@ -26,19 +26,38 @@ log = logging.getLogger("rabble")
 PANELIST_TIMEOUT = float(os.getenv("PANELIST_TIMEOUT_SEC", "90"))
 
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
-# Output tokens
-POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "4096"))
+# Output tokens — default 1024 (safe for all models incl. flash/budget).
+# Per-model overrides via MODEL_MAX_TOKENS env (shared with debate.py).
+POLL_PANELIST_MAX_TOKENS = int(os.getenv("POLL_PANELIST_MAX_TOKENS", "1024"))
 FRAMER_MAX_TOKENS = int(os.getenv("POLL_FRAMER_MAX_TOKENS", "1024"))
 SUMMARY_MAX_TOKENS = int(os.getenv("POLL_SUMMARY_MAX_TOKENS", "512"))
+
+# Per-model max_tokens overrides (same format as debate.py)
+MODEL_MAX_TOKENS_RAW = os.getenv("MODEL_MAX_TOKENS", "")
+_MODEL_MAX_TOKENS: dict[str, int] = {}
+for _pair in MODEL_MAX_TOKENS_RAW.split(","):
+    _pair = _pair.strip()
+    if "=" in _pair:
+        _slug, _val = _pair.split("=", 1)
+        _MODEL_MAX_TOKENS[_slug.strip()] = int(_val.strip())
+
+
+def _panelist_max_tokens(slug: str) -> int:
+    return _MODEL_MAX_TOKENS.get(slug, POLL_PANELIST_MAX_TOKENS)
+
 
 # Reasoning tokens — same idea as debate.py
 # reasoning.effort only (no reasoning.max_tokens) — OpenAI rejects both.
 REASONING_EFFORT = os.getenv("POLL_REASONING_EFFORT", "low")  # minimal|low|medium|high
 
-POLL_PANELIST_SETTINGS = ModelSettings(
-    max_tokens=POLL_PANELIST_MAX_TOKENS,
-    thinking=REASONING_EFFORT,
-)
+
+def _poll_panelist_settings(slug: str = "") -> ModelSettings:
+    return ModelSettings(
+        max_tokens=_panelist_max_tokens(slug),
+        thinking=REASONING_EFFORT,
+    )
+
+
 FRAMER_SETTINGS = ModelSettings(
     max_tokens=FRAMER_MAX_TOKENS,
     thinking=REASONING_EFFORT,
@@ -213,7 +232,7 @@ async def cast_ballots(
                 system_prompt=_preamble(context) + PANELIST_PROMPT,
                 tools=make_tools(p.name, on_tool_call, memory=memory,
                                  round_index=round_index),
-                model_settings=POLL_PANELIST_SETTINGS,
+                model_settings=_poll_panelist_settings(p.slug),
                 retries=2,
             )
             result = await asyncio.wait_for(agent.run(prompt), timeout=PANELIST_TIMEOUT)

@@ -32,9 +32,29 @@ DEBATE_ROUNDS = int(os.getenv("DEBATE_ROUNDS", "2"))
 
 # ── Model settings per role (cap tokens to save cost) ──────────────────────
 # Output tokens: what the model generates as visible text.
-PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "4096"))
+# Some budget/flash models cap at 1024 output tokens — sending 4096
+# causes a 400 error. We default to 1024 (safe for all) and allow
+# per-model overrides via MODEL_MAX_TOKENS env var.
+DEFAULT_PANELIST_MAX_TOKENS = 1024
+PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "1024"))
 JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "2048"))
 SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "512"))
+
+# Per-model max_tokens overrides: models that support higher output.
+# Format: "slug=4096,slug=4096" — parsed into a dict at startup.
+MODEL_MAX_TOKENS_RAW = os.getenv("MODEL_MAX_TOKENS", "")
+_MODEL_MAX_TOKENS: dict[str, int] = {}
+for _pair in MODEL_MAX_TOKENS_RAW.split(","):
+    _pair = _pair.strip()
+    if "=" in _pair:
+        _slug, _val = _pair.split("=", 1)
+        _MODEL_MAX_TOKENS[_slug.strip()] = int(_val.strip())
+
+
+def _panelist_max_tokens(slug: str) -> int:
+    """Return per-model max_tokens if overridden, else the default."""
+    return _MODEL_MAX_TOKENS.get(slug, PANELIST_MAX_TOKENS)
+
 
 # Reasoning control: set effort level (low/medium/high).
 # We use reasoning.effort only — NOT reasoning.max_tokens, because
@@ -42,9 +62,9 @@ SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "512"))
 REASONING_EFFORT = os.getenv("DEBATE_REASONING_EFFORT", "low")  # minimal|low|medium|high
 
 
-def _panelist_settings() -> ModelSettings:
+def _panelist_settings(slug: str = "") -> ModelSettings:
     return ModelSettings(
-        max_tokens=PANELIST_MAX_TOKENS,
+        max_tokens=_panelist_max_tokens(slug),
         thinking=REASONING_EFFORT,
     )
 
@@ -63,7 +83,6 @@ def _summary_settings() -> ModelSettings:
     )
 
 
-PANELIST_SETTINGS = _panelist_settings()
 JUDGE_SETTINGS = _judge_settings()
 SUMMARY_SETTINGS = _summary_settings()
 
@@ -263,7 +282,7 @@ async def debate_round(
                 system_prompt=_preamble(context) + opener + _DEBATE_TAIL,
                 tools=make_tools(p.name, on_tool_call, memory=memory,
                                  round_index=round_index),
-                model_settings=PANELIST_SETTINGS,
+                model_settings=_panelist_settings(p.slug),
                 retries=2,
             )
             result = await asyncio.wait_for(agent.run(prompt), timeout=PANELIST_TIMEOUT)
