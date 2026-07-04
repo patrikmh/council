@@ -36,32 +36,30 @@ PANELIST_MAX_TOKENS = int(os.getenv("DEBATE_PANELIST_MAX_TOKENS", "4096"))
 JUDGE_MAX_TOKENS = int(os.getenv("DEBATE_JUDGE_MAX_TOKENS", "2048"))
 SUMMARY_MAX_TOKENS = int(os.getenv("DEBATE_SUMMARY_MAX_TOKENS", "512"))
 
-# Reasoning tokens: internal chain-of-thought before the visible output.
-# Reasoning models (Grok 4, GPT-5, Claude Sonnet 5, GLM 5) can burn
-# thousands of thinking tokens — this cap keeps cost predictable.
-# NOTE: we use only reasoning.max_tokens (hard budget cap), NOT
-# reasoning.effort — OpenAI rejects having both set simultaneously.
-REASONING_TOKEN_BUDGET = int(os.getenv("DEBATE_REASONING_TOKEN_BUDGET", "2048"))
+# Reasoning control: set effort level (low/medium/high).
+# We use reasoning.effort only — NOT reasoning.max_tokens, because
+# OpenAI rejects having both set simultaneously.
+REASONING_EFFORT = os.getenv("DEBATE_REASONING_EFFORT", "low")  # minimal|low|medium|high
 
 
 def _panelist_settings() -> ModelSettings:
     return ModelSettings(
         max_tokens=PANELIST_MAX_TOKENS,
-        extra_body={"reasoning": {"max_tokens": REASONING_TOKEN_BUDGET}},
+        thinking=REASONING_EFFORT,
     )
 
 
 def _judge_settings() -> ModelSettings:
     return ModelSettings(
         max_tokens=JUDGE_MAX_TOKENS,
-        extra_body={"reasoning": {"max_tokens": REASONING_TOKEN_BUDGET}},
+        thinking=REASONING_EFFORT,
     )
 
 
 def _summary_settings() -> ModelSettings:
     return ModelSettings(
         max_tokens=SUMMARY_MAX_TOKENS,
-        extra_body={"reasoning": {"max_tokens": REASONING_TOKEN_BUDGET}},
+        thinking=REASONING_EFFORT,
     )
 
 
