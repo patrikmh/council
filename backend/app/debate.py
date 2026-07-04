@@ -61,6 +61,7 @@ def _panelist_max_tokens(slug: str) -> int | None:
 
 # Per-model thinking overrides via MODEL_THINKING env var.
 # Format: "slug=low,slug=medium"
+# All models get a default thinking level; per-model overrides change it.
 MODEL_THINKING_RAW = os.getenv("MODEL_THINKING", "")
 _MODEL_THINKING: dict[str, str] = {}
 for _pair in MODEL_THINKING_RAW.split(","):
@@ -68,6 +69,7 @@ for _pair in MODEL_THINKING_RAW.split(","):
     if "=" in _pair:
         _slug, _val = _pair.split("=", 1)
         _MODEL_THINKING[_slug.strip()] = _val.strip()
+DEFAULT_THINKING = os.getenv("DEBATE_THINKING", "low")  # minimal|low|medium|high
 
 
 def _panelist_settings(slug: str = "") -> ModelSettings:
@@ -75,23 +77,24 @@ def _panelist_settings(slug: str = "") -> ModelSettings:
     mt = _panelist_max_tokens(slug)
     if mt is not None:
         ms["max_tokens"] = mt
-    if slug in _MODEL_THINKING:
-        ms["thinking"] = _MODEL_THINKING[slug]
-    return ModelSettings(**ms) if ms else ModelSettings()
+    ms["thinking"] = _MODEL_THINKING.get(slug, DEFAULT_THINKING)
+    return ModelSettings(**ms)
 
 
 def _judge_settings() -> ModelSettings:
     ms = {}
     if JUDGE_MAX_TOKENS > 0:
         ms["max_tokens"] = JUDGE_MAX_TOKENS
-    return ModelSettings(**ms) if ms else ModelSettings()
+    ms["thinking"] = DEFAULT_THINKING
+    return ModelSettings(**ms)
 
 
 def _summary_settings() -> ModelSettings:
     ms = {}
     if SUMMARY_MAX_TOKENS > 0:
         ms["max_tokens"] = SUMMARY_MAX_TOKENS
-    return ModelSettings(**ms) if ms else ModelSettings()
+    ms["thinking"] = DEFAULT_THINKING
+    return ModelSettings(**ms)
 
 
 JUDGE_SETTINGS = _judge_settings()

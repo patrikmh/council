@@ -57,6 +57,7 @@ for _pair in MODEL_THINKING_RAW.split(","):
     if "=" in _pair:
         _slug, _val = _pair.split("=", 1)
         _MODEL_THINKING[_slug.strip()] = _val.strip()
+DEFAULT_THINKING = os.getenv("POLL_THINKING", "low")  # minimal|low|medium|high
 
 
 def _poll_panelist_settings(slug: str = "") -> ModelSettings:
@@ -64,13 +65,12 @@ def _poll_panelist_settings(slug: str = "") -> ModelSettings:
     mt = _panelist_max_tokens(slug)
     if mt is not None:
         ms["max_tokens"] = mt
-    if slug in _MODEL_THINKING:
-        ms["thinking"] = _MODEL_THINKING[slug]
-    return ModelSettings(**ms) if ms else ModelSettings()
+    ms["thinking"] = _MODEL_THINKING.get(slug, DEFAULT_THINKING)
+    return ModelSettings(**ms)
 
 
-FRAMER_SETTINGS = ModelSettings()
-POLL_SUMMARY_SETTINGS = ModelSettings()
+FRAMER_SETTINGS = ModelSettings(thinking=DEFAULT_THINKING)
+POLL_SUMMARY_SETTINGS = ModelSettings(thinking=DEFAULT_THINKING)
 
 
 def today_iso() -> str:
