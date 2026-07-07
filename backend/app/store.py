@@ -13,6 +13,7 @@ only credits the attractor if it *sticks* — the flipper's final-round vote
 must still match — so a panelist who flips back later grants no credit.
 """
 
+import json as _json
 import os
 import time
 
@@ -46,6 +47,15 @@ CREATE TABLE IF NOT EXISTS ballots (
 
 CREATE INDEX IF NOT EXISTS ballots_run   ON ballots(run_id);
 CREATE INDEX IF NOT EXISTS ballots_model ON ballots(model_name);
+
+CREATE TABLE IF NOT EXISTS news_editions (
+    id           INTEGER PRIMARY KEY AUTOINCREMENT,
+    slot         TEXT NOT NULL UNIQUE,    -- '2026-07-07-morning' | '-evening'
+    status       TEXT NOT NULL,           -- 'running' | 'done' | 'failed'
+    started_at   INTEGER NOT NULL,
+    finished_at  INTEGER,
+    payload      TEXT                     -- full edition JSON when done
+);
 """
 
 # Columns added after the initial schema shipped. SQLite has no
@@ -256,6 +266,90 @@ async def debate_delta(days: int | None = 30) -> dict:
         "judge_disagreed_pct": pct(judge_disagreed, len(judged)),
         "confidence_weighted_round0_diverged": weighted_diverged,
     }
+
+
+# ── News editions ────────────────────────────────────────────────────────────
+# On-demand with cache: the first visitor after an edition boundary claims
+# the slot and generates; everyone else reads the stored payload. The slot
+# row doubles as the lock.
+
+# A 'running' edition older than this is presumed dead (the triggering
+# visitor disconnected, the process restarted) and may be reclaimed.
+NEWS_STALE_RUNNING_SEC = int(os.getenv("NEWS_STALE_RUNNING_SEC", "1800"))
+
+
+def _edition_row(row) -> dict:
+    return {
+        "slot": row["slot"],
+        "status": row["status"],
+        "started_at": row["started_at"],
+        "finished_at": row["finished_at"],
+        "payload": _json.loads(row["payload"]) if row["payload"] else None,
+    }
+
+
+async def news_get(slot: str) -> dict | None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        rows = await db.execute_fetchall(
+            "SELECT * FROM news_editions WHERE slot = ?", (slot,))
+        return _edition_row(rows[0]) if rows else None
+
+
+async def news_latest_done() -> dict | None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        rows = await db.execute_fetchall(
+            "SELECT * FROM news_editions WHERE status = 'done' "
+            "ORDER BY finished_at DESC LIMIT 1")
+        return _edition_row(rows[0]) if rows else None
+
+
+async def news_claim(slot: str) -> bool:
+    """Claim a slot for generation. True = caller may generate. A slot that
+    is done, or running and fresh, cannot be claimed; failed or stale-running
+    slots are reclaimed so a crashed run doesn't block the edition forever."""
+    now = int(time.time())
+    async with aiosqlite.connect(DB_PATH) as db:
+        db.row_factory = aiosqlite.Row
+        rows = await db.execute_fetchall(
+            "SELECT status, started_at FROM news_editions WHERE slot = ?", (slot,))
+        if rows:
+            row = rows[0]
+            if row["status"] == "done":
+                return False
+            if (row["status"] == "running"
+                    and now - row["started_at"] < NEWS_STALE_RUNNING_SEC):
+                return False
+            await db.execute(
+                "UPDATE news_editions SET status = 'running', started_at = ?, "
+                "finished_at = NULL, payload = NULL WHERE slot = ?",
+                (now, slot))
+            await db.commit()
+            return True
+        cur = await db.execute(
+            "INSERT OR IGNORE INTO news_editions (slot, status, started_at) "
+            "VALUES (?, 'running', ?)", (slot, now))
+        await db.commit()
+        return cur.rowcount == 1
+
+
+async def news_finish(slot: str, payload: dict) -> None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE news_editions SET status = 'done', finished_at = ?, "
+            "payload = ? WHERE slot = ?",
+            (int(time.time()), _json.dumps(payload, ensure_ascii=False), slot))
+        await db.commit()
+
+
+async def news_fail(slot: str, error: str) -> None:
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "UPDATE news_editions SET status = 'failed', finished_at = ?, "
+            "payload = ? WHERE slot = ?",
+            (int(time.time()), _json.dumps({"error": error[:300]}), slot))
+        await db.commit()
 
 
 async def recent_questions(limit: int = 50) -> list[dict]:

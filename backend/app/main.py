@@ -2,6 +2,8 @@
 
   POST /agui         — original one-shot poll (SSE, AG-UI events)
   POST /agui/debate  — multi-round debate with tools (SSE, AG-UI events)
+  POST /agui/news    — generate the current news edition (SSE, AG-UI events)
+  GET  /news/latest  — cached news edition for the current slot
   GET  /panel        — panelist chips for the frontend picker
   GET  /stats/*      — leaderboard + recent-questions feed
   GET  /health       — liveness
@@ -43,6 +45,15 @@ from .debate import (
     stream_debate_summary,
 )
 from .guard import GuardError, client_ip, limiter, validate_question
+from .news import SOURCES, fetch_headlines
+from .newsroom import (
+    assess_story,
+    cluster_stories,
+    current_slot,
+    judge_story,
+    measured_leans,
+    rebuttal_round,
+)
 from .panel import cast_ballots, frame_question, stream_summary
 
 
@@ -701,6 +712,188 @@ async def stats_questions(limit: int = 50):
     if limit <= 0 or limit > 500:
         raise HTTPException(400, "limit out of range")
     return await store.recent_questions(limit=limit)
+
+
+# ── News edition endpoints ───────────────────────────────────────────────────
+# On-demand with cache: no scheduler. The first visitor after an edition
+# boundary (09:00/18:00 Stockholm) claims the slot, generates the edition
+# live over SSE, and the result is stored; everyone else reads the cache.
+
+@app.get("/news/latest")
+async def news_latest():
+    slot = current_slot()
+    row = await store.news_get(slot)
+    if row and row["status"] == "done":
+        return {"slot": slot, "status": "done",
+                "finished_at": row["finished_at"],
+                "edition": row["payload"], "previous": None}
+    prev = await store.news_latest_done()
+    return {
+        "slot": slot,
+        "status": row["status"] if row else "none",
+        "finished_at": None,
+        "edition": None,
+        "previous": ({"slot": prev["slot"], "finished_at": prev["finished_at"],
+                      "edition": prev["payload"]} if prev else None),
+    }
+
+
+@app.post("/agui/news")
+async def run_news(body: RunAgentInput, request: Request) -> StreamingResponse:
+    ip = client_ip(request)
+    allowed, reason = limiter.check(ip)
+    if not allowed:
+        return StreamingResponse(_error_stream(body, reason),
+                                 media_type="text/event-stream", status_code=429)
+    slot = current_slot()
+    if not await store.news_claim(slot):
+        return StreamingResponse(
+            _error_stream(body, "this edition is already generated or being "
+                                "generated — reload the News tab"),
+            media_type="text/event-stream", status_code=409)
+    limiter.record(ip)
+
+    async def events():
+        yield agui.sse(agui.run_started(body.thread_id, body.run_id))
+        state: dict = {
+            "slot": slot,
+            "outlets": {s.id: {"name": s.name, "stance": s.stance,
+                               "paywalled": s.paywalled} for s in SOURCES},
+            "sources": {},
+            "source_errors": {},
+            "stories": [],
+            "blindspots": [],
+            "done": False,
+        }
+        try:
+            panel = await _select_panel(body)
+
+            yield agui.sse(agui.step_started("fetch_headlines"))
+            feeds = await fetch_headlines()
+            state["sources"] = dict(Counter(it["source"] for it in feeds["items"]))
+            state["source_errors"] = feeds["errors"]
+            yield agui.sse(agui.state_snapshot(state))
+            yield agui.sse(agui.step_finished("fetch_headlines"))
+            if not feeds["items"]:
+                raise RuntimeError("no headlines could be fetched from any source")
+
+            yield agui.sse(agui.step_started("cluster_stories"))
+            desk = await cluster_stories(framer_model(panel), feeds["items"])
+            state["stories"] = [
+                {"title": s["title"], "items": s["items"], "status": "pending",
+                 "assessments": [], "rebuttals": [], "report": None, "leans": {}}
+                for s in desk["stories"]
+            ]
+            state["blindspots"] = desk["blindspots"]
+            yield agui.sse(agui.state_snapshot(state))
+            yield agui.sse(agui.step_finished("cluster_stories"))
+            if not state["stories"]:
+                raise RuntimeError("the desk editor found no multi-source stories")
+
+            aliases = {name: f"Panelist {i + 1}"
+                       for i, name in enumerate(sorted(p.name for p in panel))}
+            tool_events: asyncio.Queue = asyncio.Queue()
+
+            async def on_tool_call(payload: dict) -> None:
+                await tool_events.put(payload)
+
+            async def _collect(iterator, sink: list, story_index: int):
+                """Stream one panelist phase: interleave tool badges with
+                results landing, append successful results to `sink`."""
+                pump = _pump(iterator)
+                get_result = asyncio.create_task(pump.results_get())
+                while True:
+                    get_tool = asyncio.create_task(tool_events.get())
+                    done, _ = await asyncio.wait(
+                        {get_result, get_tool}, return_when=asyncio.FIRST_COMPLETED)
+                    if get_tool in done and get_result not in done:
+                        yield agui.sse(agui.custom("tool_call", {
+                            "story": story_index, **get_tool.result()}))
+                        continue
+                    get_tool.cancel()
+                    item = get_result.result()
+                    if item is _DONE:
+                        break
+                    get_result = asyncio.create_task(pump.results_get())
+                    panelist, result = item
+                    if isinstance(result, Exception):
+                        yield agui.sse(agui.custom("panelist_error", {
+                            "name": panelist.name, "story": story_index,
+                            "error": str(result)[:200]}))
+                        continue
+                    sink.append({"name": panelist.name,
+                                 "provider": panelist.provider,
+                                 **result.model_dump()})
+                    yield agui.sse(agui.state_snapshot(state))
+
+            # Stories run sequentially — kind to tool-provider rate limits
+            # and the event stream stays readable; panelists are parallel
+            # within each story.
+            for i, story in enumerate(state["stories"]):
+                memory = RunMemory()
+                src = {"title": story["title"], "items": story["items"]}
+
+                story["status"] = "assessing"
+                yield agui.sse(agui.step_started(f"story_{i + 1}_assess"))
+                yield agui.sse(agui.state_snapshot(state))
+                async for ev in _collect(
+                        assess_story(panel, src, on_tool_call, memory),
+                        story["assessments"], i):
+                    yield ev
+                yield agui.sse(agui.step_finished(f"story_{i + 1}_assess"))
+                if not story["assessments"]:
+                    story["status"] = "failed"
+                    continue
+
+                story["status"] = "rebuttal"
+                yield agui.sse(agui.step_started(f"story_{i + 1}_rebuttal"))
+                yield agui.sse(agui.state_snapshot(state))
+                async for ev in _collect(
+                        rebuttal_round(panel, src, story["assessments"],
+                                       on_tool_call, memory, aliases=aliases),
+                        story["rebuttals"], i):
+                    yield ev
+                yield agui.sse(agui.step_finished(f"story_{i + 1}_rebuttal"))
+
+                # The judge reads each panelist's freshest assessment —
+                # the rebuttal-round revision, or round 0 for a panelist
+                # whose rebuttal failed.
+                latest = {a["name"]: a for a in story["assessments"]}
+                latest.update({r["name"]: r for r in story["rebuttals"]})
+                final = list(latest.values())
+
+                story["status"] = "judging"
+                yield agui.sse(agui.step_started(f"story_{i + 1}_judge"))
+                yield agui.sse(agui.state_snapshot(state))
+                try:
+                    report = await judge_story(judge_model(panel), src, final)
+                    story["report"] = report.model_dump()
+                except Exception:
+                    log.exception("news_judge_failed story=%r", story["title"][:60])
+                story["leans"] = measured_leans(final)
+                story["status"] = "done" if story["report"] else "failed"
+                yield agui.sse(agui.step_finished(f"story_{i + 1}_judge"))
+                yield agui.sse(agui.state_snapshot(state))
+
+            state["done"] = True
+            await store.news_finish(slot, state)
+            yield agui.sse(agui.state_snapshot(state))
+            yield agui.sse(agui.run_finished(body.thread_id, body.run_id))
+        except asyncio.CancelledError:
+            # The triggering visitor closed the tab mid-run; free the slot
+            # so the next visitor can regenerate immediately.
+            await store.news_fail(slot, "generation interrupted")
+            raise
+        except Exception as exc:
+            log.exception("news_run_failed slot=%r", slot)
+            await store.news_fail(slot, str(exc)[:300])
+            yield agui.sse(agui.run_error(str(exc)[:300]))
+
+    return StreamingResponse(
+        events(),
+        media_type="text/event-stream",
+        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.get("/health")

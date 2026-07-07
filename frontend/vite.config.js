@@ -7,6 +7,8 @@ export default defineConfig({
     proxy: {
       "/agui": "http://localhost:8000",
       "/panel": "http://localhost:8000",
+      "/news": "http://localhost:8000",
+      "/stats": "http://localhost:8000",
     },
   },
 });

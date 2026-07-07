@@ -67,3 +67,19 @@ export function runDebate({ question, threadId, selectedModels, signal, onEvent 
     signal,
   );
 }
+
+// No question — the edition slot is decided server-side; an empty
+// selectedModels means the full panel sits.
+export function runNews({ threadId, selectedModels, signal, onEvent }) {
+  return streamAGUI(
+    "/agui/news",
+    {
+      threadId,
+      runId: crypto.randomUUID(),
+      messages: [],
+      selectedModels: selectedModels ?? [],
+    },
+    onEvent,
+    signal,
+  );
+}

@@ -6,6 +6,7 @@ import React, { useEffect, useReducer, useRef, useState } from "react";
 import { runAgent } from "./aguiClient.js";
 import A2UISurface from "./A2UIRenderer.jsx";
 import DebateView from "./DebateView.jsx";
+import NewsView from "./NewsView.jsx";
 import StatsView from "./StatsView.jsx";
 import Spinner from "./Spinner.jsx";
 import StoryBand from "./StoryBand.jsx";
@@ -458,6 +459,7 @@ export default function App() {
           {[
             ["poll", "Poll", "one question, everyone votes"],
             ["debate", "Debate", "argue across rounds"],
+            ["news", "News", "the council reads the papers"],
             ["stats", "Stats", "who's been most persuasive"],
           ].map(([key, label, hint]) => (
             <button
@@ -490,6 +492,7 @@ export default function App() {
           toggleModel={toggleModel}
         />
       )}
+      {mode === "news" && <NewsView />}
       {mode === "stats" && <StatsView />}
     </div>
   );
