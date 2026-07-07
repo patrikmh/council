@@ -591,6 +591,11 @@ async def outlet_stats(days: int | None = 30) -> list[dict]:
     return rows
 
 
+# A "median" of one rating is just that panelist's opinion; below the
+# quorum we publish no measured lean rather than a misleading one.
+LEAN_QUORUM = int(os.getenv("NEWS_LEAN_QUORUM", "2"))
+
+
 def measured_leans(final: list[dict]) -> dict[str, dict[str, float]]:
     """Median panelist rating per outlet on both axes — computed here,
     never by the judge, so one eloquent panelist can't drag the number.
@@ -603,6 +608,8 @@ def measured_leans(final: list[dict]) -> dict[str, dict[str, float]]:
             axes["lc"].append(r.get("social", 0))
     return {
         sid: {"lr": round(statistics.median(axes["lr"]), 1),
-              "lc": round(statistics.median(axes["lc"]), 1)}
+              "lc": round(statistics.median(axes["lc"]), 1),
+              "n": len(axes["lr"])}
         for sid, axes in by_source.items()
+        if len(axes["lr"]) >= LEAN_QUORUM
     }

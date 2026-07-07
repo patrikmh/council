@@ -205,13 +205,22 @@ const STORY_STATUS_HINT = {
   failed: "the council failed on this story",
 };
 
-function StoryCard({ story, index, outlets, toolCalls, running }) {
+function StoryCard({ story, index, outlets, panel, toolCalls, running }) {
   const busy = running && ["assessing", "rebuttal", "judging"].includes(story.status);
+  const missing = (panel && story.voices)
+    ? panel.filter((name) => !story.voices.includes(name))
+    : [];
   return (
     <article className={`news-story ${busy ? "is-busy" : ""}`}>
       <header className="news-story-head">
         <span className="news-story-num">{index + 1}</span>
         <h2 className="news-story-title">{story.title}</h2>
+        {missing.length > 0 && (
+          <span className="news-story-status is-degraded"
+                title={`No answer from: ${missing.join(", ")}`}>
+            {story.voices.length}/{panel.length} voices
+          </span>
+        )}
         {busy && <span className="news-story-status">{STORY_STATUS_HINT[story.status]}</span>}
         {!running && story.status === "failed" && (
           <span className="news-story-status is-failed">{STORY_STATUS_HINT.failed}</span>
@@ -505,6 +514,7 @@ export default function NewsView() {
               story={story}
               index={i}
               outlets={edition.outlets}
+              panel={edition.panel}
               toolCalls={live.toolCalls[String(i)]}
               running={live.running}
             />

@@ -2718,6 +2718,11 @@ body::after {
   font-style: italic;
 }
 .news-story-status.is-failed { color: var(--red-deep); }
+.news-story-status.is-degraded {
+  color: var(--gold);
+  font-style: normal;
+  cursor: help;
+}
 
 .news-section-eyebrow {
   font-family: var(--font-mono);

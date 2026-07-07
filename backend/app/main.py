@@ -893,6 +893,7 @@ def _news_edition_events(slot: str, thread_id: str, run_id: str):
                 alive = [p for p in panel if p.slug in catalog]
                 if alive:
                     panel = alive
+            state["panel"] = [p.name for p in panel]
             coordinator = news_coordinator_model()
 
             yield agui.sse(agui.step_started("fetch_headlines"))
@@ -988,6 +989,9 @@ def _news_edition_events(slot: str, thread_id: str, run_id: str):
                 latest = {a["name"]: a for a in story["assessments"]}
                 latest.update({r["name"]: r for r in story["rebuttals"]})
                 final = list(latest.values())
+                # Which panelists' voices the judge actually heard — stored
+                # so a story ruled on by a degraded council says so.
+                story["voices"] = sorted(latest)
 
                 story["status"] = "judging"
                 yield agui.sse(agui.step_started(f"story_{i + 1}_judge"))
