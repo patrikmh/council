@@ -179,7 +179,22 @@ async def cluster_stories(model, items: list[dict]) -> dict:
 # more headroom than a poll ballot (budget 2) but the debate cap (5) is
 # about right; the timeout is longer because browse calls serialize.
 NEWS_TOOL_BUDGET = int(os.getenv("NEWS_TOOL_BUDGET", "6"))
-NEWS_PANELIST_TIMEOUT = float(os.getenv("NEWS_PANELIST_TIMEOUT_SEC", "120"))
+NEWS_PANELIST_TIMEOUT = float(os.getenv("NEWS_PANELIST_TIMEOUT_SEC", "240"))
+
+# News council model settings: thinking pinned low and output capped.
+# The cap matters on OpenRouter: without max_tokens it pre-authorizes the
+# model's NATIVE output limit (65k on GPT 5.5) against the key's remaining
+# monthly credit and returns 402 when that can't be covered, even though
+# the actual response is a few thousand tokens.
+NEWS_THINKING = os.getenv("NEWS_THINKING", "low")
+NEWS_MAX_TOKENS = int(os.getenv("NEWS_MAX_TOKENS", "16384"))
+
+
+def _news_settings(slug: str) -> ModelSettings:
+    ms = dict(_panelist_settings(slug))
+    ms["thinking"] = NEWS_THINKING
+    ms.setdefault("max_tokens", NEWS_MAX_TOKENS)  # MODEL_MAX_TOKENS still wins
+    return ModelSettings(**ms)
 
 _SOURCE_STANCES = {s.id: s.stance for s in SOURCES}
 _SOURCE_PAYWALLED = {s.id: s.paywalled for s in SOURCES}
@@ -353,7 +368,7 @@ def assess_story(
                 system_prompt=_preamble() + ASSESS_PROMPT,
                 tools=make_tools(p.name, on_tool_call, budget=NEWS_TOOL_BUDGET,
                                  memory=memory, round_index=0),
-                model_settings=_panelist_settings(p.slug),
+                model_settings=_news_settings(p.slug),
                 retries=2,
             )
             result = await asyncio.wait_for(agent.run(prompt),
@@ -426,7 +441,7 @@ def rebuttal_round(
                 system_prompt=_preamble() + opener,
                 tools=make_tools(p.name, on_tool_call, budget=NEWS_TOOL_BUDGET,
                                  memory=memory, round_index=1),
-                model_settings=_panelist_settings(p.slug),
+                model_settings=_news_settings(p.slug),
                 retries=2,
             )
             result = await asyncio.wait_for(agent.run("\n\n".join(parts)),
