@@ -591,6 +591,24 @@ async def outlet_stats(days: int | None = 30) -> list[dict]:
     return rows
 
 
+def merge_final(assessments: list[dict], rebuttals: list[dict]) -> list[dict]:
+    """Each panelist's freshest assessment: the rebuttal-round revision
+    when there is one, else round 0. Merged per field — a revision that
+    comes back with empty outlet_reads or fact_checks keeps the round-0
+    lists instead of erasing that panelist's ratings and checks from the
+    judged set (the schema allows empty lists, and lazy rebuttals happen)."""
+    latest = {a["name"]: a for a in assessments}
+    for r in rebuttals:
+        prior = latest.get(r["name"])
+        merged = dict(r)
+        if prior:
+            for field in ("outlet_reads", "fact_checks"):
+                if not merged.get(field):
+                    merged[field] = prior[field]
+        latest[r["name"]] = merged
+    return list(latest.values())
+
+
 # A "median" of one rating is just that panelist's opinion; below the
 # quorum we publish no measured lean rather than a misleading one.
 LEAN_QUORUM = int(os.getenv("NEWS_LEAN_QUORUM", "2"))

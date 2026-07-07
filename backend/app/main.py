@@ -45,6 +45,7 @@ from .config import (
 )
 from .debate import (
     DEBATE_ROUNDS,
+    _normalize_vote,
     debate_round,
     initial_ballots,
     judge_verdict,
@@ -58,6 +59,7 @@ from .newsroom import (
     current_slot,
     judge_story,
     measured_leans,
+    merge_final,
     outlet_stats,
     rebuttal_round,
 )
@@ -135,72 +137,6 @@ async def get_panel():
 async def _error_stream(body: RunAgentInput, message: str):
     yield agui.sse(agui.run_started(body.thread_id, body.run_id))
     yield agui.sse(agui.run_error(message))
-
-
-import re as _re
-
-
-def _normalize_vote(raw: str, options: list[str]) -> str | None:
-    """Map a model's freeform vote back to one of the option labels.
-
-    Handles common shapes models emit:
-      "Denmark"              → "Denmark"          exact
-      "C"                    → 3rd option         letter
-      "Option C"             → 3rd option         labelled letter
-      "C: Denmark"           → "Denmark"          letter prefix + label
-      "C. Denmark"           → "Denmark"
-      "Option C: Denmark"    → "Denmark"
-      "**Denmark**"          → "Denmark"          markdown fluff
-      "the answer is Denmark"→ "Denmark"          substring fallback
-      "Denm"                 → "Denmark"          truncation fallback
-
-    Returns None when the vote can't be mapped to any option — callers
-    must treat that ballot as invalid rather than counting it.
-    """
-    stripped = raw.strip().strip("*_`\"' ")
-
-    # 1. Exact case-insensitive match.
-    lower = stripped.lower()
-    for opt in options:
-        if lower == opt.lower():
-            return opt
-
-    # 2. "Letter[: . - ) ] Label" — pull the label side out and match it.
-    m = _re.match(
-        r"^(?:option\s+)?([a-z])\s*[\.\:\)\-\]]\s*(.+)$",
-        stripped,
-        _re.IGNORECASE,
-    )
-    if m:
-        rest = m.group(2).strip().strip("*_`\"' ")
-        for opt in options:
-            if rest.lower() == opt.lower():
-                return opt
-        idx = ord(m.group(1).upper()) - 65
-        if 0 <= idx < len(options):
-            return options[idx]
-
-    # 3. Bare letter or "Option X".
-    upper = stripped.upper()
-    for idx, opt in enumerate(options):
-        letter = chr(65 + idx)
-        if upper == letter or upper.startswith(f"OPTION {letter}"):
-            return opt
-
-    # 4. Substring fallback: if exactly one option label appears inside the
-    #    raw vote, use it. Prevents "the answer is Denmark" from being lost.
-    matches = [opt for opt in options if opt.lower() in lower]
-    if len(matches) == 1:
-        return matches[0]
-
-    # 5. Truncation fallback: the vote is a prefix/fragment of exactly one
-    #    option ("Denm" → "Denmark").
-    if len(stripped) >= 3:
-        matches = [opt for opt in options if lower in opt.lower()]
-        if len(matches) == 1:
-            return matches[0]
-
-    return None
 
 
 def _winner(options: list[str], ballots: list[dict]) -> str | None:
@@ -984,14 +920,13 @@ def _news_edition_events(slot: str, thread_id: str, run_id: str):
                 yield agui.sse(agui.step_finished(f"story_{i + 1}_rebuttal"))
 
                 # The judge reads each panelist's freshest assessment —
-                # the rebuttal-round revision, or round 0 for a panelist
+                # the rebuttal-round revision (backfilled from round 0
+                # where it left lists empty), or round 0 for a panelist
                 # whose rebuttal failed.
-                latest = {a["name"]: a for a in story["assessments"]}
-                latest.update({r["name"]: r for r in story["rebuttals"]})
-                final = list(latest.values())
+                final = merge_final(story["assessments"], story["rebuttals"])
                 # Which panelists' voices the judge actually heard — stored
                 # so a story ruled on by a degraded council says so.
-                story["voices"] = sorted(latest)
+                story["voices"] = sorted(a["name"] for a in final)
 
                 story["status"] = "judging"
                 yield agui.sse(agui.step_started(f"story_{i + 1}_judge"))

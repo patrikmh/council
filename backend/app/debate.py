@@ -13,6 +13,7 @@ import asyncio
 import logging
 import os
 import random
+import re
 import time
 from collections import Counter
 from typing import AsyncIterator
@@ -195,6 +196,69 @@ def _options_text(framing: Framing) -> str:
     return "\n".join(
         f"Option {chr(65 + i)}: {opt}" for i, opt in enumerate(framing.options)
     )
+
+
+def _normalize_vote(raw: str, options: list[str]) -> str | None:
+    """Map a model's freeform vote back to one of the option labels.
+
+    Handles common shapes models emit:
+      "Denmark"              → "Denmark"          exact
+      "C"                    → 3rd option         letter
+      "Option C"             → 3rd option         labelled letter
+      "C: Denmark"           → "Denmark"          letter prefix + label
+      "C. Denmark"           → "Denmark"
+      "Option C: Denmark"    → "Denmark"
+      "**Denmark**"          → "Denmark"          markdown fluff
+      "the answer is Denmark"→ "Denmark"          substring fallback
+      "Denm"                 → "Denmark"          truncation fallback
+
+    Returns None when the vote can't be mapped to any option — callers
+    must treat that ballot as invalid rather than counting it.
+    """
+    stripped = raw.strip().strip("*_`\"' ")
+
+    # 1. Exact case-insensitive match.
+    lower = stripped.lower()
+    for opt in options:
+        if lower == opt.lower():
+            return opt
+
+    # 2. "Letter[: . - ) ] Label" — pull the label side out and match it.
+    m = re.match(
+        r"^(?:option\s+)?([a-z])\s*[\.\:\)\-\]]\s*(.+)$",
+        stripped,
+        re.IGNORECASE,
+    )
+    if m:
+        rest = m.group(2).strip().strip("*_`\"' ")
+        for opt in options:
+            if rest.lower() == opt.lower():
+                return opt
+        idx = ord(m.group(1).upper()) - 65
+        if 0 <= idx < len(options):
+            return options[idx]
+
+    # 3. Bare letter or "Option X".
+    upper = stripped.upper()
+    for idx, opt in enumerate(options):
+        letter = chr(65 + idx)
+        if upper == letter or upper.startswith(f"OPTION {letter}"):
+            return opt
+
+    # 4. Substring fallback: if exactly one option label appears inside the
+    #    raw vote, use it. Prevents "the answer is Denmark" from being lost.
+    matches = [opt for opt in options if opt.lower() in lower]
+    if len(matches) == 1:
+        return matches[0]
+
+    # 5. Truncation fallback: the vote is a prefix/fragment of exactly one
+    #    option ("Denm" → "Denmark").
+    if len(stripped) >= 3:
+        matches = [opt for opt in options if lower in opt.lower()]
+        if len(matches) == 1:
+            return matches[0]
+
+    return None
 
 
 def _map_names(text: str, mapping: dict[str, str]) -> str:
@@ -411,8 +475,11 @@ async def _judge_sample(model, state: dict, criteria: list[str] | None) -> Verdi
                    model_settings=JUDGE_SETTINGS, retries=2)
     result = await agent.run(text)
     real_names = {alias: name for name, alias in aliases.items()}
+    # Normalize against the SHUFFLED options this sample saw — a bare
+    # "Option B" refers to the shuffled order, not the original one.
+    winner = _normalize_vote(result.output.winner, options) or result.output.winner
     return Verdict(
-        winner=result.output.winner,
+        winner=winner,
         rationale=_map_names(result.output.rationale, real_names),
     )
 
@@ -420,7 +487,11 @@ async def _judge_sample(model, state: dict, criteria: list[str] | None) -> Verdi
 async def judge_verdict(model, state: dict, criteria: list[str] | None = None) -> Verdict:
     """Rule on argument quality after the final round. Runs JUDGE_SAMPLES
     independent passes and takes the majority winner; a tie falls back to
-    the first sample. Failed samples are ignored unless all fail."""
+    the first sample. Failed samples are ignored unless all fail.
+
+    Winners are normalized to option labels before counting, so samples
+    saying "Sweden" and "Option B: Sweden" agree instead of splitting the
+    majority."""
     samples = await asyncio.gather(
         *(_judge_sample(model, state, criteria) for _ in range(JUDGE_SAMPLES)),
         return_exceptions=True,

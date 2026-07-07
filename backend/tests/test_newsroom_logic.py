@@ -14,6 +14,7 @@ from app.newsroom import (
     _resolve,
     current_slot,
     measured_leans,
+    merge_final,
 )
 
 STOCKHOLM = ZoneInfo("Europe/Stockholm")
@@ -109,6 +110,39 @@ def test_leans_quorum_suppresses_single_rater():
     out = measured_leans(final)
     assert "dn" in out and out["dn"]["n"] == 2
     assert "etc" not in out
+
+
+# ── merge_final ──────────────────────────────────────────────────────────
+
+
+def test_merge_final_prefers_rebuttal_but_backfills_empty_lists():
+    assessments = [
+        {"name": "Alpha", "account": "v0",
+         "outlet_reads": [{"source": "dn", "lean": -1, "social": 0}],
+         "fact_checks": [{"claim": "c", "verdict": "verified"}]},
+        {"name": "Beta", "account": "v0",
+         "outlet_reads": [{"source": "dn", "lean": 1, "social": 0}],
+         "fact_checks": []},
+    ]
+    rebuttals = [
+        # Lazy rebuttal: new account, but empty lists — round 0 must survive.
+        {"name": "Alpha", "account": "v1", "outlet_reads": [],
+         "fact_checks": [], "rebuttal": "r"},
+    ]
+    final = {a["name"]: a for a in merge_final(assessments, rebuttals)}
+    assert final["Alpha"]["account"] == "v1"                # revision kept
+    assert final["Alpha"]["outlet_reads"][0]["lean"] == -1  # backfilled
+    assert final["Alpha"]["fact_checks"][0]["claim"] == "c"
+    assert final["Beta"]["account"] == "v0"                 # no rebuttal: round 0
+
+
+def test_merge_final_keeps_non_empty_rebuttal_lists():
+    assessments = [{"name": "Alpha", "outlet_reads": [{"lean": -2}],
+                    "fact_checks": []}]
+    rebuttals = [{"name": "Alpha", "outlet_reads": [{"lean": 0}],
+                  "fact_checks": []}]
+    (merged,) = merge_final(assessments, rebuttals)
+    assert merged["outlet_reads"] == [{"lean": 0}]  # revision wins when present
 
 
 # ── _map_names / pseudonymization ────────────────────────────────────────

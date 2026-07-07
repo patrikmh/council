@@ -153,9 +153,13 @@ def news_stubs(monkeypatch):
                 if p.name == "Gamma":
                     yield p, TimeoutError("timed out")
                 else:
+                    # Beta's rebuttal is lazy (empty lists) — merge_final
+                    # must backfill its round-0 reads or the lean quorum
+                    # collapses to one rater.
+                    reads = ([] if p.name == "Beta"
+                             else make_assessment(80).outlet_reads)
                     yield p, Rebuttal(
-                        account="Reviderat.",
-                        outlet_reads=make_assessment(80).outlet_reads,
+                        account="Reviderat.", outlet_reads=reads,
                         fact_checks=[], confidence=80,
                         rebuttal="Jag håller med.")
         return gen()
