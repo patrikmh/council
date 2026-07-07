@@ -16,9 +16,16 @@ function ago(ts) {
   return `${Math.floor(s / 86400)}d ago`;
 }
 
+// Signed, compact: +0.75 / −1.2 / — when there's no data.
+function fmtLean(v) {
+  if (v == null) return "—";
+  return `${v > 0 ? "+" : ""}${v}`;
+}
+
 export default function StatsView() {
   const [days, setDays] = useState(30);
   const [board, setBoard] = useState(null);
+  const [outlets, setOutlets] = useState(null);
   const [questions, setQuestions] = useState(null);
   const [feedDisabled, setFeedDisabled] = useState(false);
   const [error, setError] = useState("");
@@ -27,10 +34,15 @@ export default function StatsView() {
     let cancelled = false;
     setError("");
     setBoard(null);
+    setOutlets(null);
     fetch(`/stats/leaderboard?days=${days}`)
       .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
       .then((data) => !cancelled && setBoard(data))
       .catch((e) => !cancelled && setError(`Leaderboard failed (${e})`));
+    fetch(`/stats/outlets?days=${days}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
+      .then((data) => !cancelled && setOutlets(data))
+      .catch(() => !cancelled && setOutlets([]));
     return () => {
       cancelled = true;
     };
@@ -117,6 +129,60 @@ export default function StatsView() {
         <p className="stats-hint">
           Influence = wins + 2 × (times another panelist flipped toward this
           model's vote in the next debate round).
+        </p>
+      </section>
+
+      <section className="stats-section">
+        <div className="stats-head">
+          <h2>The papers, scored by the council</h2>
+        </div>
+        {outlets === null && <div className="status">Loading…</div>}
+        {outlets && !outlets.some((o) => o.stories > 0) && (
+          <div className="note">
+            No news editions in this window yet — open the News tab and call
+            the council to order.
+          </div>
+        )}
+        {outlets && outlets.some((o) => o.stories > 0) && (
+          <table className="stats-table">
+            <thead>
+              <tr>
+                <th>Outlet</th>
+                <th>Declared</th>
+                <th>Left–right</th>
+                <th>Lib–cons</th>
+                <th>Stories</th>
+                <th>✓ / ✗ / ?</th>
+                <th>Accuracy</th>
+              </tr>
+            </thead>
+            <tbody>
+              {outlets
+                .filter((o) => o.stories > 0)
+                .map((o) => (
+                  <tr key={o.id}>
+                    <td>{o.name}</td>
+                    <td>
+                      <span className="stance-badge">{o.stance}</span>
+                    </td>
+                    <td>{fmtLean(o.lean_lr)}</td>
+                    <td>{fmtLean(o.lean_lc)}</td>
+                    <td>{o.stories}</td>
+                    <td>
+                      {o.verified} / {o.contradicted} / {o.unverified}
+                    </td>
+                    <td>{o.accuracy_pct == null ? "—" : `${o.accuracy_pct}%`}</td>
+                  </tr>
+                ))}
+            </tbody>
+          </table>
+        )}
+        <p className="stats-hint">
+          Lean is the council's measured framing of the outlet's actual
+          articles, −2 (left / liberal) to +2 (right / conservative) —
+          compare it against the declared stance. Accuracy = verified ÷
+          (verified + contradicted) over fact-checked claims attributed to
+          the outlet; unverified claims count toward neither side.
         </p>
       </section>
 

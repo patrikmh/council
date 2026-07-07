@@ -58,6 +58,7 @@ from .newsroom import (
     current_slot,
     judge_story,
     measured_leans,
+    outlet_stats,
     rebuttal_round,
 )
 from .panel import cast_ballots, frame_question, stream_summary
@@ -105,6 +106,11 @@ class RunAgentInput(BaseModel):
     selected_models: list[str] = Field(
         alias="selectedModels", default_factory=list,
         description="Names of models the user selected. Empty = use full panel.",
+    )
+    watch_only: bool = Field(
+        alias="watchOnly", default=False,
+        description="News only: attach to a live edition run if one exists, "
+                    "but never trigger a new (costly) generation.",
     )
 
 
@@ -711,6 +717,15 @@ async def stats_debate_delta(days: int = 30):
     return await store.debate_delta(days=days)
 
 
+@app.get("/stats/outlets")
+async def stats_outlets(days: int = 30):
+    """The outlet scoreboard: measured lean on both axes and fact-check
+    accuracy per newspaper, aggregated over stored news editions."""
+    if days <= 0 or days > 3650:
+        raise HTTPException(400, "days out of range")
+    return await outlet_stats(days=days)
+
+
 @app.get("/stats/questions")
 async def stats_questions(limit: int = 50):
     if not PUBLIC_FEED:
@@ -724,6 +739,22 @@ async def stats_questions(limit: int = 50):
 # On-demand with cache: no scheduler. The first visitor after an edition
 # boundary (09:00/18:00 Stockholm) claims the slot, generates the edition
 # live over SSE, and the result is stored; everyone else reads the cache.
+
+@app.get("/news/editions")
+async def news_editions_index():
+    """Browsable archive: past editions within the retention window,
+    newest first. Old editions are pruned as new ones finish."""
+    return await store.news_recent_done()
+
+
+@app.get("/news/editions/{slot}")
+async def news_edition_by_slot(slot: str):
+    row = await store.news_get(slot)
+    if row is None or row["status"] != "done":
+        raise HTTPException(404, "no such edition")
+    return {"slot": slot, "finished_at": row["finished_at"],
+            "edition": row["payload"]}
+
 
 @app.get("/news/latest")
 async def news_latest():
@@ -744,23 +775,104 @@ async def news_latest():
     }
 
 
+# In-process registry of live edition runs: slot → {subs, replay, task}.
+# Generation runs as a DETACHED task, so the triggering visitor closing
+# their tab cannot kill a half-finished edition; every open News tab
+# subscribes to the same run and streams it live. Assumes a single
+# uvicorn worker (true locally and on Render): a DB row saying 'running'
+# with no entry here is an orphan from a dead process and gets freed.
+_news_runs: dict[str, dict] = {}
+
+_SSE_HEADERS = {"Cache-Control": "no-cache", "X-Accel-Buffering": "no"}
+
+
+def _watch_news_run(slot: str):
+    """Response generator for one subscriber: replay RUN_STARTED + the
+    latest state snapshot so a late joiner reconstructs the UI, then live
+    events until the run's end-of-stream sentinel."""
+    run = _news_runs[slot]
+    q: asyncio.Queue = asyncio.Queue()
+    run["subs"].add(q)
+    for ev in run["replay"]:
+        q.put_nowait(ev)
+
+    async def gen():
+        try:
+            while True:
+                ev = await q.get()
+                if ev is None:
+                    break
+                yield ev
+        finally:
+            run["subs"].discard(q)
+
+    return gen()
+
+
+async def _produce_news_edition(slot: str, thread_id: str, run_id: str) -> None:
+    """Drive the edition pipeline to completion, broadcasting every SSE
+    frame to all subscribers. Lives and dies independently of any HTTP
+    connection."""
+    run = _news_runs[slot]
+    try:
+        async for ev in _news_edition_events(slot, thread_id, run_id):
+            if '"type": "RUN_STARTED"' in ev:
+                run["replay"] = [ev]
+            elif '"type": "STATE_SNAPSHOT"' in ev:
+                run["replay"] = run["replay"][:1] + [ev]
+            for q in list(run["subs"]):
+                q.put_nowait(ev)
+    finally:
+        for q in list(run["subs"]):
+            q.put_nowait(None)
+        _news_runs.pop(slot, None)
+
+
 @app.post("/agui/news")
 async def run_news(body: RunAgentInput, request: Request) -> StreamingResponse:
+    slot = current_slot()
+
+    # A run is live in this process: anyone may watch, free of charge.
+    if slot in _news_runs:
+        return StreamingResponse(_watch_news_run(slot),
+                                 media_type="text/event-stream",
+                                 headers=_SSE_HEADERS)
+
+    # No live run here — a DB row still saying 'running' is an orphan
+    # (dead generator, server restart). Free it now rather than waiting
+    # out the stale window.
+    row = await store.news_get(slot)
+    if row is not None and row["status"] == "running":
+        await store.news_fail(slot, "orphaned run (generation died)")
+
+    if body.watch_only:
+        return StreamingResponse(
+            _error_stream(body, "no live session for this edition"),
+            media_type="text/event-stream", status_code=409)
+
     ip = client_ip(request)
     allowed, reason = limiter.check(ip)
     if not allowed:
         return StreamingResponse(_error_stream(body, reason),
                                  media_type="text/event-stream", status_code=429)
-    slot = current_slot()
     if not await store.news_claim(slot):
         return StreamingResponse(
-            _error_stream(body, "this edition is already generated or being "
-                                "generated — reload the News tab"),
+            _error_stream(body, "this edition is already generated — "
+                                "reload the News tab"),
             media_type="text/event-stream", status_code=409)
     limiter.record(ip)
 
+    _news_runs[slot] = {"subs": set(), "replay": []}
+    _news_runs[slot]["task"] = asyncio.create_task(
+        _produce_news_edition(slot, body.thread_id, body.run_id))
+    return StreamingResponse(_watch_news_run(slot),
+                             media_type="text/event-stream",
+                             headers=_SSE_HEADERS)
+
+
+def _news_edition_events(slot: str, thread_id: str, run_id: str):
     async def events():
-        yield agui.sse(agui.run_started(body.thread_id, body.run_id))
+        yield agui.sse(agui.run_started(thread_id, run_id))
         state: dict = {
             "slot": slot,
             "outlets": {s.id: {"name": s.name, "stance": s.stance,
@@ -892,23 +1004,22 @@ async def run_news(body: RunAgentInput, request: Request) -> StreamingResponse:
 
             state["done"] = True
             await store.news_finish(slot, state)
+            await store.news_prune()  # newer editions push week-old ones out
             yield agui.sse(agui.state_snapshot(state))
-            yield agui.sse(agui.run_finished(body.thread_id, body.run_id))
+            yield agui.sse(agui.run_finished(thread_id, run_id))
         except asyncio.CancelledError:
-            # The triggering visitor closed the tab mid-run; free the slot
-            # so the next visitor can regenerate immediately.
-            await store.news_fail(slot, "generation interrupted")
+            # Server shutting down mid-run. Awaiting inside a cancelled
+            # task raises again, so free the slot fire-and-forget; the
+            # stale-claim window is the backstop if the write never lands.
+            asyncio.get_running_loop().create_task(
+                store.news_fail(slot, "generation interrupted"))
             raise
         except Exception as exc:
             log.exception("news_run_failed slot=%r", slot)
             await store.news_fail(slot, str(exc)[:300])
             yield agui.sse(agui.run_error(str(exc)[:300]))
 
-    return StreamingResponse(
-        events(),
-        media_type="text/event-stream",
-        headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
-    )
+    return events()
 
 
 @app.get("/health")

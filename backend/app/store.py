@@ -277,6 +277,9 @@ async def debate_delta(days: int | None = 30) -> dict:
 # visitor disconnected, the process restarted) and may be reclaimed.
 NEWS_STALE_RUNNING_SEC = int(os.getenv("NEWS_STALE_RUNNING_SEC", "1800"))
 
+# How long finished editions stay browsable before newer ones push them out.
+NEWS_RETENTION_DAYS = int(os.getenv("NEWS_RETENTION_DAYS", "7"))
+
 
 def _edition_row(row) -> dict:
     return {
@@ -294,6 +297,37 @@ async def news_get(slot: str) -> dict | None:
         rows = await db.execute_fetchall(
             "SELECT * FROM news_editions WHERE slot = ?", (slot,))
         return _edition_row(rows[0]) if rows else None
+
+
+async def news_done_editions(days: int | None = 30) -> list[dict]:
+    """Payloads of all completed editions in the window, oldest first —
+    the raw material for the outlet scoreboard."""
+    cutoff = int(time.time() - days * 86400) if days else 0
+    async with aiosqlite.connect(DB_PATH) as db:
+        rows = await db.execute_fetchall(
+            "SELECT payload FROM news_editions WHERE status = 'done' "
+            "AND finished_at >= ? ORDER BY finished_at", (cutoff,))
+        return [_json.loads(r[0]) for r in rows if r[0]]
+
+
+async def news_recent_done(limit: int = 20) -> list[dict]:
+    """Index of browsable past editions, newest first: slot + finished_at,
+    no payloads — the archive strip in the UI."""
+    async with aiosqlite.connect(DB_PATH) as db:
+        rows = await db.execute_fetchall(
+            "SELECT slot, finished_at FROM news_editions WHERE status = 'done' "
+            "ORDER BY finished_at DESC LIMIT ?", (limit,))
+        return [{"slot": r[0], "finished_at": r[1]} for r in rows]
+
+
+async def news_prune(days: int = NEWS_RETENTION_DAYS) -> None:
+    """Drop editions older than the retention window (failed rows too)."""
+    cutoff = int(time.time() - days * 86400)
+    async with aiosqlite.connect(DB_PATH) as db:
+        await db.execute(
+            "DELETE FROM news_editions "
+            "WHERE COALESCE(finished_at, started_at) < ?", (cutoff,))
+        await db.commit()
 
 
 async def news_latest_done() -> dict | None:

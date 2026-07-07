@@ -19,6 +19,8 @@ from dataclasses import dataclass
 import httpx
 
 FETCH_TIMEOUT = 15.0
+FETCH_ATTEMPTS = 3          # per source, with a short pause between tries
+FETCH_RETRY_PAUSE = 2.0
 MAX_ITEMS_PER_SOURCE = 15
 USER_AGENT = "Mozilla/5.0 (compatible; Rabble/1.0)"
 
@@ -121,9 +123,19 @@ def _parse_feed(xml_bytes: bytes, source: Source) -> list[dict]:
 
 
 async def _fetch_one(client: httpx.AsyncClient, source: Source) -> list[dict]:
-    resp = await client.get(source.feed)
-    resp.raise_for_status()
-    return _parse_feed(resp.content, source)
+    """Fetch one feed, retrying transient failures — an edition runs twice
+    a day, so giving a flaky CDN a second chance is cheap."""
+    last: Exception = RuntimeError("no attempt made")
+    for attempt in range(FETCH_ATTEMPTS):
+        try:
+            resp = await client.get(source.feed)
+            resp.raise_for_status()
+            return _parse_feed(resp.content, source)
+        except Exception as exc:
+            last = exc
+            if attempt + 1 < FETCH_ATTEMPTS:
+                await asyncio.sleep(FETCH_RETRY_PAUSE)
+    raise last
 
 
 async def fetch_headlines() -> dict:

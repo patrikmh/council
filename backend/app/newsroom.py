@@ -195,11 +195,20 @@ class OutletRead(BaseModel):
     lean: int = Field(
         ge=-2, le=2,
         description=(
-            "Measured political lean of THIS article's framing: -2 clearly "
-            "left, -1 leans left, 0 neutral, +1 leans right, +2 clearly "
-            "right. Rate the text in front of you — word choice, emphasis, "
-            "what it omits — never the outlet's reputation or declared "
-            "stance."
+            "Measured economic left-right lean of THIS article's framing: "
+            "-2 clearly left, -1 leans left, 0 neutral, +1 leans right, "
+            "+2 clearly right. Rate the text in front of you — word choice, "
+            "emphasis, what it omits — never the outlet's reputation or "
+            "declared stance."
+        ),
+    )
+    social: int = Field(
+        ge=-2, le=2,
+        description=(
+            "Measured social-axis position of THIS article's framing "
+            "(GAL-TAN): -2 clearly liberal/progressive, 0 neutral, "
+            "+2 clearly conservative/traditionalist. Same rule: rate the "
+            "text, not the brand."
         ),
     )
     note: str = Field(
@@ -212,6 +221,13 @@ class OutletRead(BaseModel):
 
 class FactCheck(BaseModel):
     claim: str = Field(description="The specific factual claim, quoted or tightly paraphrased.")
+    source: str = Field(
+        default="",
+        description=(
+            "Outlet key ('dn', 'svt', …) whose article carries this claim. "
+            "Empty string only if the claim appears across several outlets."
+        ),
+    )
     verdict: Literal["verified", "unverified", "contradicted"]
     evidence: str = Field(
         description=(
@@ -267,10 +283,10 @@ ASSESS_PROMPT = (
     "web_search to fact-check the one to three most load-bearing claims, "
     "preferably against sources outside these outlets (TT, myndigheter, "
     "international wires).\n"
-    "2. Rate each outlet's framing of THIS article on the -2..+2 "
-    "left-right scale. Rate the text, not the brand: a public-service "
-    "piece can lean, a tabloid piece can be straight. Note emphasis and "
-    "omissions.\n"
+    "2. Rate each outlet's framing of THIS article on two -2..+2 axes: "
+    "economic left-right, and social liberal-conservative (GAL-TAN). "
+    "Rate the text, not the brand: a public-service piece can lean, a "
+    "tabloid piece can be straight. Note emphasis and omissions.\n"
     "3. Write your account in neutral wire-service tone with URLs inline.\n\n"
     "Work in English; the judge publishes the final report in Swedish. "
     "Do not invent URLs — cite only pages you browsed or search results "
@@ -356,7 +372,9 @@ def assess_story(
 
 
 def _render_assessment(a: dict, alias: str) -> str:
-    leans = " ".join(f"{r['source']}:{r['lean']:+d}" for r in a["outlet_reads"])
+    leans = " ".join(
+        f"{r['source']}:LR{r['lean']:+d}/LC{r.get('social', 0):+d}"
+        for r in a["outlet_reads"])
     lines = [f"{alias} (confidence {a['confidence']}):",
              f"  Account: {a['account'][:700]}",
              f"  Lean ratings: {leans or '(none)'}"]
@@ -465,7 +483,8 @@ class StoryReport(BaseModel):
         description=(
             "The consolidated fact-check list: merge the panelists' checks, "
             "drop duplicates, keep each verdict only if the cited evidence "
-            "supports it. Claims and evidence in Swedish, URLs unchanged."
+            "supports it. Preserve each claim's source outlet key. Claims "
+            "and evidence in Swedish, URLs unchanged."
         )
     )
 
@@ -498,11 +517,77 @@ async def judge_story(model, story: dict, final: list[dict]) -> StoryReport:
     return result.output
 
 
-def measured_leans(final: list[dict]) -> dict[str, float]:
-    """Median panelist lean per outlet — computed here, never by the judge,
-    so one eloquent panelist can't drag the number."""
-    by_source: dict[str, list[int]] = {}
+# ── Outlet stats: how the papers score across editions ──────────────────────
+
+async def outlet_stats(days: int | None = 30) -> list[dict]:
+    """Aggregate the stored editions into a per-outlet scoreboard: average
+    measured left-right and liberal-conservative lean (mean of per-story
+    medians), and fact-check accuracy over claims attributed to the outlet.
+    Accuracy = verified / (verified + contradicted); unverified claims are
+    counted but don't move the score either way."""
+    from . import store  # local import: store has no business importing us
+
+    editions = await store.news_done_editions(days)
+    acc: dict[str, dict] = {
+        s.id: {"lr": [], "lc": [], "stories": 0,
+               "verified": 0, "contradicted": 0, "unverified": 0}
+        for s in SOURCES
+    }
+    for edition in editions:
+        for story in edition.get("stories", []):
+            if story.get("status") != "done":
+                continue
+            for sid, lean in (story.get("leans") or {}).items():
+                if sid not in acc:
+                    continue
+                acc[sid]["stories"] += 1
+                if isinstance(lean, dict):
+                    acc[sid]["lr"].append(lean.get("lr", 0))
+                    acc[sid]["lc"].append(lean.get("lc", 0))
+                else:  # editions stored before the second axis existed
+                    acc[sid]["lr"].append(lean)
+            report = story.get("report") or {}
+            for fc in report.get("fact_checks", []):
+                sid = fc.get("source", "")
+                if sid in acc and fc.get("verdict") in (
+                        "verified", "contradicted", "unverified"):
+                    acc[sid][fc["verdict"]] += 1
+
+    def mean(values: list) -> float | None:
+        return round(sum(values) / len(values), 2) if values else None
+
+    rows = []
+    for s in SOURCES:
+        a = acc[s.id]
+        decided = a["verified"] + a["contradicted"]
+        rows.append({
+            "id": s.id,
+            "name": s.name,
+            "stance": s.stance,
+            "stories": a["stories"],
+            "lean_lr": mean(a["lr"]),
+            "lean_lc": mean(a["lc"]),
+            "verified": a["verified"],
+            "contradicted": a["contradicted"],
+            "unverified": a["unverified"],
+            "accuracy_pct": round(100 * a["verified"] / decided, 1) if decided else None,
+        })
+    rows.sort(key=lambda r: (-(r["stories"]), r["name"]))
+    return rows
+
+
+def measured_leans(final: list[dict]) -> dict[str, dict[str, float]]:
+    """Median panelist rating per outlet on both axes — computed here,
+    never by the judge, so one eloquent panelist can't drag the number.
+    lr = economic left-right, lc = social liberal-conservative."""
+    by_source: dict[str, dict[str, list[int]]] = {}
     for a in final:
         for r in a["outlet_reads"]:
-            by_source.setdefault(r["source"], []).append(r["lean"])
-    return {sid: round(statistics.median(v), 1) for sid, v in by_source.items()}
+            axes = by_source.setdefault(r["source"], {"lr": [], "lc": []})
+            axes["lr"].append(r["lean"])
+            axes["lc"].append(r.get("social", 0))
+    return {
+        sid: {"lr": round(statistics.median(axes["lr"]), 1),
+              "lc": round(statistics.median(axes["lc"]), 1)}
+        for sid, axes in by_source.items()
+    }

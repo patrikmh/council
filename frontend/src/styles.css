@@ -2914,3 +2914,34 @@ body::after {
 .shell.is-mobile .news-outlet-row { grid-template-columns: 1fr; }
 .shell.is-mobile .news-story { padding: 14px 12px; }
 .shell.is-mobile .news-story-title { font-size: 19px; }
+
+/* Two-axis lean readout (left-right + liberal-conservative). */
+.lean-pair { display: inline-flex; flex-direction: column; gap: 7px; min-width: 110px; }
+
+/* Edition archive strip — browse the week's past rabbles. */
+.news-archive-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  max-width: var(--column);
+  margin: 14px auto 0;
+}
+.news-archive-chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  cursor: pointer;
+  transition: border-color 120ms var(--ease-out), color 120ms var(--ease-out);
+}
+.news-archive-chip:hover { border-color: var(--gold); color: var(--ink); }
+.news-archive-chip.is-on {
+  border-color: var(--gold);
+  background: var(--gold-bg);
+  color: var(--lamp-ink);
+}

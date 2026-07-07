@@ -11,7 +11,7 @@ async function streamAGUI(url, body, onEvent, signal) {
   if (!res.body) {
     throw new Error(`Backend responded ${res.status}`);
   }
-  if (!res.ok && res.status !== 429 && res.status !== 400) {
+  if (!res.ok && res.status !== 429 && res.status !== 400 && res.status !== 409) {
     throw new Error(`Backend responded ${res.status}`);
   }
 
@@ -68,16 +68,18 @@ export function runDebate({ question, threadId, selectedModels, signal, onEvent 
   );
 }
 
-// No question — the edition slot is decided server-side; an empty
-// selectedModels means the full panel sits.
-export function runNews({ threadId, selectedModels, signal, onEvent }) {
+// No question — the edition slot is decided server-side and the council
+// is the fixed news panel. watchOnly attaches to a live run if one
+// exists but never triggers a new (costly) generation.
+export function runNews({ threadId, watchOnly, signal, onEvent }) {
   return streamAGUI(
     "/agui/news",
     {
       threadId,
       runId: crypto.randomUUID(),
       messages: [],
-      selectedModels: selectedModels ?? [],
+      selectedModels: [],
+      watchOnly: watchOnly ?? false,
     },
     onEvent,
     signal,

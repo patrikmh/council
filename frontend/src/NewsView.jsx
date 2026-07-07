@@ -33,6 +33,15 @@ function linkify(text) {
   );
 }
 
+// "2026-07-07-morning" → "7 Jul · morning" (archive chip label)
+function slotShort(slot) {
+  const m = slot?.match(/^(\d{4})-(\d{2})-(\d{2})-(morning|evening)$/);
+  if (!m) return slot;
+  const d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));
+  const nice = d.toLocaleDateString("en-GB", { day: "numeric", month: "short" });
+  return `${nice} · ${m[4]}`;
+}
+
 // "2026-07-07-morning" → "Morning edition · 7 July 2026"
 function slotLabel(slot) {
   if (!slot) return "";
@@ -51,7 +60,7 @@ const VERDICT_META = {
   contradicted: { mark: "✗", label: "contradicted", cls: "is-contradicted" },
 };
 
-function FactCheckList({ checks }) {
+function FactCheckList({ checks, outlets }) {
   if (!checks?.length) return null;
   return (
     <div className="news-facts">
@@ -64,6 +73,11 @@ function FactCheckList({ checks }) {
               <span className={`fact-verdict ${meta.cls}`}>
                 {meta.mark} {meta.label}
               </span>
+              {fc.source && outlets?.[fc.source] && (
+                <span className="stance-badge" title="the outlet whose article carries this claim">
+                  {outlets[fc.source].name}
+                </span>
+              )}
               <span className="news-fact-claim">“{fc.claim}”</span>
               <span className="news-fact-evidence">{linkify(fc.evidence)}</span>
             </li>
@@ -74,21 +88,42 @@ function FactCheckList({ checks }) {
   );
 }
 
-// Declared stance vs the council's measured lean of this article (-2..+2,
-// median across panelists). The gap between the two is the point.
-function LeanScale({ lean }) {
-  if (lean == null) return <span className="lean-none">–</span>;
-  const pct = ((Number(lean) + 2) / 4) * 100;
+// Old editions stored a bare left-right number; newer ones store
+// {lr, lc} — economic left-right and social liberal-conservative.
+function axisValue(lean, axis) {
+  if (lean == null) return null;
+  if (typeof lean === "number") return axis === "lr" ? lean : null;
+  return lean[axis] ?? null;
+}
+
+// Declared stance vs the council's measured rating of this article
+// (-2..+2, median across panelists). The gap between the two is the point.
+function LeanScale({ value, ends }) {
+  if (value == null) return null;
+  const pct = ((Number(value) + 2) / 4) * 100;
   return (
-    <span className="lean-scale" title={`measured lean ${lean > 0 ? "+" : ""}${lean}`}>
+    <span className="lean-scale"
+          title={`measured ${ends[0]}–${ends[1]}: ${value > 0 ? "+" : ""}${value}`}>
       <span className="lean-track">
         <span className="lean-mid" />
         <span className="lean-marker" style={{ left: `${pct}%` }} />
       </span>
       <span className="lean-ends" aria-hidden="true">
-        <span>left</span>
-        <span>right</span>
+        <span>{ends[0]}</span>
+        <span>{ends[1]}</span>
       </span>
+    </span>
+  );
+}
+
+function LeanPair({ lean }) {
+  const lr = axisValue(lean, "lr");
+  const lc = axisValue(lean, "lc");
+  if (lr == null && lc == null) return <span className="lean-none">–</span>;
+  return (
+    <span className="lean-pair">
+      <LeanScale value={lr} ends={["left", "right"]} />
+      <LeanScale value={lc} ends={["liberal", "conserv."]} />
     </span>
   );
 }
@@ -118,7 +153,7 @@ function OutletTable({ story, outlets }) {
               </span>
             </div>
             <div className="news-outlet-headline">“{it.title}”</div>
-            <LeanScale lean={story.leans?.[it.source]} />
+            <LeanPair lean={story.leans?.[it.source]} />
             {framingBySource[it.source] && (
               <div className="news-outlet-framing">{framingBySource[it.source]}</div>
             )}
@@ -203,7 +238,7 @@ function StoryCard({ story, index, outlets, toolCalls, running }) {
         </div>
       )}
 
-      <FactCheckList checks={story.report?.fact_checks} />
+      <FactCheckList checks={story.report?.fact_checks} outlets={outlets} />
 
       {busy && toolCalls?.length > 0 && (
         <div className="news-toolstrip">
@@ -314,6 +349,8 @@ function reducer(state, ev) {
 
 export default function NewsView() {
   const [latest, setLatest] = useState(null); // GET /news/latest response
+  const [editions, setEditions] = useState([]); // archive index
+  const [archive, setArchive] = useState(null); // {slot, edition} being browsed
   const [live, dispatch] = useReducer(reducer, {
     running: false, step: null, snapshot: null, toolCalls: {}, notes: [],
   });
@@ -326,18 +363,26 @@ export default function NewsView() {
     } catch {
       setLatest({ status: "unreachable" });
     }
+    try {
+      const r = await fetch("/news/editions");
+      if (r.ok) setEditions(await r.json());
+    } catch {}
+  }
+
+  async function openEdition(slot) {
+    if (!slot) {
+      setArchive(null);
+      return;
+    }
+    try {
+      const r = await fetch(`/news/editions/${slot}`);
+      if (r.ok) setArchive(await r.json());
+    } catch {}
   }
 
   useEffect(() => {
     refresh();
   }, []);
-
-  // Someone else is generating: poll until the edition lands.
-  useEffect(() => {
-    if (latest?.status !== "running" || live.running) return;
-    const t = setInterval(refresh, 20000);
-    return () => clearInterval(t);
-  }, [latest?.status, live.running]);
 
   async function generate() {
     dispatch({ kind: "start" });
@@ -352,10 +397,38 @@ export default function NewsView() {
     refresh();
   }
 
-  // What to render: the live run's snapshot wins, then the cached edition,
-  // then the previous edition as a fallback while the current one pends.
-  const edition = live.snapshot || latest?.edition || latest?.previous?.edition;
-  const showingPrevious = !live.snapshot && !latest?.edition && !!latest?.previous;
+  // Someone else triggered this edition: attach to the live run and
+  // watch it stream in. watchOnly never starts a new generation — if the
+  // run turns out to be dead, the backend frees the slot and the refresh
+  // brings back the call-to-order button.
+  async function watchLive() {
+    dispatch({ kind: "start" });
+    try {
+      await runNews({
+        threadId: threadId.current,
+        watchOnly: true,
+        onEvent: (event) => {
+          if (event.type === "RUN_ERROR") return; // dead run — stay quiet
+          dispatch({ kind: "agui", event });
+        },
+      });
+    } catch {}
+    dispatch({ kind: "agui", event: { type: "RUN_FINISHED" } });
+    refresh();
+  }
+
+  useEffect(() => {
+    if (latest?.status === "running" && !live.running) watchLive();
+  }, [latest?.status]);
+
+  // What to render: the live run's snapshot wins, then an archive pick,
+  // then the cached edition, then the previous edition as a fallback
+  // while the current one pends.
+  const edition =
+    live.snapshot || archive?.edition || latest?.edition ||
+    latest?.previous?.edition;
+  const showingPrevious =
+    !live.snapshot && !archive && !latest?.edition && !!latest?.previous;
   const pending = !live.running && latest && latest.status !== "done" && latest.status !== "unreachable";
 
   if (!latest && !live.running) {
@@ -392,6 +465,26 @@ export default function NewsView() {
 
       {latest?.status === "unreachable" && (
         <div className="note">Could not reach the backend.</div>
+      )}
+
+      {editions.length > 0 && !live.running && (
+        <div className="news-archive-strip">
+          <button
+            className={`news-archive-chip ${!archive ? "is-on" : ""}`}
+            onClick={() => openEdition(null)}
+          >
+            Latest
+          </button>
+          {editions.map((e) => (
+            <button
+              key={e.slot}
+              className={`news-archive-chip ${archive?.slot === e.slot ? "is-on" : ""}`}
+              onClick={() => openEdition(e.slot)}
+            >
+              {slotShort(e.slot)}
+            </button>
+          ))}
+        </div>
       )}
 
       {showingPrevious && edition && (
