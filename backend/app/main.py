@@ -36,7 +36,13 @@ from pydantic import BaseModel, ConfigDict, Field
 from . import a2ui, agui, openrouter as orcatalog, store, tavily, parallel
 from .tools import _context_fn, _search_client, _WEB_PROVIDER
 from .memory import RunMemory
-from .config import build_panel, framer_model, judge_model
+from .config import (
+    build_news_panel,
+    build_panel,
+    framer_model,
+    judge_model,
+    news_coordinator_model,
+)
 from .debate import (
     DEBATE_ROUNDS,
     debate_round,
@@ -766,7 +772,16 @@ async def run_news(body: RunAgentInput, request: Request) -> StreamingResponse:
             "done": False,
         }
         try:
-            panel = await _select_panel(body)
+            # The news council is a fixed, diversity-picked panel (NEWS_PANEL),
+            # not the user-selectable poll panel; the coordinator model runs
+            # the desk and the judging.
+            panel = build_news_panel()
+            catalog = await orcatalog.available_slugs()
+            if catalog is not None:
+                alive = [p for p in panel if p.slug in catalog]
+                if alive:
+                    panel = alive
+            coordinator = news_coordinator_model()
 
             yield agui.sse(agui.step_started("fetch_headlines"))
             feeds = await fetch_headlines()
@@ -778,7 +793,7 @@ async def run_news(body: RunAgentInput, request: Request) -> StreamingResponse:
                 raise RuntimeError("no headlines could be fetched from any source")
 
             yield agui.sse(agui.step_started("cluster_stories"))
-            desk = await cluster_stories(framer_model(panel), feeds["items"])
+            desk = await cluster_stories(coordinator, feeds["items"])
             state["stories"] = [
                 {"title": s["title"], "items": s["items"], "status": "pending",
                  "assessments": [], "rebuttals": [], "report": None, "leans": {}}
@@ -866,7 +881,7 @@ async def run_news(body: RunAgentInput, request: Request) -> StreamingResponse:
                 yield agui.sse(agui.step_started(f"story_{i + 1}_judge"))
                 yield agui.sse(agui.state_snapshot(state))
                 try:
-                    report = await judge_story(judge_model(panel), src, final)
+                    report = await judge_story(coordinator, src, final)
                     story["report"] = report.model_dump()
                 except Exception:
                     log.exception("news_judge_failed story=%r", story["title"][:60])

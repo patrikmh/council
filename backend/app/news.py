@@ -1,9 +1,11 @@
 """Morning/evening news editions: raw material for the council.
 
-Six major Swedish outlets, each fetched exactly once per edition. Every
-source carries its *declared* editorial stance (Swedish papers print
-theirs on the ledarsida); the council later rates the *measured* lean of
-each article, and the gap between the two is part of the report.
+Twelve Swedish outlets — six mainstream, three on each partisan flank —
+each fetched exactly once per edition. Every source carries a *declared*
+stance (mainstream papers print theirs on the ledarsida; for the partisan
+web outlets it is the commonly attributed position); the council later
+rates the *measured* lean of each article, and the gap between the two is
+part of the report.
 
 No LLM calls in this module — it only produces headline items per source.
 """
@@ -30,7 +32,13 @@ class Source:
     paywalled: bool  # full articles behind a paywall?
 
 
+# The stance string is the outlet's own declared line where one exists
+# (mainstream papers print theirs on the ledarsida); for the partisan web
+# outlets that call themselves "oberoende" it is the commonly attributed
+# position instead — the council rates the measured lean per article
+# either way, and the delta is the point.
 SOURCES: list[Source] = [
+    # Mainstream
     Source("dn", "Dagens Nyheter", "https://www.dn.se/rss/",
            "oberoende liberal", paywalled=True),
     Source("svd", "Svenska Dagbladet", "https://www.svd.se/feed/articles.rss",
@@ -45,6 +53,20 @@ SOURCES: list[Source] = [
     Source("sr", "Sveriges Radio Ekot",
            "https://api.sr.se/api/rss/program/83?format=145",
            "public service (opartisk)", paywalled=False),
+    # Left flank
+    Source("etc", "Dagens ETC", "https://www.etc.se/rss.xml",
+           "röd och grön vänster", paywalled=False),
+    Source("flamman", "Flamman", "https://flamman.se/feed/",
+           "socialistisk", paywalled=False),
+    Source("arena", "Dagens Arena", "https://www.dagensarena.se/feed/",
+           "progressiv vänster", paywalled=False),
+    # Right flank
+    Source("samnytt", "Samnytt", "https://samnytt.se/feed/",
+           "nationalistisk höger", paywalled=False),
+    Source("nyheteridag", "Nyheter Idag", "https://nyheteridag.se/feed/",
+           "högerpopulistisk", paywalled=False),
+    Source("friatider", "Fria Tider", "https://www.friatider.se/rss.xml",
+           "nationalistisk höger", paywalled=False),
 ]
 
 _TAG_RE = re.compile(r"<[^>]+>")
@@ -62,7 +84,7 @@ _ATOM = "{http://www.w3.org/2005/Atom}"
 def _parse_feed(xml_bytes: bytes, source: Source) -> list[dict]:
     """RSS 2.0 <item> or Atom <entry> → {source, title, summary, link, published}.
 
-    Five of the six outlets serve RSS 2.0; Sveriges Radio serves Atom.
+    Most outlets serve RSS 2.0; Sveriges Radio serves Atom.
     """
     root = ET.fromstring(xml_bytes)
     items: list[dict] = []

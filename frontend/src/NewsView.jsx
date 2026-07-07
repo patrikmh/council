@@ -1,4 +1,5 @@
-// News view: twice a day the council reads the six big Swedish outlets,
+// News view: twice a day the council reads the Swedish outlets (mainstream
+// plus both partisan flanks),
 // debates each multi-source story, and a judge publishes the edition —
 // consensus account, declared-vs-measured framing per outlet, disagreement
 // callouts and fact-checks. No scheduler: the first visitor after 09:00 /

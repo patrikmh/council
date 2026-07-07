@@ -56,8 +56,7 @@ def _display_name(slug: str) -> str:
                     else w.capitalize() for w in words)
 
 
-def build_panel() -> list[Panelist]:
-    raw = os.getenv("ROUNDTABLE_PANEL", DEFAULT_PANEL)
+def _parse_panel(raw: str) -> list[Panelist]:
     panel: list[Panelist] = []
     for entry in raw.split(","):
         entry = entry.strip()
@@ -71,9 +70,41 @@ def build_panel() -> list[Panelist]:
             slug=slug,
             model=_openrouter_model(slug),
         ))
+    return panel
+
+
+def build_panel() -> list[Panelist]:
+    panel = _parse_panel(os.getenv("ROUNDTABLE_PANEL", DEFAULT_PANEL))
     if not panel:
         raise RuntimeError("ROUNDTABLE_PANEL is empty.")
     return panel
+
+
+# The news council is its own, smaller table: four voices picked for
+# viewpoint diversity — different labs, different countries — separate
+# from the poll/debate panel. The coordinator (desk editor + judge)
+# deliberately does NOT sit on the panel, so the published ruling stays
+# brand-neutral.
+DEFAULT_NEWS_PANEL = ",".join([
+    "openai/gpt-5.5",
+    "x-ai/grok-4.3",
+    "z-ai/glm-5.2",
+    "mistralai/mistral-medium-3-5",
+])
+
+
+def build_news_panel() -> list[Panelist]:
+    panel = _parse_panel(os.getenv("NEWS_PANEL", DEFAULT_NEWS_PANEL))
+    if not panel:
+        raise RuntimeError("NEWS_PANEL is empty.")
+    return panel
+
+
+def news_coordinator_model():
+    """Desk editor + judge for news editions. Sonnet 5 by default,
+    override with NEWS_COORDINATOR_MODEL (any OpenRouter slug)."""
+    return _openrouter_model(
+        os.getenv("NEWS_COORDINATOR_MODEL", "anthropic/claude-sonnet-5"))
 
 
 def framer_model(panel: list[Panelist]):

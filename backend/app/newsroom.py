@@ -103,17 +103,20 @@ class Desk(BaseModel):
     )
 
 
+_OUTLET_ROSTER = ", ".join(s.name for s in SOURCES)
+
 DESK_PROMPT = (
     "You are the desk editor for a council of AI models that debates how "
     "Swedish outlets report the news. You receive a numbered list of "
-    "current headline items from six Swedish outlets (Dagens Nyheter, "
-    "Svenska Dagbladet, Aftonbladet, Expressen, SVT Nyheter, Sveriges "
-    "Radio Ekot).\n\n"
+    "current headline items from a mix of mainstream and declared-partisan "
+    f"Swedish outlets: {_OUTLET_ROSTER}.\n\n"
     "Group items that report the SAME underlying news event into stories. "
     "Two outlets covering the same event with different angles is exactly "
     "what the council wants; two merely similar events is not a group. "
     "Rank stories by news value: hard news with public significance beats "
-    "sports results and celebrity coverage.\n\n"
+    "sports results and celebrity coverage. When candidates tie, prefer a "
+    "story covered from both mainstream and partisan angles — the framing "
+    "comparison is richest there.\n\n"
     "Items that are significant but covered by only one outlet go in "
     "blindspots — the council cannot debate them, but readers should see "
     "what the other outlets skipped. Do not pad either list: fewer good "
@@ -232,7 +235,7 @@ class Assessment(BaseModel):
         max_length=3,
         description=(
             "The one to three most load-bearing factual claims in this "
-            "story, checked against sources outside the six outlets when "
+            "story, checked against sources outside these outlets when "
             "possible."
         ),
     )
@@ -262,7 +265,7 @@ ASSESS_PROMPT = (
     "full articles from outlets NOT marked paywalled (paywalled ones give "
     "you only the snippet — treat their framing accordingly). Use "
     "web_search to fact-check the one to three most load-bearing claims, "
-    "preferably against sources outside these six outlets (TT, myndigheter, "
+    "preferably against sources outside these outlets (TT, myndigheter, "
     "international wires).\n"
     "2. Rate each outlet's framing of THIS article on the -2..+2 "
     "left-right scale. Rate the text, not the brand: a public-service "
