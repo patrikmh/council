@@ -450,6 +450,11 @@ export default function NewsView() {
 
   return (
     <main className="transcript news-transcript">
+      <figure className="news-banner" aria-hidden="true">
+        <video src="/news.mp4" autoPlay muted loop playsInline
+               disablePictureInPicture />
+      </figure>
+
       {pending && (
         <div className="news-pending">
           {latest.status === "running" ? (
